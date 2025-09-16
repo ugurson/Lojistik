@@ -25,6 +25,7 @@ namespace Lojistik.Pages.Belgeler
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
+
             if (id == null)
             {
                 return NotFound();
@@ -54,20 +55,19 @@ namespace Lojistik.Pages.Belgeler
             try
             {
                 await _context.SaveChangesAsync();
+                return RedirectToPage("/Araclar/Details", new { id = AracBelgesi.AracID });
+
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!AracBelgesiExists(AracBelgesi.BelgeID))
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
+                    if (!_context.AracBelgeleri.Any(e => e.BelgeID == AracBelgesi.BelgeID))
+                        return NotFound();
+                    else
+                        throw;
                 }
             }
 
-            return RedirectToPage("./Index");
         }
 
         private bool AracBelgesiExists(int id)

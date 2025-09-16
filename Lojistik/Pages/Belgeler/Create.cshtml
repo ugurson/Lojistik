@@ -34,7 +34,8 @@
     <div class="form-group row mb-3">
         <label asp-for="AracBelgesi.Firma" class="col-sm-2 col-form-label">Firma</label>
         <div class="col-sm-6">
-            <input asp-for="AracBelgesi.Firma" class="form-control" />
+            <input asp-for="AracBelgesi.Firma" class="form-control" maxlength="100" />
+
             <span asp-validation-for="AracBelgesi.Firma" class="text-danger"></span>
         </div>
     </div>

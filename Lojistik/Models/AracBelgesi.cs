@@ -1,4 +1,6 @@
-﻿namespace Lojistik.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Lojistik.Models
 {
     public class AracBelgesi
     {
@@ -6,6 +8,8 @@
         public int AracID { get; set; }
         public string BelgeTipi { get; set; } = default!;
         public string? BelgeNo { get; set; }
+
+        [MaxLength(100, ErrorMessage = "Firma adı en fazla 100 karakter olabilir.")]
         public string? Firma { get; set; }
         public DateOnly BaslangicTarihi { get; set; }
         public DateOnly? BitisTarihi { get; set; }   // NULL = aktif
