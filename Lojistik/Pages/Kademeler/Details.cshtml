@@ -1,0 +1,61 @@
+﻿@page
+@model Lojistik.Pages.Kademeler.DetailsModel
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>AracKademe</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Tarih)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Tarih)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.YapilanIslem)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.YapilanIslem)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Tutar)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Tutar)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.ParaBirimi)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.ParaBirimi)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Notlar)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Notlar)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.CreatedAt)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.CreatedAt)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Arac)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Arac.Plaka)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-page="./Edit" asp-route-id="@Model.AracKademe.KademeID">Edit</a> |
+    <a asp-page="./Index">Back to List</a>
+</div>

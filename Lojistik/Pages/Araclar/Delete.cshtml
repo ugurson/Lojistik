@@ -1,0 +1,60 @@
+﻿@page
+@model Lojistik.Pages.Araclar.DeleteModel
+
+@{
+    ViewData["Title"] = "Araç Sil";
+}
+
+<h2 class="mb-3 text-danger">Araç Sil</h2>
+
+@if (Model.Arac is null)
+{
+    <div class="alert alert-warning">Kayıt bulunamadı.</div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <strong>Dikkat!</strong> Bu aracı silmek üzeresiniz. Devam etmek istediğinize emin misiniz?
+    </div>
+
+    <div class="container px-0">
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Plaka</div>
+            <div class="col-sm-6">@Model.Arac.Plaka</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Marka</div>
+            <div class="col-sm-6">@Model.Arac.Marka</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Model</div>
+            <div class="col-sm-6">@Model.Arac.Model</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Model Yılı</div>
+            <div class="col-sm-6">@Model.Arac.ModelYili</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Araç Tipi</div>
+            <div class="col-sm-6">@Model.Arac.AracTipi</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Dorse ise</div>
+            <div class="col-sm-6">@(Model.Arac.IsDorse ? "Evet" : "Hayır")</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Durum</div>
+            <div class="col-sm-6">@Model.Arac.Durum</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-sm-2 fw-semibold">Notlar</div>
+            <div class="col-sm-6">@Model.Arac.Notlar</div>
+        </div>
+    </div>
+
+    <form method="post" class="mt-3">
+        <input type="hidden" asp-for="Arac.AracID" />
+        <button type="submit" class="btn btn-danger me-2">Sil</button>
+        <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
+    </form>
+}

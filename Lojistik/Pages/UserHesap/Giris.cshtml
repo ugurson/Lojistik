@@ -1,0 +1,46 @@
+﻿@page
+@model Lojistik.Pages.UserHesap.GirisModel
+@{
+    ViewData["Title"] = "Giriş";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-8 col-md-6 col-lg-4 col-xl-3">
+        <div class="card shadow-sm rounded-4 mt-4">
+            <div class="card-body p-3">
+                <div class="text-center mb-2">
+                    <img src="~/images/logo21.png" alt="Lojistik" style="height:36px;width:auto;" />
+                    <h5 class="mt-2 mb-0">Giriş Yap</h5>
+                </div>
+
+                <form method="post" class="small">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                    <div class="mb-2">
+                        <label class="form-label small mb-1">Kullanıcı Adı</label>
+                        <input class="form-control form-control-sm" asp-for="Input.Username" autocomplete="username" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small mb-1">Şifre</label>
+                        <input class="form-control form-control-sm" asp-for="Input.Password" type="password" autocomplete="current-password" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small mb-1">Firma Kodu</label>
+                        <input class="form-control form-control-sm"
+                               asp-for="Input.FirmaKodu" required />
+                        <span class="text-danger small" asp-validation-for="Input.FirmaKodu"></span>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" asp-for="Input.BeniHatirla" />
+                        <label class="form-check-label small" asp-for="Input.BeniHatirla">Beni hatırla</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Giriş</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

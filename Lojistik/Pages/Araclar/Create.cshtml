@@ -1,0 +1,98 @@
+﻿@page
+@model Lojistik.Pages.Araclar.CreateModel
+@{
+    ViewData["Title"] = "Araç Ekle";
+}
+
+<h2>Araç Ekle</h2>
+
+<form method="post" class="form-horizontal">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="Arac.Plaka" class="col-sm-2 col-form-label"></label>
+        <div class="col-sm-6">
+            <input asp-for="Arac.Plaka" class="form-control" />
+            <span asp-validation-for="Arac.Plaka" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="Arac.Marka" class="col-sm-2 col-form-label"></label>
+        <div class="col-sm-6">
+            <input asp-for="Arac.Marka" class="form-control" />
+            <span asp-validation-for="Arac.Marka" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="Arac.Model" class="col-sm-2 col-form-label"></label>
+        <div class="col-sm-6">
+            <input asp-for="Arac.Model" class="form-control" />
+            <span asp-validation-for="Arac.Model" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label class="col-sm-2 col-form-label">Model Yılı</label>
+        <div class="col-sm-6">
+            <input asp-for="Arac.ModelYili" class="form-control" />
+            <span asp-validation-for="Arac.ModelYili" class="text-danger"></span>
+        </div>
+    </div>
+
+    <!-- Araç Tipi: combobox -->
+    <div class="form-group row mb-3">
+        <label class="col-sm-2 col-form-label">Araç Tipi</label>
+        <div class="col-sm-6">
+            <select asp-for="Arac.AracTipi" class="form-select" asp-items="Model.AracTipleri">
+                <option value="">Seçiniz…</option>
+            </select>
+            <span asp-validation-for="Arac.AracTipi" class="text-danger"></span>
+        </div>
+    </div>
+
+    <!-- IsDorse: checkbox + özel label "Dorse ise" -->
+    <div class="form-group row mb-3">
+        <label class="col-sm-2 col-form-label">Dorse ise</label>
+        <div class="col-sm-6 d-flex align-items-center">
+            <div class="form-check">
+                <input asp-for="Arac.IsDorse" class="form-check-input" />
+                <label class="form-check-label" for="Arac_IsDorse">Dorse ise</label>
+            </div>
+            <span asp-validation-for="Arac.IsDorse" class="text-danger ms-2"></span>
+        </div>
+    </div>
+
+    <!-- Durum: Aktif/Pasif combobox -->
+    <div class="form-group row mb-3">
+        <label class="col-sm-2 col-form-label">Durum</label>
+        <div class="col-sm-6">
+            <select asp-for="Arac.Durum" class="form-select" asp-items="Model.Durumlar">
+                <option value="">Seçiniz…</option>
+            </select>
+            <span asp-validation-for="Arac.Durum" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="Arac.Notlar" class="col-sm-2 col-form-label"></label>
+        <div class="col-sm-6">
+            <input asp-for="Arac.Notlar" class="form-control" />
+            <span asp-validation-for="Arac.Notlar" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-sm-6 offset-sm-2">
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+            <a asp-page="Index" class="btn btn-secondary">Listeye Dön</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

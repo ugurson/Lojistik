@@ -1,0 +1,101 @@
+﻿@using System.Security.Claims
+@{
+    var ad = User?.FindFirst("KullaniciAdi")?.Value ?? User?.Identity?.Name;
+    var firma = User?.FindFirst("FirmaKodu")?.Value;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Lojistik</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Lojistik.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-page="/Index">
+                    <img src="~/images/logo21.png" asp-append-version="true"
+                         alt="Lojistik" style="height:32px; width:auto;" />
+                    <span>Lojistik</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="araclarMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Araçlar
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="araclarMenu">
+                                <li><a class="dropdown-item" asp-page="/Araclar/Index">Tüm Araçlar</a></li>
+                                <li><a class="dropdown-item" asp-page="/Araclar/BitenBelgeler">Süresi Biten/Bitecek Belgeler</a></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><a class="dropdown-item" asp-page="/Belgeler/Tum">Tüm Belgeler</a></li> <!-- [YENİ] -->
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <!-- [YENİ] Kullanıcı menüsü -->
+                    <ul class="navbar-nav ms-auto">
+                        @if (User?.Identity?.IsAuthenticated ?? false)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu"
+                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    @(ad) @(string.IsNullOrEmpty(firma) ? "" : $"({firma})")
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/UserHesap/Profil">Profilim</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form method="post" asp-page="/UserHesap/Cikis" class="px-3">
+                                            <button type="submit" class="btn btn-link p-0 text-danger">Çıkış Yap</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/UserHesap/Giris">Giriş</a>
+                            </li>
+                        }
+                    </ul>
+                    <!-- [YENİ] SON -->
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - Lojistik - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

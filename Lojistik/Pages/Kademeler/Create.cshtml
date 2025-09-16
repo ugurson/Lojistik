@@ -1,0 +1,73 @@
+﻿@page
+@model Lojistik.Pages.Kademeler.CreateModel
+@{
+    ViewData["Title"] = "Yeni Kademe";
+}
+
+@if (Model.Kademe.AracID > 0)
+{
+    <div class="mb-2"><strong>Araç:</strong> @Model.Plaka (@Model.Kademe.AracID)</div>
+}
+
+<h2>Yeni Kademe</h2>
+<hr />
+
+<form method="post" class="form-horizontal">
+    <input type="hidden" asp-for="Kademe.AracID" /> <!-- [YENİ] -->
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Tarih</label>
+        <div class="col-sm-4">
+            <input asp-for="Kademe.Tarih" class="form-control" type="date" />
+            <span asp-validation-for="Kademe.Tarih" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Yapılan İşlem</label>
+        <div class="col-sm-8">
+            <input asp-for="Kademe.YapilanIslem" class="form-control" />
+            <span asp-validation-for="Kademe.YapilanIslem" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Tutar</label>
+        <div class="col-sm-4">
+            <input asp-for="Kademe.Tutar" class="form-control" />
+            <span asp-validation-for="Kademe.Tutar" class="text-danger"></span>
+        </div>
+
+        <label class="col-sm-2 col-form-label">Para Birimi</label>
+        <div class="col-sm-4">
+            <select asp-for="Kademe.ParaBirimi" class="form-select">
+                <option value="TRY">TRY</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+            </select>
+            <span asp-validation-for="Kademe.ParaBirimi" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Notlar</label>
+        <div class="col-sm-10">
+            <textarea asp-for="Kademe.Notlar" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Kaydet</button>
+    @if (Model.Kademe.AracID > 0)
+    {
+        <a class="btn btn-secondary ms-2"
+           asp-page="Index"
+           asp-route-aracId="@Model.Kademe.AracID"
+           asp-route-plaka="@Model.Plaka">Listeye Dön</a>
+    }
+    else
+    {
+        <a class="btn btn-secondary ms-2" asp-page="Index">Listeye Dön</a>
+    }
+</form>

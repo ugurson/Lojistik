@@ -1,0 +1,23 @@
+﻿# Build klasörleri
+bin/
+obj/
+.vs/
+Debug/
+Release/
+
+# Kullanıcı ayarları
+*.user
+*.suo
+
+# JetBrains / Rider
+.idea/
+
+# Publish profilleri
+*.publish.xml
+
+# Upload klasörleri
+wwwroot/uploads/**
+
+# Yerel ayar dosyaları
+appsettings.Development.json
+appsettings.Local.json

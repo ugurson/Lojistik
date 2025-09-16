@@ -1,0 +1,59 @@
+﻿@page "{id:int}"
+@model Lojistik.Pages.Araclar.EditModel
+@{
+    ViewData["Title"] = "Araç Düzenle";
+}
+
+<h3>Araç Düzenle</h3>
+<hr />
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <input type="hidden" asp-for="Arac.AracID" />
+    <!-- FirmaID'yi formda GÖSTERME / GÖNDERME! Sunucuda sabit kalacak. -->
+
+    <div class="mb-3">
+        <label class="form-label">Plaka</label>
+        <input class="form-control" asp-for="Arac.Plaka" />
+        <span class="text-danger" asp-validation-for="Arac.Plaka"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Marka</label>
+        <input class="form-control" asp-for="Arac.Marka" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Model</label>
+        <input class="form-control" asp-for="Arac.Model" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Model Yılı</label>
+        <input class="form-control" asp-for="Arac.ModelYili" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Araç Tipi</label>
+        <input class="form-control" asp-for="Arac.AracTipi" />
+    </div>
+
+    <div class="form-check mb-3">
+        <input class="form-check-input" asp-for="Arac.IsDorse" />
+        <label class="form-check-label" asp-for="Arac.IsDorse">Dorse</label>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Durum</label>
+        <input class="form-control" asp-for="Arac.Durum" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Notlar</label>
+        <textarea class="form-control" asp-for="Arac.Notlar"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <a asp-page="./Index" class="btn btn-secondary">İptal</a>
+</form>

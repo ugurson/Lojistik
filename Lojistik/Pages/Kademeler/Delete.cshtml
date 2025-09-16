@@ -1,0 +1,64 @@
+﻿@page
+@model Lojistik.Pages.Kademeler.DeleteModel
+
+@{
+    ViewData["Title"] = "Silme";
+}
+
+<h1>Silme</h1>
+
+<h3>Bu kayıt silinecek ?</h3>
+<div>
+    <h4>AracKademe</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Tarih)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Tarih)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.YapilanIslem)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.YapilanIslem)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Tutar)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Tutar)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.ParaBirimi)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.ParaBirimi)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Notlar)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Notlar)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.CreatedAt)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.CreatedAt)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AracKademe.Arac)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AracKademe.Arac.Plaka)
+        </dd>
+    </dl>
+    
+    <form method="post">
+        <input type="hidden" asp-for="AracKademe.KademeID" />
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-page="./Index">Geri Dön</a>
+    </form>
+</div>

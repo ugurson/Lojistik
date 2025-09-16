@@ -1,0 +1,112 @@
+﻿@page
+@model Lojistik.Pages.Belgeler.CreateModel
+
+@{
+    ViewData["Title"] = "Yeni Belge";
+}
+
+<div><strong>Araç:</strong> @Model.Plaka</div>
+
+<h2>Yeni Belge</h2>
+<hr />
+
+<form method="post" class="form-horizontal" enctype="multipart/form-data">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <input type="hidden" asp-for="AracBelgesi.AracID" />
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.BelgeTipi" class="col-sm-2 col-form-label">Belge Tipi</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.BelgeTipi" class="form-control" />
+            <span asp-validation-for="AracBelgesi.BelgeTipi" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.BelgeNo" class="col-sm-2 col-form-label">Belge No</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.BelgeNo" class="form-control" />
+            <span asp-validation-for="AracBelgesi.BelgeNo" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.Firma" class="col-sm-2 col-form-label">Firma</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.Firma" class="form-control" />
+            <span asp-validation-for="AracBelgesi.Firma" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.BaslangicTarihi" class="col-sm-2 col-form-label">Başlangıç Tarihi</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.BaslangicTarihi" type="date" class="form-control" />
+            <span asp-validation-for="AracBelgesi.BaslangicTarihi" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.BitisTarihi" class="col-sm-2 col-form-label">Bitiş Tarihi</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.BitisTarihi" type="date" class="form-control" />
+            <span asp-validation-for="AracBelgesi.BitisTarihi" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.Tutar" class="col-sm-2 col-form-label">Tutar</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.Tutar" class="form-control" />
+            <span asp-validation-for="AracBelgesi.Tutar" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.ParaBirimi" class="col-sm-2 col-form-label">Para Birimi</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.ParaBirimi" class="form-control" />
+            <span asp-validation-for="AracBelgesi.ParaBirimi" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.DosyaYolu" class="col-sm-2 col-form-label">Dosya Yolu</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.DosyaYolu" class="form-control" />
+            <span asp-validation-for="AracBelgesi.DosyaYolu" class="text-danger"></span>
+        </div>
+    </div>
+    <!-- Belge Dosyası Yükleme -->
+    <div class="form-group row mb-3">
+        <!-- <-- YENİ -->
+        <label class="col-sm-2 col-form-label">Belge Dosyası</label>            <!-- <-- YENİ -->
+        <div class="col-sm-6">
+            <!-- <-- YENİ -->
+            <input asp-for="Dosya" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" /> <!-- <-- YENİ -->
+            <small class="text-muted">PDF, JPG, PNG</small>                      <!-- <-- YENİ -->
+            <span asp-validation-for="Dosya" class="text-danger"></span>         <!-- <-- YENİ -->
+        </div>                                                                   <!-- <-- YENİ -->
+    </div>
+    <div class="form-group row mb-3">
+        <label asp-for="AracBelgesi.Notlar" class="col-sm-2 col-form-label">Notlar</label>
+        <div class="col-sm-6">
+            <input asp-for="AracBelgesi.Notlar" class="form-control" />
+            <span asp-validation-for="AracBelgesi.Notlar" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <div class="col-sm-6 offset-sm-2">
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+            <a class="btn btn-secondary" asp-page="/Araclar/Index">Listeye Dön</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

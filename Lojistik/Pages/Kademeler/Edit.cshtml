@@ -1,0 +1,72 @@
+﻿@page
+@model Lojistik.Pages.Kademeler.EditModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>AracKademe</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="AracKademe.KademeID" />
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="AracKademe.AracID" class="control-label"></label>
+                <select asp-for="AracKademe.AracID" class="form-control" asp-items="ViewBag.AracID"></select>
+                <span asp-validation-for="AracKademe.AracID" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="AracKademe.Tarih" class="control-label"></label>
+                <input asp-for="AracKademe.Tarih" class="form-control" />
+                <span asp-validation-for="AracKademe.Tarih" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="AracKademe.YapilanIslem" class="control-label"></label>
+                <input asp-for="AracKademe.YapilanIslem" class="form-control" />
+                <span asp-validation-for="AracKademe.YapilanIslem" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="AracKademe.Tutar" class="control-label"></label>
+                <input asp-for="AracKademe.Tutar" class="form-control" />
+                <span asp-validation-for="AracKademe.Tutar" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="AracKademe.ParaBirimi" class="control-label"></label>
+                <input asp-for="AracKademe.ParaBirimi" class="form-control" />
+                <span asp-validation-for="AracKademe.ParaBirimi" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                
+                <label asp-for="AracKademe.Notlar" class="control-label"></label>
+                <input asp-for="AracKademe.Notlar" class="form-control" />
+                <span asp-validation-for="AracKademe.Notlar" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                
+                <label asp-for="AracKademe.CreatedAt" class="control-label"></label>
+                <input asp-for="AracKademe.CreatedAt" class="form-control" />
+                <span asp-validation-for="AracKademe.CreatedAt" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
