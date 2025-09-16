@@ -1,46 +1,91 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using System.Security.Claims;
 using Lojistik.Data;
 using Lojistik.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
-namespace Lojistik.Pages_Musteriler
+namespace Lojistik.Pages.Musteriler;
+
+public class CreateModel : PageModel
 {
-    public class CreateModel : PageModel
+    private readonly AppDbContext _context;
+    public CreateModel(AppDbContext context) => _context = context;
+
+    [BindProperty]
+    public Musteri Musteri { get; set; } = new();
+
+    public List<Ulke> UlkeList { get; set; } = new();
+    public List<Sehir> SehirList { get; set; } = new();
+
+    public async Task<IActionResult> OnGetAsync()
     {
-        private readonly Lojistik.Data.AppDbContext _context;
+        UlkeList = await _context.Ulkeler
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.UlkeAdi)
+            .ToListAsync();
 
-        public CreateModel(Lojistik.Data.AppDbContext context)
-        {
-            _context = context;
-        }
+        SehirList = new();
+        return Page();
+    }
 
-        public IActionResult OnGet()
+    // AJAX: /Musteriler/Create?handler=Sehirler&ulkeId=#
+    public async Task<JsonResult> OnGetSehirlerAsync(int ulkeId)
+    {
+        var sehirler = await _context.Sehirler
+            .Where(s => s.UlkeID == ulkeId && s.IsActive)
+            .OrderBy(s => s.SehirAdi)
+            .Select(s => new { s.SehirID, s.SehirAdi })
+            .ToListAsync();
+
+        return new JsonResult(sehirler);
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        // FirmaID claim’i zorunlu
+        var firmaIdStr = User.FindFirstValue("FirmaID");
+        if (string.IsNullOrEmpty(firmaIdStr) || !int.TryParse(firmaIdStr, out var firmaId))
         {
-        ViewData["SehirID"] = new SelectList(_context.Set<Sehir>(), "SehirID", "SehirID");
-        ViewData["UlkeID"] = new SelectList(_context.Set<Ulke>(), "UlkeID", "UlkeID");
+            ModelState.AddModelError(string.Empty, "Firma bilgisi bulunamadı.");
+            UlkeList = await _context.Ulkeler.Where(u => u.IsActive).OrderBy(u => u.UlkeAdi).ToListAsync();
+            SehirList = Musteri.UlkeID > 0
+                ? await _context.Sehirler.Where(s => s.UlkeID == Musteri.UlkeID && s.IsActive).OrderBy(s => s.SehirAdi).ToListAsync()
+                : new();
             return Page();
         }
 
-        [BindProperty]
-        public Musteri Musteri { get; set; } = default!;
+        Musteri.FirmaID = firmaId;
 
-        // For more information, see https://aka.ms/RazorPagesCRUD.
-        public async Task<IActionResult> OnPostAsync()
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
+            UlkeList = await _context.Ulkeler.Where(u => u.IsActive).OrderBy(u => u.UlkeAdi).ToListAsync();
+            SehirList = Musteri.UlkeID > 0
+                ? await _context.Sehirler.Where(s => s.UlkeID == Musteri.UlkeID && s.IsActive).OrderBy(s => s.SehirAdi).ToListAsync()
+                : new();
+            return Page();
+        }
 
-            _context.Musteri.Add(Musteri);
+        _context.Musteriler.Add(Musteri);
+
+        try
+        {
             await _context.SaveChangesAsync();
-
             return RedirectToPage("./Index");
+        }
+        catch (DbUpdateException ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            if (msg.Contains("UX_Musteriler_Firma_MusteriAdi"))
+                ModelState.AddModelError("Musteri.MusteriAdi", "Bu müşteri adı zaten kayıtlı.");
+            else
+                ModelState.AddModelError(string.Empty, "Kaydetme sırasında bir hata oluştu.");
+
+            UlkeList = await _context.Ulkeler.Where(u => u.IsActive).OrderBy(u => u.UlkeAdi).ToListAsync();
+            SehirList = Musteri.UlkeID > 0
+                ? await _context.Sehirler.Where(s => s.UlkeID == Musteri.UlkeID && s.IsActive).OrderBy(s => s.SehirAdi).ToListAsync()
+                : new();
+            return Page();
         }
     }
 }

@@ -1,62 +1,47 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using Lojistik.Data;
+using Lojistik.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Lojistik.Data;
-using Lojistik.Models;
 
-namespace Lojistik.Pages_Musteriler
+namespace Lojistik.Pages.Musteriler;
+
+public class DeleteModel : PageModel
 {
-    public class DeleteModel : PageModel
+    private readonly AppDbContext _context;
+    public DeleteModel(AppDbContext context) => _context = context;
+
+    [BindProperty]
+    public Musteri Musteri { get; set; } = null!;
+
+    public async Task<IActionResult> OnGetAsync(int id)
     {
-        private readonly Lojistik.Data.AppDbContext _context;
+        var firmaIdStr = User.FindFirstValue("FirmaID");
+        if (!int.TryParse(firmaIdStr, out var firmaId)) return Unauthorized();
 
-        public DeleteModel(Lojistik.Data.AppDbContext context)
-        {
-            _context = context;
-        }
+        var m = await _context.Musteriler
+            .Include(x => x.Ulke)
+            .Include(x => x.Sehir)
+            .FirstOrDefaultAsync(x => x.MusteriID == id && x.FirmaID == firmaId);
 
-        [BindProperty]
-        public Musteri Musteri { get; set; } = default!;
+        if (m == null) return NotFound();
 
-        public async Task<IActionResult> OnGetAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        Musteri = m;
+        return Page();
+    }
 
-            var musteri = await _context.Musteri.FirstOrDefaultAsync(m => m.MusteriID == id);
+    public async Task<IActionResult> OnPostAsync(int id)
+    {
+        var firmaIdStr = User.FindFirstValue("FirmaID");
+        if (!int.TryParse(firmaIdStr, out var firmaId)) return Unauthorized();
 
-            if (musteri is not null)
-            {
-                Musteri = musteri;
+        var m = await _context.Musteriler.FirstOrDefaultAsync(x => x.MusteriID == id && x.FirmaID == firmaId);
+        if (m == null) return NotFound();
 
-                return Page();
-            }
+        _context.Musteriler.Remove(m);
+        await _context.SaveChangesAsync();
 
-            return NotFound();
-        }
-
-        public async Task<IActionResult> OnPostAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var musteri = await _context.Musteri.FindAsync(id);
-            if (musteri != null)
-            {
-                Musteri = musteri;
-                _context.Musteri.Remove(Musteri);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToPage("./Index");
-        }
+        return RedirectToPage("./Index");
     }
 }

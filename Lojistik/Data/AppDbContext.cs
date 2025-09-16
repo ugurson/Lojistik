@@ -10,9 +10,32 @@ namespace Lojistik.Data
         public DbSet<Arac> Araclar => Set<Arac>();
         public DbSet<AracBelgesi> AracBelgeleri => Set<AracBelgesi>();
         public DbSet<AracKademe> AracKademeler => Set<AracKademe>(); // [YENİ]
+        public DbSet<Ulke> Ulkeler => Set<Ulke>();
+        public DbSet<Sehir> Sehirler => Set<Sehir>();
+        public DbSet<Musteri> Musteriler => Set<Musteri>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Ulke>().ToTable("Ulkeler");
+            modelBuilder.Entity<Sehir>().ToTable("Sehirler");
+            modelBuilder.Entity<Musteri>().ToTable("Musteriler");
+
+            // İlişkiler (SQL’de FK var; EF tarafı da bilsin)
+            modelBuilder.Entity<Sehir>()
+              .HasOne(s => s.Ulke)
+              .WithMany(u => u.Sehirler!)
+              .HasForeignKey(s => s.UlkeID);
+
+            modelBuilder.Entity<Musteri>()
+              .HasOne(m => m.Ulke)
+              .WithMany()
+              .HasForeignKey(m => m.UlkeID);
+
+            modelBuilder.Entity<Musteri>()
+              .HasOne(m => m.Sehir)
+              .WithMany()
+              .HasForeignKey(m => m.SehirID);
 
             modelBuilder.Entity<Firma>()
                 .HasIndex(x => x.FirmaKodu)

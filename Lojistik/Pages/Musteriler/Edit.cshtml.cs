@@ -1,79 +1,102 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using System.Security.Claims;
 using Lojistik.Data;
 using Lojistik.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
-namespace Lojistik.Pages_Musteriler
+namespace Lojistik.Pages.Musteriler;
+
+public class EditModel : PageModel
 {
-    public class EditModel : PageModel
+    private readonly AppDbContext _context;
+    public EditModel(AppDbContext context) => _context = context;
+
+    [BindProperty]
+    public Musteri Musteri { get; set; } = new();
+
+    public List<Ulke> UlkeList { get; set; } = new();
+    public List<Sehir> SehirList { get; set; } = new();
+
+    public async Task<IActionResult> OnGetAsync(int id)
     {
-        private readonly Lojistik.Data.AppDbContext _context;
+        // Firma filtresi
+        var firmaIdStr = User.FindFirstValue("FirmaID");
+        if (!int.TryParse(firmaIdStr, out var firmaId)) return Unauthorized();
 
-        public EditModel(Lojistik.Data.AppDbContext context)
+        var m = await _context.Musteriler
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.MusteriID == id && x.FirmaID == firmaId);
+
+        if (m == null) return NotFound();
+
+        Musteri = m;
+
+        UlkeList = await _context.Ulkeler
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.UlkeAdi)
+            .ToListAsync();
+
+        SehirList = await _context.Sehirler
+            .Where(s => s.UlkeID == Musteri.UlkeID && s.IsActive)
+            .OrderBy(s => s.SehirAdi)
+            .ToListAsync();
+
+        return Page();
+    }
+
+    // AJAX: /Musteriler/Edit?handler=Sehirler&ulkeId=#
+    public async Task<JsonResult> OnGetSehirlerAsync(int ulkeId)
+    {
+        var sehirler = await _context.Sehirler
+            .Where(s => s.UlkeID == ulkeId && s.IsActive)
+            .OrderBy(s => s.SehirAdi)
+            .Select(s => new { s.SehirID, s.SehirAdi })
+            .ToListAsync();
+
+        return new JsonResult(sehirler);
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        var firmaIdStr = User.FindFirstValue("FirmaID");
+        if (!int.TryParse(firmaIdStr, out var firmaId)) return Unauthorized();
+
+        if (!ModelState.IsValid)
         {
-            _context = context;
-        }
-
-        [BindProperty]
-        public Musteri Musteri { get; set; } = default!;
-
-        public async Task<IActionResult> OnGetAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var musteri =  await _context.Musteri.FirstOrDefaultAsync(m => m.MusteriID == id);
-            if (musteri == null)
-            {
-                return NotFound();
-            }
-            Musteri = musteri;
-           ViewData["SehirID"] = new SelectList(_context.Set<Sehir>(), "SehirID", "SehirID");
-           ViewData["UlkeID"] = new SelectList(_context.Set<Ulke>(), "UlkeID", "UlkeID");
+            UlkeList = await _context.Ulkeler.Where(u => u.IsActive).OrderBy(u => u.UlkeAdi).ToListAsync();
+            SehirList = Musteri.UlkeID > 0
+                ? await _context.Sehirler.Where(s => s.UlkeID == Musteri.UlkeID && s.IsActive).OrderBy(s => s.SehirAdi).ToListAsync()
+                : new();
             return Page();
         }
 
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more information, see https://aka.ms/RazorPagesCRUD.
-        public async Task<IActionResult> OnPostAsync()
+        // Kayıt gerçekten bu firmaya mı ait?
+        var belongs = await _context.Musteriler.AnyAsync(x => x.MusteriID == Musteri.MusteriID && x.FirmaID == firmaId);
+        if (!belongs) return NotFound();
+
+        // FirmaID dışardan değiştirilmesin
+        _context.Attach(Musteri).Property(x => x.FirmaID).IsModified = false;
+        _context.Entry(Musteri).State = EntityState.Modified;
+
+        try
         {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            _context.Attach(Musteri).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MusteriExists(Musteri.MusteriID))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+            await _context.SaveChangesAsync();
             return RedirectToPage("./Index");
         }
-
-        private bool MusteriExists(int id)
+        catch (DbUpdateException ex)
         {
-            return _context.Musteri.Any(e => e.MusteriID == id);
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            if (msg.Contains("UX_Musteriler_Firma_MusteriAdi"))
+                ModelState.AddModelError("Musteri.MusteriAdi", "Bu müşteri adı zaten kayıtlı.");
+            else
+                ModelState.AddModelError(string.Empty, "Güncelleme sırasında bir hata oluştu.");
+
+            UlkeList = await _context.Ulkeler.Where(u => u.IsActive).OrderBy(u => u.UlkeAdi).ToListAsync();
+            SehirList = Musteri.UlkeID > 0
+                ? await _context.Sehirler.Where(s => s.UlkeID == Musteri.UlkeID && s.IsActive).OrderBy(s => s.SehirAdi).ToListAsync()
+                : new();
+            return Page();
         }
     }
 }

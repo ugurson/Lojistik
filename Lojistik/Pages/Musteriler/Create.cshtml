@@ -1,73 +1,105 @@
-@page
-@model Lojistik.Pages_Musteriler.CreateModel
+﻿@page
+@model Lojistik.Pages.Musteriler.CreateModel
+@{
+    ViewData["Title"] = "Yeni Müşteri";
+}
 
-        @{
-        ViewData["Title"] = "Create";
-        }
-        
-        <h1>Create</h1>
-        
-    <h4>Musteri</h4>
-    <hr />
-    <div class="row">
-    <div class="col-md-4">
-    <form method="post">
+<h2>Yeni Müşteri</h2>
+<hr />
+
+<form method="post" class="form-horizontal">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Musteri.FirmaID" class="control-label"></label>
-                <input asp-for="Musteri.FirmaID" class="form-control" />
-                <span asp-validation-for="Musteri.FirmaID" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Musteri.MusteriAdi" class="control-label"></label>
-                <input asp-for="Musteri.MusteriAdi" class="form-control" />
-                <span asp-validation-for="Musteri.MusteriAdi" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Musteri.UlkeID" class="control-label"></label>
-                <select asp-for="Musteri.UlkeID" class ="form-control" asp-items="ViewBag.UlkeID"></select>
-            </div>
-            <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Musteri.SehirID" class="control-label"></label>
-                <select asp-for="Musteri.SehirID" class ="form-control" asp-items="ViewBag.SehirID"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="Musteri.Adres" class="control-label"></label>
-                <input asp-for="Musteri.Adres" class="form-control" />
-                <span asp-validation-for="Musteri.Adres" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Musteri.PostaKodu" class="control-label"></label>
-                <input asp-for="Musteri.PostaKodu" class="form-control" />
-                <span asp-validation-for="Musteri.PostaKodu" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Musteri.Telefon" class="control-label"></label>
-                <input asp-for="Musteri.Telefon" class="form-control" />
-                <span asp-validation-for="Musteri.Telefon" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Musteri.Email" class="control-label"></label>
-                <input asp-for="Musteri.Email" class="form-control" />
-                <span asp-validation-for="Musteri.Email" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Musteri.IsActive" /> @Html.DisplayNameFor(model => model.Musteri.IsActive)
-                </label>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+    <input type="hidden" asp-for="Musteri.FirmaID" />
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Müşteri Adı</label>
+        <div class="col-sm-6">
+            <input asp-for="Musteri.MusteriAdi" class="form-control" />
+            <span asp-validation-for="Musteri.MusteriAdi" class="text-danger"></span>
+        </div>
     </div>
-</div>
 
-<div>
-    <a asp-page="Index">Back to List</a>
-</div>
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Ülke</label>
+        <div class="col-sm-6">
+            <select asp-for="Musteri.UlkeID" class="form-select" id="UlkeID">
+                <option value="">-- Seçiniz --</option>
+                @foreach (var u in Model.UlkeList)
+                {
+                    <option value="@u.UlkeID">@u.UlkeAdi</option>
+                }
+            </select>
+            <span asp-validation-for="Musteri.UlkeID" class="text-danger"></span>
+        </div>
+    </div>
 
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Şehir</label>
+        <div class="col-sm-6">
+            <select asp-for="Musteri.SehirID" class="form-select" id="SehirID">
+                <option value="">Önce ülke seçiniz</option>
+            </select>
+            <span asp-validation-for="Musteri.SehirID" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Adres</label>
+        <div class="col-sm-6">
+            <input asp-for="Musteri.Adres" class="form-control" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Posta Kodu</label>
+        <div class="col-sm-3">
+            <input asp-for="Musteri.PostaKodu" class="form-control" />
+        </div>
+        <label class="col-sm-1 col-form-label text-end">Telefon</label>
+        <div class="col-sm-3">
+            <input asp-for="Musteri.Telefon" class="form-control" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">E-posta</label>
+        <div class="col-sm-6">
+            <input asp-for="Musteri.Email" class="form-control" />
+            <span asp-validation-for="Musteri.Email" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div>
+        <button type="submit" class="btn btn-success me-1">Kaydet</button>
+        <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const ulkeSel = document.getElementById('UlkeID');
+        const sehirSel = document.getElementById('SehirID');
+
+        ulkeSel.addEventListener('change', async () => {
+            const ulkeId = ulkeSel.value;
+            if (!ulkeId) {
+                sehirSel.innerHTML = '<option value="">Önce ülke seçiniz</option>';
+                return;
+            }
+
+            sehirSel.innerHTML = '<option value="">Yükleniyor...</option>';
+
+            const url = `@Url.Page("./Create", null, new { handler = "Sehirler" }, Request.Scheme)&ulkeId=${ulkeId}`;
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+
+            sehirSel.innerHTML = '<option value="">-- Seçiniz --</option>';
+            for (const s of data) {
+                const opt = document.createElement('option');
+                opt.value = s.sehirID;      // JSON property adları camelCase
+                opt.textContent = s.sehirAdi;
+                sehirSel.appendChild(opt);
+            }
+        });
+    </script>
+}

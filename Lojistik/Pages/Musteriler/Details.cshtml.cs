@@ -1,43 +1,32 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using Lojistik.Data;
+using Lojistik.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Lojistik.Data;
-using Lojistik.Models;
 
-namespace Lojistik.Pages_Musteriler
+namespace Lojistik.Pages.Musteriler;
+
+public class DetailsModel : PageModel
 {
-    public class DetailsModel : PageModel
+    private readonly AppDbContext _context;
+    public DetailsModel(AppDbContext context) => _context = context;
+
+    public Musteri Musteri { get; set; } = null!;
+
+    public async Task<IActionResult> OnGetAsync(int id)
     {
-        private readonly Lojistik.Data.AppDbContext _context;
+        var firmaIdStr = User.FindFirstValue("FirmaID");
+        if (!int.TryParse(firmaIdStr, out var firmaId)) return Unauthorized();
 
-        public DetailsModel(Lojistik.Data.AppDbContext context)
-        {
-            _context = context;
-        }
+        var m = await _context.Musteriler
+            .Include(x => x.Ulke)
+            .Include(x => x.Sehir)
+            .FirstOrDefaultAsync(x => x.MusteriID == id && x.FirmaID == firmaId);
 
-        public Musteri Musteri { get; set; } = default!;
+        if (m == null) return NotFound();
 
-        public async Task<IActionResult> OnGetAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var musteri = await _context.Musteri.FirstOrDefaultAsync(m => m.MusteriID == id);
-
-            if (musteri is not null)
-            {
-                Musteri = musteri;
-
-                return Page();
-            }
-
-            return NotFound();
-        }
+        Musteri = m;
+        return Page();
     }
 }

@@ -1,73 +1,39 @@
-@page
-@model Lojistik.Pages_Musteriler.DetailsModel
-
+﻿@page "{id:int}"
+@model Lojistik.Pages.Musteriler.DetailsModel
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Müşteri Detay";
 }
 
-<h1>Details</h1>
+<h2>Müşteri Detay</h2>
+<hr />
+
+<dl class="row">
+    <dt class="col-sm-2">Müşteri Adı</dt>
+    <dd class="col-sm-10">@Model.Musteri.MusteriAdi</dd>
+
+    <dt class="col-sm-2">Ülke</dt>
+    <dd class="col-sm-10">@Model.Musteri.Ulke?.UlkeAdi</dd>
+
+    <dt class="col-sm-2">Şehir</dt>
+    <dd class="col-sm-10">@Model.Musteri.Sehir?.SehirAdi</dd>
+
+    <dt class="col-sm-2">Adres</dt>
+    <dd class="col-sm-10">@Model.Musteri.Adres</dd>
+
+    <dt class="col-sm-2">Posta Kodu</dt>
+    <dd class="col-sm-10">@Model.Musteri.PostaKodu</dd>
+
+    <dt class="col-sm-2">Telefon</dt>
+    <dd class="col-sm-10">@Model.Musteri.Telefon</dd>
+
+    <dt class="col-sm-2">E-posta</dt>
+    <dd class="col-sm-10">@Model.Musteri.Email</dd>
+
+    <dt class="col-sm-2">Aktif mi</dt>
+    <dd class="col-sm-10">@(Model.Musteri.IsActive ? "Evet" : "Hayır")</dd>
+</dl>
 
 <div>
-    <h4>Musteri</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.FirmaID)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.FirmaID)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.MusteriAdi)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.MusteriAdi)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.Adres)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.Adres)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.PostaKodu)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.PostaKodu)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.Telefon)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.Telefon)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.Email)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.Email)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.IsActive)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.IsActive)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.Ulke)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.Ulke.UlkeID)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Musteri.Sehir)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Musteri.Sehir.SehirID)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-page="./Edit" asp-route-id="@Model.Musteri.MusteriID">Edit</a> |
-    <a asp-page="./Index">Back to List</a>
+    <a class="btn btn-primary btn-sm" asp-page="./Edit" asp-route-id="@Model.Musteri.MusteriID">Düzenle</a>
+    <a class="btn btn-secondary btn-sm" asp-page="./Index">Liste</a>
 </div>

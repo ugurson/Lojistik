@@ -1,31 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
+﻿using System.Security.Claims;
 using Lojistik.Data;
 using Lojistik.Models;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
-namespace Lojistik.Pages_Musteriler
+namespace Lojistik.Pages.Musteriler
 {
     public class IndexModel : PageModel
     {
-        private readonly Lojistik.Data.AppDbContext _context;
+        private readonly AppDbContext _context;
+        public IndexModel(AppDbContext context) => _context = context;
 
-        public IndexModel(Lojistik.Data.AppDbContext context)
-        {
-            _context = context;
-        }
-
-        public IList<Musteri> Musteri { get;set; } = default!;
+        // Razor tarafında Model.List ile kullanıyoruz
+        public IList<Musteri> List { get; set; } = new List<Musteri>();
 
         public async Task OnGetAsync()
         {
-            Musteri = await _context.Musteri
+            // FirmaID claim'i ile multi-tenant filtre
+            var firmaIdStr = User.FindFirstValue("FirmaID");
+            if (!int.TryParse(firmaIdStr, out var firmaId))
+            {
+                List = new List<Musteri>();
+                return;
+            }
+
+            List = await _context.Musteriler
+                .Include(m => m.Ulke)
                 .Include(m => m.Sehir)
-                .Include(m => m.Ulke).ToListAsync();
+                .Where(m => m.FirmaID == firmaId)
+                .OrderBy(m => m.MusteriAdi)
+                .ToListAsync();
         }
     }
 }
