@@ -1,4 +1,4 @@
-﻿using Lojistik.Models;
+using Lojistik.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lojistik.Data
@@ -85,5 +85,6 @@ namespace Lojistik.Data
                  .HasFilter("[BitisTarihi] IS NULL");
             });
         }
+        public DbSet<Lojistik.Models.Musteri> Musteri { get; set; } = default!;
     }
 }

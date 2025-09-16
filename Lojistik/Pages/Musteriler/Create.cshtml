@@ -1,0 +1,73 @@
+@page
+@model Lojistik.Pages_Musteriler.CreateModel
+
+        @{
+        ViewData["Title"] = "Create";
+        }
+        
+        <h1>Create</h1>
+        
+    <h4>Musteri</h4>
+    <hr />
+    <div class="row">
+    <div class="col-md-4">
+    <form method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="Musteri.FirmaID" class="control-label"></label>
+                <input asp-for="Musteri.FirmaID" class="form-control" />
+                <span asp-validation-for="Musteri.FirmaID" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="Musteri.MusteriAdi" class="control-label"></label>
+                <input asp-for="Musteri.MusteriAdi" class="form-control" />
+                <span asp-validation-for="Musteri.MusteriAdi" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="Musteri.UlkeID" class="control-label"></label>
+                <select asp-for="Musteri.UlkeID" class ="form-control" asp-items="ViewBag.UlkeID"></select>
+            </div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="Musteri.SehirID" class="control-label"></label>
+                <select asp-for="Musteri.SehirID" class ="form-control" asp-items="ViewBag.SehirID"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="Musteri.Adres" class="control-label"></label>
+                <input asp-for="Musteri.Adres" class="form-control" />
+                <span asp-validation-for="Musteri.Adres" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Musteri.PostaKodu" class="control-label"></label>
+                <input asp-for="Musteri.PostaKodu" class="form-control" />
+                <span asp-validation-for="Musteri.PostaKodu" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Musteri.Telefon" class="control-label"></label>
+                <input asp-for="Musteri.Telefon" class="form-control" />
+                <span asp-validation-for="Musteri.Telefon" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Musteri.Email" class="control-label"></label>
+                <input asp-for="Musteri.Email" class="form-control" />
+                <span asp-validation-for="Musteri.Email" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Musteri.IsActive" /> @Html.DisplayNameFor(model => model.Musteri.IsActive)
+                </label>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="Index">Back to List</a>
+</div>
+

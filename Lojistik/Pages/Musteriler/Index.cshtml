@@ -1,0 +1,84 @@
+@page
+@model Lojistik.Pages_Musteriler.IndexModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-page="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].FirmaID)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].MusteriAdi)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].Adres)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].PostaKodu)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].Telefon)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].Email)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].IsActive)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].Ulke)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Musteri[0].Sehir)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.Musteri) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.FirmaID)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.MusteriAdi)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Adres)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PostaKodu)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Telefon)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsActive)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Ulke.UlkeID)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Sehir.SehirID)
+            </td>
+            <td>
+                <a asp-page="./Edit" asp-route-id="@item.MusteriID">Edit</a> |
+                <a asp-page="./Details" asp-route-id="@item.MusteriID">Details</a> |
+                <a asp-page="./Delete" asp-route-id="@item.MusteriID">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
