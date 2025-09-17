@@ -1,0 +1,38 @@
+﻿@page "{id:int}"
+@model Lojistik.Pages.Siparisler.DetailsModel
+@{
+    ViewData["Title"] = "Sipariş Detay";
+}
+
+<h2>Sipariş Detay</h2>
+<hr />
+
+<dl class="row">
+    <dt class="col-sm-3">Tarih</dt>
+    <dd class="col-sm-9">@Model.Siparis.SiparisTarihi.ToString("dd-MM-yyyy")</dd>
+
+    <dt class="col-sm-3">Gönderen</dt>
+    <dd class="col-sm-9">@Model.Siparis.GonderenMusteri?.MusteriAdi</dd>
+
+    <dt class="col-sm-3">Alıcı</dt>
+    <dd class="col-sm-9">@Model.Siparis.AliciMusteri?.MusteriAdi</dd>
+
+    <dt class="col-sm-3">Alıcı Ülke / Şehir</dt>
+    <dd class="col-sm-9">@Model.Siparis.AliciMusteri?.Sehir?.Ulke?.UlkeAdi / @Model.Siparis.AliciMusteri?.Sehir?.SehirAdi</dd>
+
+    <dt class="col-sm-3">Yük Açıklaması</dt>
+    <dd class="col-sm-9">@Model.Siparis.YukAciklamasi</dd>
+
+    <dt class="col-sm-3">Kilo</dt>
+    <dd class="col-sm-9">@Model.Siparis.Kilo</dd>
+
+    <dt class="col-sm-3">Tutar</dt>
+    <dd class="col-sm-9">@Model.Siparis.Tutar @Model.Siparis.ParaBirimi</dd>
+
+    <dt class="col-sm-3">Fatura No</dt>
+    <dd class="col-sm-9">@Model.Siparis.FaturaNo</dd>
+</dl>
+
+<a asp-page="./Index" class="btn btn-secondary">Geri</a>
+<a asp-page="./Edit" asp-route-id="@Model.Siparis.SiparisID" class="btn btn-primary">Düzenle</a>
+<a asp-page="./Delete" asp-route-id="@Model.Siparis.SiparisID" class="btn btn-danger">Sil</a>

@@ -20,6 +20,10 @@ namespace Lojistik.Models
         [Required] public int AliciMusteriID { get; set; }
         public int? AraTedarikciMusteriID { get; set; }
 
+        // İlişkiler
+        public Musteri? GonderenMusteri { get; set; }
+        public Musteri? AliciMusteri { get; set; }
+        public Musteri? AraTedarikciMusteri { get; set; }
         // Veri
         [Required] public DateTime SiparisTarihi { get; set; } = DateTime.Today;
         [Required, StringLength(200)] public string YukAciklamasi { get; set; } = string.Empty;

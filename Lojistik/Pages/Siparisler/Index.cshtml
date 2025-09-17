@@ -33,10 +33,13 @@ else
                     <th>Tarih</th>
                     <th>Gönderen</th>
                     <th>Alıcı</th>
+                    <th>Alıcı Ülke</th>
+                    <th>Alıcı Şehir</th>
                     <th>Yük Açıklaması</th>
                     <th class="text-end">Kilo</th>
                     <th class="text-end">Tutar</th>
                     <th>PB</th>
+                    <th>Fatura No</th>
                     <th style="width:1%"></th>
                 </tr>
             </thead>
@@ -46,15 +49,35 @@ else
                     <tr>
                         <td>@r.SiparisID</td>
                         <td>@r.SiparisTarihi</td>
-                        <td>@r.Gonderen</td>
-                        <td>@r.Alici</td>
+                        <td>@(r.Gonderen ?? "-")</td>
+                        <td>@(r.Alici ?? "-")</td>
+                        <td>@(r.AliciUlke ?? "-")</td>
+                        <td>@(r.AliciSehir ?? "-")</td>
                         <td>@r.YukAciklamasi</td>
                         <td class="text-end">@r.Kilo</td>
                         <td class="text-end">@String.Format("{0:N2}", r.Tutar)</td>
                         <td>@r.ParaBirimi</td>
                         <td>
+                            @if (!string.IsNullOrWhiteSpace(r.FaturaNo))
+                            {
+                                @r.FaturaNo
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td>
                             <!-- ileri adımlarda detay/düzenle/sil eklenecek -->
                         </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a class="btn btn-outline-secondary" asp-page="Details" asp-route-id="@r.SiparisID">Detay</a>
+                                <a class="btn btn-outline-primary" asp-page="Edit" asp-route-id="@r.SiparisID">Düzenle</a>
+                                <a class="btn btn-outline-danger" asp-page="Delete" asp-route-id="@r.SiparisID">Sil</a>
+                            </div>
+                        </td>
+
                     </tr>
                 }
             </tbody>

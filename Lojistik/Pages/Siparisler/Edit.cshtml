@@ -1,0 +1,89 @@
+﻿@page "{id:int}"
+@model Lojistik.Pages.Siparisler.EditModel
+@{
+    ViewData["Title"] = "Sipariş Düzenle";
+}
+
+<h2 class="mb-3">Sipariş Düzenle</h2>
+<hr />
+
+<form method="post" class="row g-3">
+    <input asp-for="Input.SiparisID" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.SiparisTarihi" class="form-label"></label>
+        <input asp-for="Input.SiparisTarihi" class="form-control" />
+        <span asp-validation-for="Input.SiparisTarihi" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Input.YukAciklamasi" class="form-label"></label>
+        <input asp-for="Input.YukAciklamasi" class="form-control" />
+        <span asp-validation-for="Input.YukAciklamasi" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Input.GonderenMusteriID" class="form-label"></label>
+        <select asp-for="Input.GonderenMusteriID" asp-items="Model.MusterilerSelect" class="form-select">
+            <option value="">(seçiniz)</option>
+        </select>
+        <span asp-validation-for="Input.GonderenMusteriID" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Input.AliciMusteriID" class="form-label"></label>
+        <select asp-for="Input.AliciMusteriID" asp-items="Model.MusterilerSelect" class="form-select">
+            <option value="">(seçiniz)</option>
+        </select>
+        <span asp-validation-for="Input.AliciMusteriID" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Input.AraTedarikciMusteriID" class="form-label"></label>
+        <select asp-for="Input.AraTedarikciMusteriID" asp-items="Model.MusterilerSelect" class="form-select">
+            <option value="">(seçiniz)</option>
+        </select>
+        <span asp-validation-for="Input.AraTedarikciMusteriID" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.Kilo" class="form-label"></label>
+        <input asp-for="Input.Kilo" class="form-control text-end" />
+        <span asp-validation-for="Input.Kilo" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.Tutar" class="form-label"></label>
+        <input asp-for="Input.Tutar" class="form-control text-end" />
+        <span asp-validation-for="Input.Tutar" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="Input.ParaBirimi" class="form-label"></label>
+        <select asp-for="Input.ParaBirimi" class="form-select">
+            <option value="">(seçiniz)</option>
+            <option>TRY</option>
+            <option>EUR</option>
+            <option>USD</option>
+        </select>
+        <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Input.FaturaNo" class="form-label"></label>
+        <input asp-for="Input.FaturaNo" class="form-control" />
+        <span asp-validation-for="Input.FaturaNo" class="text-danger"></span>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a asp-page="./Details" asp-route-id="@Model.Input.SiparisID" class="btn btn-outline-secondary">Vazgeç</a>
+        <a asp-page="./Index" class="btn btn-link">Listeye dön</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
