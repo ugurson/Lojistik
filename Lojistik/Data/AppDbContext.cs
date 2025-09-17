@@ -13,6 +13,9 @@ namespace Lojistik.Data
         public DbSet<Ulke> Ulkeler => Set<Ulke>();
         public DbSet<Sehir> Sehirler => Set<Sehir>();
         public DbSet<Musteri> Musteriler => Set<Musteri>();
+        public DbSet<Lojistik.Models.Siparis> Siparisler { get; set; } = default!;
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

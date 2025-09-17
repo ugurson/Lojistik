@@ -1,0 +1,63 @@
+﻿@page
+@model Lojistik.Pages.Siparisler.IndexModel
+@{
+    ViewData["Title"] = "Siparişler";
+}
+
+<h2 class="mb-3">Siparişler</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <input name="q" value="@Model.Q" class="form-control" placeholder="Yük açıklaması / Fatura No ara..." />
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-primary" type="submit">Ara</button>
+        <a asp-page="./Index" class="btn btn-outline-secondary">Temizle</a>
+    </div>
+    <div class="col-auto ms-auto">
+        <a asp-page="./Create" class="btn btn-primary">Yeni Sipariş</a>
+    </div>
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="alert alert-info">Kayıt bulunamadı.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tarih</th>
+                    <th>Gönderen</th>
+                    <th>Alıcı</th>
+                    <th>Yük Açıklaması</th>
+                    <th class="text-end">Kilo</th>
+                    <th class="text-end">Tutar</th>
+                    <th>PB</th>
+                    <th style="width:1%"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Items)
+                {
+                    <tr>
+                        <td>@r.SiparisID</td>
+                        <td>@r.SiparisTarihi</td>
+                        <td>@r.Gonderen</td>
+                        <td>@r.Alici</td>
+                        <td>@r.YukAciklamasi</td>
+                        <td class="text-end">@r.Kilo</td>
+                        <td class="text-end">@String.Format("{0:N2}", r.Tutar)</td>
+                        <td>@r.ParaBirimi</td>
+                        <td>
+                            <!-- ileri adımlarda detay/düzenle/sil eklenecek -->
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
