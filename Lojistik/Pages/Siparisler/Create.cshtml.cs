@@ -27,6 +27,7 @@ namespace Lojistik.Pages.Siparisler
         public async Task<IActionResult> OnGetAsync()
         {
             ViewData["Title"] = "Yeni Sipariş";   // garanti
+            Siparis ??= new Siparis();
             var firmaId = User.GetFirmaId();
             await HazirlaDropdownlarAsync(firmaId);
 
@@ -67,24 +68,24 @@ namespace Lojistik.Pages.Siparisler
 
         private async Task HazirlaDropdownlarAsync(int firmaId)
         {
-            // Senin DbSet adı -> Musteriler
-            var musteriQuery = _context.Musteriler
+            var list = await _context.Musteriler
                 .Where(m => m.FirmaID == firmaId)
-                .OrderBy(m => m.MusteriAdi)  // Eğer alan adı farklıysa (Ad/FirmaAdi) düzelt
-                .Select(m => new { m.MusteriID, m.MusteriAdi });
+                .OrderBy(m => m.MusteriAdi)
+                .Select(m => new { m.MusteriID, m.MusteriAdi })
+                .AsNoTracking()
+                .ToListAsync();
 
-            var list = await musteriQuery.AsNoTracking().ToListAsync();
-
-            GonderenList = new SelectList(list, "MusteriID", "Unvan");
-            AliciList = new SelectList(list, "MusteriID", "Unvan");
-            AraTedarikciList = new SelectList(list, "MusteriID", "Unvan");
+            GonderenList = new SelectList(list, "MusteriID", "MusteriAdi");
+            AliciList = new SelectList(list, "MusteriID", "MusteriAdi");
+            AraTedarikciList = new SelectList(list, "MusteriID", "MusteriAdi");
 
             ParaBirimiList = new SelectList(new[]
             {
-                new { K = "TL",  V = "TL"  },
-                new { K = "EUR", V = "EUR" },
-                new { K = "USD", V = "USD" }
-            }, "K", "V");
+        new { K = "TL",  V = "TL"  },
+        new { K = "EUR", V = "EUR" },
+        new { K = "USD", V = "USD" }
+    }, "K", "V");
         }
+
     }
 }

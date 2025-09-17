@@ -1,9 +1,8 @@
 ﻿@page
 @model Lojistik.Pages.Siparisler.CreateModel
-
-   @{ /* geçici test */ var _t = ViewData.ContainsKey("Title") ? ViewData["Title"] : "(null)"; }
-
-
+@{
+    ViewData["Title"] = "Yeni Sipariş";
+}
 
 <h2 class="mb-3">Yeni Sipariş</h2>
 
@@ -23,15 +22,7 @@
                 </div>
             </div>
 
-            <div class="row g-3 align-items-center mb-1">
-                <div class="col-sm-2">
-                    <label asp-for="Siparis.YukAciklamasi" class="col-form-label">Yük Açıklaması</label>
-                </div>
-                <div class="col-sm-6">
-                    <input asp-for="Siparis.YukAciklamasi" class="form-control" placeholder="Örn: Hammadde / 1 parti" />
-                    <span asp-validation-for="Siparis.YukAciklamasi" class="text-danger"></span>
-                </div>
-            </div>
+
 
             <hr class="my-4" />
 
@@ -75,7 +66,7 @@
 
             <!-- MİKTAR & KİLO -->
             <div class="row g-3 align-items-center mb-1">
-                <div class="col-sm-2">
+                <div class="col-sm-2 text-sm-end">
                     <label asp-for="Siparis.Adet" class="col-form-label">Adet</label>
                 </div>
                 <div class="col-sm-2">
@@ -98,13 +89,23 @@
                     <input asp-for="Siparis.Kilo" class="form-control" type="number" min="1" />
                     <span asp-validation-for="Siparis.Kilo" class="text-danger"></span>
                 </div>
-            </div>
+            
 
+            <div class="row g-2 align-items-center mb-1">
+                <div class="col-sm-2 text-sm-end">
+                    <label asp-for="Siparis.YukAciklamasi" class="col-form-label">Yük Açıklaması</label>
+                </div>
+                <div class="col-sm-6">
+                    <input asp-for="Siparis.YukAciklamasi" class="form-control" placeholder="Örn: Hammadde / 1 parti" />
+                    <span asp-validation-for="Siparis.YukAciklamasi" class="text-danger"></span>
+                </div>
+            </div>
+            </div>
             <hr class="my-4" />
 
             <!-- TUTAR & PARA BİRİMİ & FATURA -->
-            <div class="row g-3 align-items-center mb-1">
-                <div class="col-sm-2">
+            <div class="row g-2 align-items-center mb-1">
+                <div class="col-sm-2 text-sm-end">
                     <label asp-for="Siparis.Tutar" class="col-form-label">Tutar</label>
                 </div>
                 <div class="col-sm-2">
@@ -121,13 +122,14 @@
                     </select>
                     <span asp-validation-for="Siparis.ParaBirimi" class="text-danger"></span>
                 </div>
-
-                <div class="col-sm-2 text-sm-end">
-                    <label asp-for="Siparis.FaturaNo" class="col-form-label">Fatura No</label>
-                </div>
-                <div class="col-sm-2">
-                    <input asp-for="Siparis.FaturaNo" class="form-control" />
-                    <span asp-validation-for="Siparis.FaturaNo" class="text-danger"></span>
+                <div class="row g-3 align-items-center mb-1">
+                    <div class="col-sm-2 text-sm-end">
+                        <label asp-for="Siparis.FaturaNo" class="col-form-label">Fatura No</label>
+                    </div>
+                    <div class="col-sm-3">
+                        <input asp-for="Siparis.FaturaNo" class="form-control" />
+                        <span asp-validation-for="Siparis.FaturaNo" class="text-danger"></span>
+                    </div>
                 </div>
             </div>
 
