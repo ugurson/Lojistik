@@ -1,68 +1,28 @@
-﻿@page
+﻿@* Pages/Siparisler/Index.cshtml *@
+@page
 @model Lojistik.Pages.Siparisler.IndexModel
 @{
     ViewData["Title"] = "Siparişler";
-    string tarihSort = Model.sort == "tarih_desc" ? "tarih_asc" : "tarih_desc";
-    string tutarSort = Model.sort == "tutar_desc" ? "tutar_asc" : "tutar_desc";
 }
-
 <h2 class="mb-3">Siparişler</h2>
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-sm-4">
-        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (yük açıklaması, fatura no, müşteri)..." />
-    </div>
-    <div class="col-sm-2">
-        <select name="durum" class="form-select" onchange="this.form.submit()">
-            <option value="">Durum (Hepsi)</option>
-            <option value="0" selected="@(Model.durum == 0)">0</option>
-            <option value="1" selected="@(Model.durum == 1)">1</option>
-            <option value="2" selected="@(Model.durum == 2)">2</option>
-            <option value="3" selected="@(Model.durum == 3)">3</option>
-            <option value="4" selected="@(Model.durum == 4)">4</option>
-        </select>
-    </div>
-    <div class="col-sm-2">
-        <select name="pageSize" class="form-select" onchange="this.form.submit()">
-            @{
-                int[] sizes = new[] { 10, 20, 50, 100 };
-                foreach (var s in sizes)
-                {
-                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
-                }
-            }
-        </select>
-    </div>
-    <input type="hidden" name="page" value="1" />
-    <input type="hidden" name="sort" value="@Model.sort" />
-    <div class="col-sm-2">
-        <button class="btn btn-primary w-100">Ara</button>
-    </div>
-    <div class="col-sm-2 text-end">
-        <a asp-page="./Create" class="btn btn-success w-100">+ Yeni Sipariş</a>
-    </div>
-</form>
-
+<div class="mb-3 text-end">
+    <a asp-page="./Create" class="btn btn-success">+ Yeni Sipariş</a>
+</div>
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>
-                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum"
-                       asp-route-sort="@tarihSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
-                        Tarih
-                    </a>
-                </th>
-                <th>Yük Açıklaması</th>
+                <th>Tarih</th>
                 <th>Gönderen</th>
                 <th>Alıcı</th>
-                <th class="text-end">
-                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum"
-                       asp-route-sort="@tutarSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
-                        Tutar
-                    </a>
-                </th>
+                <th>Alıcı Ülke</th>
+                <th>Yük Açıklaması</th>
+                <th class="text-end">Adet</th>
+                <th>Adet Cinsi</th>
+                <th class="text-end">Kilo</th>
+                <th class="text-end">Tutar</th>
                 <th>PB</th>
                 <th>Durum</th>
                 <th class="text-end">İşlemler</th>
@@ -76,24 +36,18 @@
                     <tr>
                         <td>@r.SiparisID</td>
                         <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
-                        <td>@r.YukAciklamasi</td>
                         <td>@r.Gonderen</td>
                         <td>@r.Alici</td>
-                        <td class="text-end">
-                            @if (r.Tutar.HasValue)
-                            {
-                                @r.Tutar.Value.ToString("N2")
-                            }
-                            else
-                            {
-
-                                <span class="text-muted">—</span>
-                            }
-                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(r.AliciUlke) ? "—" : r.AliciUlke)</td>
+                        <td class="text-truncate" style="max-width:260px">@r.YukAciklamasi</td>
+                        <td class="text-end">@r.Adet?.ToString("N0")</td>
+                        <td>@r.AdetCinsi</td>
+                        <td class="text-end">@r.Kilo?.ToString("N0")</td>
+                        <td class="text-end">@((r.Tutar?.ToString("N2")) ?? "—")</td>
                         <td>@(string.IsNullOrWhiteSpace(r.ParaBirimi) ? "—" : r.ParaBirimi)</td>
                         <td>
-                            <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
-                                @r.Durum
+                            <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "warning" : (r.Durum == 4 ? "success" : "dark")))))">
+                                @r.DurumText
                             </span>
                         </td>
                         <td class="text-end">
@@ -108,34 +62,8 @@
             }
             else
             {
-                <tr><td colspan="9" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+                <tr><td colspan="13" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
             }
         </tbody>
     </table>
 </div>
-
-<nav class="d-flex justify-content-between align-items-center mt-3">
-    <div class="text-muted">
-        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
-    </div>
-    <ul class="pagination mb-0">
-        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-durum="@Model.durum"
-               asp-route-sort="@Model.sort"
-               asp-route-page="@(Model.page - 1)"
-               asp-route-pageSize="@Model.pageSize">Önceki</a>
-        </li>
-        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-durum="@Model.durum"
-               asp-route-sort="@Model.sort"
-               asp-route-page="@(Model.page + 1)"
-               asp-route-pageSize="@Model.pageSize">Sonraki</a>
-        </li>
-    </ul>
-</nav>

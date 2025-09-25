@@ -21,39 +21,35 @@ namespace Lojistik.Pages.Siparisler
         [BindProperty] public InputModel Input { get; set; } = new();
 
         public SelectList? MusterilerSelect { get; set; }
+        public SelectList? AraTedarikciSelect { get; set; }
+        public SelectList? ParaBirimleriSelect { get; set; }
 
         public class InputModel
         {
-            [Required, DataType(DataType.Date)]
-            public DateTime SiparisTarihi { get; set; } = DateTime.Today;
+            [DataType(DataType.Date)] public DateTime SiparisTarihi { get; set; } = DateTime.Today;
 
             [Required] public int GonderenMusteriID { get; set; }
             [Required] public int AliciMusteriID { get; set; }
             public int? AraTedarikciMusteriID { get; set; }
 
-            [Required, StringLength(200)]
-            public string YukAciklamasi { get; set; } = null!;
-
             public int? Adet { get; set; }
             [StringLength(50)] public string? AdetCinsi { get; set; }
             public int? Kilo { get; set; }
 
-            [Range(0, double.MaxValue)]
-            public decimal? Tutar { get; set; }
+            [Required, StringLength(200)] public string YukAciklamasi { get; set; } = null!;
 
+            public decimal? Tutar { get; set; }
             [StringLength(10)] public string? ParaBirimi { get; set; } = "TRY";
+
             [StringLength(50)] public string? FaturaNo { get; set; }
-            [StringLength(20)] public string? SubeKodu { get; set; }
             [StringLength(500)] public string? Notlar { get; set; }
 
             [Required] public byte Durum { get; set; } = 0;
         }
 
-        public async Task<IActionResult> OnGetAsync(int? gonderenId = null, int? aliciId = null)
+        public async Task<IActionResult> OnGetAsync()
         {
-            await LoadMusterilerAsync();
-            if (gonderenId.HasValue) Input.GonderenMusteriID = gonderenId.Value;
-            if (aliciId.HasValue) Input.AliciMusteriID = aliciId.Value;
+            await LoadSelectsAsync();
             return Page();
         }
 
@@ -64,7 +60,7 @@ namespace Lojistik.Pages.Siparisler
 
             if (!ModelState.IsValid)
             {
-                await LoadMusterilerAsync();
+                await LoadSelectsAsync();
                 return Page();
             }
 
@@ -75,18 +71,20 @@ namespace Lojistik.Pages.Siparisler
                 CreatedByKullaniciID = userId,
                 CreatedAt = DateTime.Now,
 
-                SubeKodu = Input.SubeKodu?.Trim(),
+                // SubeKodu kullanmıyoruz
                 SiparisTarihi = Input.SiparisTarihi.Date,
                 GonderenMusteriID = Input.GonderenMusteriID,
                 AliciMusteriID = Input.AliciMusteriID,
                 AraTedarikciMusteriID = Input.AraTedarikciMusteriID,
 
-                YukAciklamasi = Input.YukAciklamasi.Trim(),
                 Adet = Input.Adet,
                 AdetCinsi = Input.AdetCinsi?.Trim(),
                 Kilo = Input.Kilo,
+
+                YukAciklamasi = Input.YukAciklamasi.Trim(),
                 Tutar = Input.Tutar,
-                ParaBirimi = string.IsNullOrWhiteSpace(Input.ParaBirimi) ? null : Input.ParaBirimi!.Trim(),
+                ParaBirimi = string.IsNullOrWhiteSpace(Input.ParaBirimi) ? null : Input.ParaBirimi.Trim(),
+
                 FaturaNo = Input.FaturaNo?.Trim(),
                 Notlar = Input.Notlar?.Trim(),
                 Durum = Input.Durum
@@ -94,23 +92,25 @@ namespace Lojistik.Pages.Siparisler
 
             _context.Siparisler.Add(e);
             await _context.SaveChangesAsync();
-
             return RedirectToPage("./Details", new { id = e.SiparisID });
         }
 
-        private async Task LoadMusterilerAsync()
+        private async Task LoadSelectsAsync()
         {
             var firmaId = User.GetFirmaId();
 
-            MusterilerSelect = new SelectList(
-                await _context.Musteriler
-                    .AsNoTracking()
-                    .Where(m => m.FirmaID == firmaId)
-                    .OrderBy(m => m.MusteriAdi)
-                    .Select(m => new { m.MusteriID, m.MusteriAdi })
-                    .ToListAsync(),
-                "MusteriID", "MusteriAdi"
-            );
+            var musteriList = await _context.Musteriler
+                .AsNoTracking()
+                .Where(m => m.FirmaID == firmaId)
+                .OrderBy(m => m.MusteriAdi)
+                .Select(m => new { m.MusteriID, m.MusteriAdi })
+                .ToListAsync();
+
+            MusterilerSelect = new SelectList(musteriList, "MusteriID", "MusteriAdi");
+            AraTedarikciSelect = new SelectList(musteriList, "MusteriID", "MusteriAdi");
+
+            var pbs = new[] { "TRY", "USD", "EUR", "GBP", "CHF" };
+            ParaBirimleriSelect = new SelectList(pbs.Select(x => new { Value = x, Text = x }), "Value", "Text", Input.ParaBirimi);
         }
     }
 }

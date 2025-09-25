@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
 using Lojistik.Extensions; // User.GetFirmaId()
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,69 +21,74 @@ namespace Lojistik.Pages.Siparisler
             string YukAciklamasi,
             string? Gonderen,
             string? Alici,
+            string? AliciUlke,
+            int? Adet,
+            string? AdetCinsi,
+            int? Kilo,
             decimal? Tutar,
             string? ParaBirimi,
-            byte Durum
+            byte Durum,
+            string DurumText
         );
 
         public IList<Row> Items { get; set; } = new List<Row>();
-
-        [BindProperty(SupportsGet = true)] public string? q { get; set; }
-        [BindProperty(SupportsGet = true)] public byte? durum { get; set; }
-        [BindProperty(SupportsGet = true)] public string? sort { get; set; } = "tarih_desc";
-        [BindProperty(SupportsGet = true)] public int page { get; set; } = 1;
-        [BindProperty(SupportsGet = true)] public int pageSize { get; set; } = 20;
-
-        public int TotalCount { get; set; }
-        public int TotalPages => (int)Math.Ceiling((double)TotalCount / pageSize);
 
         public async Task OnGetAsync()
         {
             var firmaId = User.GetFirmaId();
 
-            var query = _context.Siparisler
+            var raw = await _context.Siparisler
                 .AsNoTracking()
-                .Where(s => s.FirmaID == firmaId);
-
-            if (durum.HasValue)
-                query = query.Where(s => s.Durum == durum.Value);
-
-            if (!string.IsNullOrWhiteSpace(q))
-            {
-                var term = q.Trim();
-                query = query.Where(s =>
-                    s.YukAciklamasi.Contains(term) ||
-                    (s.FaturaNo != null && s.FaturaNo.Contains(term)) ||
-                    (s.GonderenMusteri != null && s.GonderenMusteri.MusteriAdi.Contains(term)) ||
-                    (s.AliciMusteri != null && s.AliciMusteri.MusteriAdi.Contains(term))
-                );
-            }
-
-            query = sort switch
-            {
-                "tarih_asc" => query.OrderBy(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID),
-                "tarih_desc" => query.OrderByDescending(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID),
-                "tutar_asc" => query.OrderBy(s => s.Tutar).ThenByDescending(s => s.SiparisID),
-                "tutar_desc" => query.OrderByDescending(s => s.Tutar).ThenByDescending(s => s.SiparisID),
-                _ => query.OrderByDescending(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID)
-            };
-
-            TotalCount = await query.CountAsync();
-
-            Items = await query
-                .Select(s => new Row(
+                .Where(s => s.FirmaID == firmaId)
+                .OrderByDescending(s => s.SiparisID)
+                .Select(s => new
+                {
                     s.SiparisID,
                     s.SiparisTarihi,
                     s.YukAciklamasi,
-                    s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
-                    s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
+                    Gonderen = s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
+                    Alici = s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
+                    AliciUlke = s.AliciMusteri != null && s.AliciMusteri.Ulke != null
+              ? s.AliciMusteri.Ulke.UlkeAdi   // ülke adı kolonu (string)
+              : null,
+                    s.Adet,
+                    s.AdetCinsi,
+                    s.Kilo,
                     s.Tutar,
                     s.ParaBirimi,
                     s.Durum
-                ))
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                })
                 .ToListAsync();
+
+            Items = raw
+                .Select(x => new Row(
+                    x.SiparisID,
+                    x.SiparisTarihi,
+                    x.YukAciklamasi,
+                    x.Gonderen,
+                    x.Alici,
+                    x.AliciUlke,
+                    x.Adet,
+                    x.AdetCinsi,
+                    x.Kilo,
+                    x.Tutar,
+                    x.ParaBirimi,
+                    x.Durum,
+                    GetDurumText(x.Durum)
+                ))
+                .ToList();
         }
+
+        private static string GetDurumText(byte d) =>
+            d switch
+            {
+                0 => "0 - Yeni",
+                1 => "1 - Onaylı",
+                2 => "2 - Hazırlanıyor",
+                3 => "3 - Sevkte",
+                4 => "4 - Tamamlandı",
+                5 => "5 - İptal",
+                _ => $"{d} - Bilinmiyor"
+            };
     }
 }
