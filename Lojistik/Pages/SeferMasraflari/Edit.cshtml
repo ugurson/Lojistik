@@ -1,0 +1,76 @@
+﻿@* Pages/SeferMasraflari/Edit.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.SeferMasraflari.EditModel
+@{
+    ViewData["Title"] = "Masraf Düzenle";
+}
+<h2 class="mb-3">Masraf Düzenle</h2>
+
+<form method="post" class="row g-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Input.SeferMasrafID" />
+
+    <div class="col-md-6">
+        <label asp-for="Input.SeferID" class="form-label">Sefer</label>
+        <select asp-for="Input.SeferID" asp-items="Model.SeferSelect" class="form-select"></select>
+        <span asp-validation-for="Input.SeferID" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.Tarih" class="form-label">Tarih</label>
+        <input asp-for="Input.Tarih" type="date" class="form-control" />
+        <span asp-validation-for="Input.Tarih" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.MasrafTipi" class="form-label">Tip</label>
+        <input asp-for="Input.MasrafTipi" class="form-control" />
+        <span asp-validation-for="Input.MasrafTipi" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.Tutar" class="form-label">Tutar</label>
+        <input asp-for="Input.Tutar" class="form-control" />
+        <span asp-validation-for="Input.Tutar" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="Input.ParaBirimi" class="form-label">PB</label>
+        <input asp-for="Input.ParaBirimi" class="form-control" />
+        <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.FaturaBelgeNo" class="form-label">Fatura/Belge</label>
+        <input asp-for="Input.FaturaBelgeNo" class="form-control" />
+        <span asp-validation-for="Input.FaturaBelgeNo" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="Input.Ulke" class="form-label">Ülke</label>
+        <input asp-for="Input.Ulke" class="form-control" />
+        <span asp-validation-for="Input.Ulke" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Input.Yer" class="form-label">Yer</label>
+        <input asp-for="Input.Yer" class="form-control" />
+        <span asp-validation-for="Input.Yer" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
+        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
+        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Kaydet</button>
+        <a asp-page="./Details" asp-route-id="@Model.Input.SeferMasrafID" class="btn btn-outline-secondary">İptal</a>
+        <a asp-page="./Delete" asp-route-id="@Model.Input.SeferMasrafID" class="btn btn-outline-danger">Sil</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

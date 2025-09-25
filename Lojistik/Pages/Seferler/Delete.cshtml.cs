@@ -1,4 +1,4 @@
-﻿// Pages/Siparisler/Delete.cshtml.cs
+// Pages/Seferler/Delete.cshtml.cs
 using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System;
 
-namespace Lojistik.Pages.Siparisler
+namespace Lojistik.Pages.Seferler
 {
     public class DeleteModel : PageModel
     {
@@ -16,13 +16,13 @@ namespace Lojistik.Pages.Siparisler
         public DeleteModel(AppDbContext context) => _context = context;
 
         public record Item(
-            int SiparisID,
-            DateTime SiparisTarihi,
-            string YukAciklamasi,
-            string? Gonderen,
-            string? Alici,
-            decimal? Tutar,
-            string? ParaBirimi,
+            int SeferID,
+            string? SeferKodu,
+            string? CekiciPlaka,
+            string? DorsePlaka,
+            string? SurucuAdi,
+            DateTime? CikisTarihi,
+            DateTime? DonusTarihi,
             byte Durum
         );
 
@@ -32,17 +32,17 @@ namespace Lojistik.Pages.Siparisler
         {
             var firmaId = User.GetFirmaId();
 
-            Data = await _context.Siparisler
+            Data = await _context.Seferler
                 .AsNoTracking()
-                .Where(s => s.FirmaID == firmaId && s.SiparisID == id)
+                .Where(s => s.FirmaID == firmaId && s.SeferID == id)
                 .Select(s => new Item(
-                    s.SiparisID,
-                    s.SiparisTarihi,
-                    s.YukAciklamasi,
-                    s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
-                    s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
-                    s.Tutar,
-                    s.ParaBirimi,
+                    s.SeferID,
+                    s.SeferKodu,
+                    s.Arac != null ? s.Arac.Plaka : null,
+                    s.Dorse != null ? s.Dorse.Plaka : null,
+                    s.SurucuAdi,
+                    s.CikisTarihi,
+                    s.DonusTarihi,
                     s.Durum
                 ))
                 .FirstOrDefaultAsync();
@@ -55,12 +55,12 @@ namespace Lojistik.Pages.Siparisler
         {
             var firmaId = User.GetFirmaId();
 
-            var e = await _context.Siparisler
-                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == id);
+            var e = await _context.Seferler
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == id);
 
             if (e != null)
             {
-                _context.Siparisler.Remove(e);
+                _context.Seferler.Remove(e);
                 await _context.SaveChangesAsync();
             }
 

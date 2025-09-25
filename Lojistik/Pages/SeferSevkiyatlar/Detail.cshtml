@@ -1,0 +1,36 @@
+﻿@* Pages/SeferSevkiyatlar/Details.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.SeferSevkiyatlar.DetailsModel
+@{
+    ViewData["Title"] = "Bağlantı Detayı";
+    var x = Model.Data!;
+}
+<h2 class="mb-3">Bağlantı Detayı</h2>
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a asp-page="./Edit" asp-route-id="@x.SeferSevkiyatID" class="btn btn-warning">Düzenle</a>
+    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Sefer’e Dön</a>
+    <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID" class="btn btn-outline-secondary">Sevkiyat’a Dön</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Sefer</dt>
+            <dd class="col-sm-9">
+                <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">@x.SeferKodu</a> — @x.CekiciPlaka
+            </dd>
+
+            <dt class="col-sm-3">Sevkiyat</dt>
+            <dd class="col-sm-9">
+                <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID">@x.SevkiyatKodu</a> — @x.SevkiyatCekici
+            </dd>
+
+            <dt class="col-sm-3">Yön</dt>
+            <dd class="col-sm-9">@x.Yon</dd>
+
+            <dt class="col-sm-3">Notlar</dt>
+            <dd class="col-sm-9 text-prewrap">@x.Notlar</dd>
+        </dl>
+    </div>
+</div>

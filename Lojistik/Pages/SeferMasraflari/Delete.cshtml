@@ -1,0 +1,34 @@
+﻿@* Pages/SeferMasraflari/Delete.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.SeferMasraflari.DeleteModel
+@{
+    ViewData["Title"] = "Masraf Sil";
+    var x = Model.Data!;
+}
+<h2 class="mb-3 text-danger">Masraf Sil</h2>
+
+<div class="alert alert-warning">
+    <strong>Bu masrafı silmek istediğinize emin misiniz?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@x.SeferMasrafID</dd>
+            <dt class="col-sm-3">Sefer</dt>
+            <dd class="col-sm-9">SF-@x.SeferID</dd>
+            <dt class="col-sm-3">Tarih</dt>
+            <dd class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</dd>
+            <dt class="col-sm-3">Tip</dt>
+            <dd class="col-sm-9">@x.MasrafTipi</dd>
+            <dt class="col-sm-3">Tutar</dt>
+            <dd class="col-sm-9">@x.Tutar.ToString("N2") @x.ParaBirimi</dd>
+        </dl>
+    </div>
+</div>
+
+<form method="post" class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-page="./Details" asp-route-id="@x.SeferMasrafID" class="btn btn-outline-secondary">Vazgeç</a>
+</form>

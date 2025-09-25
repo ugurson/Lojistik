@@ -2,58 +2,49 @@
 @model Lojistik.Pages.Siparisler.DeleteModel
 @{
     ViewData["Title"] = "Sipariş Sil";
+    var s = Model.Data!;
 }
 
 <h2 class="mb-3 text-danger">Sipariş Sil</h2>
-<p class="text-muted">Bu siparişi silmek üzeresiniz. Lütfen bilgileri kontrol edin.</p>
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-        {
-            <div>@err.ErrorMessage</div>
-        }
+<div class="alert alert-warning">
+    <strong>Bu siparişi silmek istediğinize emin misiniz?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@s.SiparisID</dd>
+
+            <dt class="col-sm-3">Tarih</dt>
+            <dd class="col-sm-9">@s.SiparisTarihi.ToString("dd.MM.yyyy")</dd>
+
+            <dt class="col-sm-3">Yük Açıklaması</dt>
+            <dd class="col-sm-9 text-prewrap">@s.YukAciklamasi</dd>
+
+            <dt class="col-sm-3">Gönderen</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.Gonderen) ? s.Gonderen : "—")</dd>
+
+            <dt class="col-sm-3">Alıcı</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.Alici) ? s.Alici : "—")</dd>
+
+            <dt class="col-sm-3">Tutar</dt>
+            <dd class="col-sm-9">
+                @((s.Tutar?.ToString("N2")) ?? "—") @(string.IsNullOrWhiteSpace(s.ParaBirimi) ? "" : s.ParaBirimi)
+            </dd>
+
+            <dt class="col-sm-3">Durum</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-@(s.Durum == 0 ? "secondary" : (s.Durum == 1 ? "info" : (s.Durum == 2 ? "primary" : (s.Durum == 3 ? "success" : "dark"))))">
+                    @s.Durum
+                </span>
+            </dd>
+        </dl>
     </div>
-}
+</div>
 
-@if (Model.Siparis is not null)
-{
-    <dl class="row">
-        <dt class="col-sm-3">Tarih</dt>
-        <dd class="col-sm-9">@Model.Siparis.SiparisTarihi.ToString("dd-MM-yyyy")</dd>
-
-        <dt class="col-sm-3">Gönderen</dt>
-        <dd class="col-sm-9">@Model.Siparis.GonderenMusteri?.MusteriAdi</dd>
-
-        <dt class="col-sm-3">Alıcı</dt>
-        <dd class="col-sm-9">@Model.Siparis.AliciMusteri?.MusteriAdi</dd>
-
-        <dt class="col-sm-3">Alıcı Ülke / Şehir</dt>
-        <dd class="col-sm-9">
-            @Model.Siparis.AliciMusteri?.Sehir?.Ulke?.UlkeAdi / @Model.Siparis.AliciMusteri?.Sehir?.SehirAdi
-        </dd>
-
-        <dt class="col-sm-3">Yük Açıklaması</dt>
-        <dd class="col-sm-9">@Model.Siparis.YukAciklamasi</dd>
-
-        <dt class="col-sm-3">Kilo</dt>
-        <dd class="col-sm-9">@Model.Siparis.Kilo</dd>
-
-        <dt class="col-sm-3">Tutar</dt>
-        <dd class="col-sm-9">@Model.Siparis.Tutar @Model.Siparis.ParaBirimi</dd>
-
-        <dt class="col-sm-3">Fatura No</dt>
-        <dd class="col-sm-9">@Model.Siparis.FaturaNo</dd>
-    </dl>
-
-    <form method="post" class="mt-3">
-        <input type="hidden" name="id" value="@Model.Siparis.SiparisID" />
-        <button type="submit" class="btn btn-danger">Evet, Sil</button>
-        <a asp-page="./Index" class="btn btn-secondary">Vazgeç</a>
-    </form>
-}
-else
-{
-    <div class="alert alert-warning">Kayıt bulunamadı.</div>
-}
+<form method="post" class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-page="./Details" asp-route-id="@s.SiparisID" class="btn btn-outline-secondary">Vazgeç</a>
+</form>

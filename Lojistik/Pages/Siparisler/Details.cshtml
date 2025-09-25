@@ -1,38 +1,130 @@
-﻿@page "{id:int}"
+﻿@* Pages/Siparisler/Details.cshtml *@
+@page "{id:int}"
 @model Lojistik.Pages.Siparisler.DetailsModel
 @{
-    ViewData["Title"] = "Sipariş Detay";
+    ViewData["Title"] = "Sipariş Detayı";
+    var s = Model.Data!;
 }
 
-<h2>Sipariş Detay</h2>
-<hr />
+<h2 class="mb-3">Sipariş Detayı</h2>
 
-<dl class="row">
-    <dt class="col-sm-3">Tarih</dt>
-    <dd class="col-sm-9">@Model.Siparis.SiparisTarihi.ToString("dd-MM-yyyy")</dd>
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
+    <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
+    <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
+    <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
+</div>
 
-    <dt class="col-sm-3">Gönderen</dt>
-    <dd class="col-sm-9">@Model.Siparis.GonderenMusteri?.MusteriAdi</dd>
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Genel</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">ID</dt>
+                    <dd class="col-sm-8">@s.SiparisID</dd>
 
-    <dt class="col-sm-3">Alıcı</dt>
-    <dd class="col-sm-9">@Model.Siparis.AliciMusteri?.MusteriAdi</dd>
+                    <dt class="col-sm-4">Tarih</dt>
+                    <dd class="col-sm-8">@s.SiparisTarihi.ToString("dd.MM.yyyy")</dd>
 
-    <dt class="col-sm-3">Alıcı Ülke / Şehir</dt>
-    <dd class="col-sm-9">@Model.Siparis.AliciMusteri?.Sehir?.Ulke?.UlkeAdi / @Model.Siparis.AliciMusteri?.Sehir?.SehirAdi</dd>
+                    <dt class="col-sm-4">Yük Açıklaması</dt>
+                    <dd class="col-sm-8 text-prewrap">@s.YukAciklamasi</dd>
 
-    <dt class="col-sm-3">Yük Açıklaması</dt>
-    <dd class="col-sm-9">@Model.Siparis.YukAciklamasi</dd>
+                    <dt class="col-sm-4">Durum</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-@(s.Durum == 0 ? "secondary" : (s.Durum == 1 ? "info" : (s.Durum == 2 ? "primary" : (s.Durum == 3 ? "success" : "dark"))))">
+                            @s.Durum
+                        </span>
+                    </dd>
 
-    <dt class="col-sm-3">Kilo</dt>
-    <dd class="col-sm-9">@Model.Siparis.Kilo</dd>
+                    <dt class="col-sm-4">Oluşturma</dt>
+                    <dd class="col-sm-8">@s.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
 
-    <dt class="col-sm-3">Tutar</dt>
-    <dd class="col-sm-9">@Model.Siparis.Tutar @Model.Siparis.ParaBirimi</dd>
+                    <dt class="col-sm-4">Notlar</dt>
+                    <dd class="col-sm-8 text-prewrap">@s.Notlar</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
 
-    <dt class="col-sm-3">Fatura No</dt>
-    <dd class="col-sm-9">@Model.Siparis.FaturaNo</dd>
-</dl>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Müşteriler & Fatura</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Gönderen</dt>
+                    <dd class="col-sm-8">@s.Gonderen</dd>
 
-<a asp-page="./Index" class="btn btn-secondary">Geri</a>
-<a asp-page="./Edit" asp-route-id="@Model.Siparis.SiparisID" class="btn btn-primary">Düzenle</a>
-<a asp-page="./Delete" asp-route-id="@Model.Siparis.SiparisID" class="btn btn-danger">Sil</a>
+                    <dt class="col-sm-4">Alıcı</dt>
+                    <dd class="col-sm-8">@s.Alici</dd>
+
+                    <dt class="col-sm-4">Ara Tedarikçi</dt>
+                    <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(s.AraTedarikci) ? s.AraTedarikci : "—")</dd>
+
+                    <dt class="col-sm-4">Fatura No</dt>
+                    <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(s.FaturaNo) ? s.FaturaNo : "—")</dd>
+
+                    <dt class="col-sm-4">Tutar</dt>
+                    <dd class="col-sm-8">@((s.Tutar?.ToString("N2")) ?? "—") @s.ParaBirimi</dd>
+
+                    <dt class="col-sm-4">Şube Kodu</dt>
+                    <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(s.SubeKodu) ? s.SubeKodu : "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">İlişkili Sevkiyatlar</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kod</th>
+                        <th>Çekici</th>
+                        <th>Dorse</th>
+                        <th>Sürücü</th>
+                        <th>Planlanan</th>
+                        <th>Yükleme</th>
+                        <th>Varış</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Sevkiyatlar?.Count > 0)
+                    {
+                        foreach (var r in Model.Sevkiyatlar)
+                        {
+                            <tr>
+                                <td>@r.SevkiyatID</td>
+                                <td>@(r.SevkiyatKodu ?? ("SV-" + r.SevkiyatID))</td>
+                                <td>@r.CekiciPlaka</td>
+                                <td>@r.DorsePlaka</td>
+                                <td>@r.SurucuAdi</td>
+                                <td>@r.PlanlananYuklemeTarihi?.ToString("dd.MM.yyyy")</td>
+                                <td>@r.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@r.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
+                                        @r.Durum
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-sm btn-outline-primary">Aç</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="10" class="text-center text-muted">Sevkiyat yok.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

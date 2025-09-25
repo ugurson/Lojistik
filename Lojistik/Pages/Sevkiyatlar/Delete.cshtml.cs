@@ -1,4 +1,5 @@
-﻿// Pages/Siparisler/Delete.cshtml.cs
+// Pages/Sevkiyatlar/Delete.cshtml.cs
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
@@ -6,9 +7,8 @@ using Lojistik.Extensions; // User.GetFirmaId()
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
 
-namespace Lojistik.Pages.Siparisler
+namespace Lojistik.Pages.Sevkiyatlar
 {
     public class DeleteModel : PageModel
     {
@@ -16,13 +16,16 @@ namespace Lojistik.Pages.Siparisler
         public DeleteModel(AppDbContext context) => _context = context;
 
         public record Item(
+            int SevkiyatID,
+            string? SevkiyatKodu,
             int SiparisID,
-            DateTime SiparisTarihi,
-            string YukAciklamasi,
-            string? Gonderen,
-            string? Alici,
-            decimal? Tutar,
-            string? ParaBirimi,
+            string? CekiciPlaka,
+            string? DorsePlaka,
+            string? SurucuAdi,
+            string? YuklemeMusteri,
+            string? BosaltmaMusteri,
+            DateTime? YuklemeTarihi,
+            DateTime? VarisTarihi,
             byte Durum
         );
 
@@ -32,17 +35,20 @@ namespace Lojistik.Pages.Siparisler
         {
             var firmaId = User.GetFirmaId();
 
-            Data = await _context.Siparisler
+            Data = await _context.Sevkiyatlar
                 .AsNoTracking()
-                .Where(s => s.FirmaID == firmaId && s.SiparisID == id)
+                .Where(s => s.FirmaID == firmaId && s.SevkiyatID == id)
                 .Select(s => new Item(
+                    s.SevkiyatID,
+                    s.SevkiyatKodu,
                     s.SiparisID,
-                    s.SiparisTarihi,
-                    s.YukAciklamasi,
-                    s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
-                    s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
-                    s.Tutar,
-                    s.ParaBirimi,
+                    s.Arac != null ? s.Arac.Plaka : null,
+                    s.Dorse != null ? s.Dorse.Plaka : null,
+                    s.SurucuAdi,
+                    s.YuklemeMusteri != null ? s.YuklemeMusteri.MusteriAdi : null,
+                    s.BosaltmaMusteri != null ? s.BosaltmaMusteri.MusteriAdi : null,
+                    s.YuklemeTarihi,
+                    s.VarisTarihi,
                     s.Durum
                 ))
                 .FirstOrDefaultAsync();
@@ -55,12 +61,12 @@ namespace Lojistik.Pages.Siparisler
         {
             var firmaId = User.GetFirmaId();
 
-            var e = await _context.Siparisler
-                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == id);
+            var e = await _context.Sevkiyatlar
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SevkiyatID == id);
 
             if (e != null)
             {
-                _context.Siparisler.Remove(e);
+                _context.Sevkiyatlar.Remove(e);
                 await _context.SaveChangesAsync();
             }
 

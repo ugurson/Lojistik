@@ -1,0 +1,52 @@
+﻿@* Pages/SeferGelirleri/Delete.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.SeferGelirleri.DeleteModel
+@{
+    ViewData["Title"] = "Gelir Sil";
+    var x = Model.Data!;
+}
+<h2 class="mb-3 text-danger">Gelir Sil</h2>
+
+<div class="alert alert-warning">
+    <strong>Bu geliri silmek istediğinize emin misiniz?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Sefer</dt>
+            <dd class="col-sm-9">
+                <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">
+                    @((x.SeferKodu ?? ("SF-" + x.SeferID))) — @x.CekiciPlaka
+                </a>
+            </dd>
+
+            <dt class="col-sm-3">Tarih</dt>
+            <dd class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</dd>
+
+            <dt class="col-sm-3">Açıklama</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.Aciklama) ? x.Aciklama : "—")</dd>
+
+            <dt class="col-sm-3">Tutar</dt>
+            <dd class="col-sm-9">@x.Tutar.ToString("N2") @x.ParaBirimi</dd>
+
+            <dt class="col-sm-3">İlgili Sipariş</dt>
+            <dd class="col-sm-9">
+                @if (x.IlgiliSiparisID.HasValue)
+                {
+                    <a asp-page="/Siparisler/Details" asp-route-id="@x.IlgiliSiparisID.Value">@x.IlgiliSiparisID</a>
+                }
+                else
+                {
+
+                    <span class="text-muted">—</span>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form method="post" class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Vazgeç</a>
+</form>

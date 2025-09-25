@@ -1,0 +1,54 @@
+﻿@* Pages/SeferMasraflari/Index.cshtml *@
+@page
+@model Lojistik.Pages.SeferMasraflari.IndexModel
+@{
+    ViewData["Title"] = "Sefer Masrafları";
+}
+<h2 class="mb-3">Sefer Masrafları</h2>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sefer</th>
+                <th>Tarih</th>
+                <th>Tip</th>
+                <th class="text-end">Tutar</th>
+                <th>PB</th>
+                <th>Yer</th>
+                <th>Ülke</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items?.Count > 0)
+            {
+                foreach (var r in Model.Items)
+                {
+                    <tr>
+                        <td>@r.SeferMasrafID</td>
+                        <td><a asp-page="/Seferler/Details" asp-route-id="@r.SeferID">SF-@r.SeferID</a></td>
+                        <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
+                        <td>@r.MasrafTipi</td>
+                        <td class="text-end">@r.Tutar.ToString("N2")</td>
+                        <td>@r.ParaBirimi</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.Yer) ? "—" : r.Yer)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.Ulke) ? "—" : r.Ulke)</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-page="./Details" asp-route-id="@r.SeferMasrafID" class="btn btn-outline-primary">Detay</a>
+                                <a asp-page="./Edit" asp-route-id="@r.SeferMasrafID" class="btn btn-outline-warning">Düzenle</a>
+                                <a asp-page="./Delete" asp-route-id="@r.SeferMasrafID" class="btn btn-outline-danger">Sil</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="9" class="text-center text-muted">Kayıt yok.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

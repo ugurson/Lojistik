@@ -1,0 +1,55 @@
+﻿@* Pages/SeferGelirleri/Details.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.SeferGelirleri.DetailsModel
+@{
+    ViewData["Title"] = "Gelir Detayı";
+    var x = Model.Data!;
+}
+<h2 class="mb-3">Gelir Detayı</h2>
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a asp-page="./Edit" asp-route-id="@x.SeferGelirID" class="btn btn-warning">Düzenle</a>
+    <a asp-page="./Delete" asp-route-id="@x.SeferGelirID" class="btn btn-danger">Sil</a>
+    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Sefer’e Dön</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Sefer</dt>
+            <dd class="col-sm-9">
+                <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">
+                    @((x.SeferKodu ?? ("SF-" + x.SeferID))) — @x.CekiciPlaka
+                </a>
+            </dd>
+
+            <dt class="col-sm-3">Tarih</dt>
+            <dd class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</dd>
+
+            <dt class="col-sm-3">Açıklama</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.Aciklama) ? x.Aciklama : "—")</dd>
+
+            <dt class="col-sm-3">Tutar</dt>
+            <dd class="col-sm-9">@x.Tutar.ToString("N2") @x.ParaBirimi</dd>
+
+            <dt class="col-sm-3">İlgili Sipariş</dt>
+            <dd class="col-sm-9">
+                @if (x.IlgiliSiparisID.HasValue)
+                {
+                    <a asp-page="/Siparisler/Details" asp-route-id="@x.IlgiliSiparisID.Value">@x.IlgiliSiparisID</a>
+                }
+                else
+                {
+
+                    <span class="text-muted">—</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Oluşturma</dt>
+            <dd class="col-sm-9">@x.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Notlar</dt>
+            <dd class="col-sm-9 text-prewrap">@x.Notlar</dd>
+        </dl>
+    </div>
+</div>

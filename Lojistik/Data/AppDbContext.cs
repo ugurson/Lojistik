@@ -14,7 +14,11 @@ namespace Lojistik.Data
         public DbSet<Sehir> Sehirler => Set<Sehir>();
         public DbSet<Musteri> Musteriler => Set<Musteri>();
         public DbSet<Lojistik.Models.Siparis> Siparisler { get; set; } = default!;
-
+        public DbSet<Sevkiyat> Sevkiyatlar { get; set; } = default!;
+        public DbSet<Sefer> Seferler { get; set; } = default!;
+        public DbSet<SeferSevkiyat> SeferSevkiyatlar { get; set; } = default!;
+        public DbSet<SeferMasraf> SeferMasraflari { get; set; } = default!;
+        public DbSet<SeferGelir> SeferGelirleri { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,6 +29,8 @@ namespace Lojistik.Data
             modelBuilder.Entity<Musteri>().ToTable("Musteriler");
 
             // İlişkiler (SQL’de FK var; EF tarafı da bilsin)
+
+
             modelBuilder.Entity<Sehir>()
               .HasOne(s => s.Ulke)
               .WithMany(u => u.Sehirler!)

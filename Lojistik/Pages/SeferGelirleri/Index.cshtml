@@ -1,0 +1,157 @@
+﻿@page
+@model Lojistik.Pages.SeferGelirleri.IndexModel
+@{
+    ViewData["Title"] = "Sefer Gelirleri";
+    string tarihSort = Model.sort == "tarih_desc" ? "tarih_asc" : "tarih_desc";
+    string tutarSort = Model.sort == "tutar_desc" ? "tutar_asc" : "tutar_desc";
+    string acikSort = Model.sort == "acik_desc" ? "acik_asc" : "acik_desc";
+}
+
+<h2 class="mb-3">Sefer Gelirleri</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-4">
+        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (açıklama, PB, sipariş, sefer)..." />
+    </div>
+    <div class="col-sm-2">
+        <input name="seferId" value="@(Model.seferId?.ToString() ?? "")" class="form-control" placeholder="Sefer ID" />
+    </div>
+    <div class="col-sm-2">
+        <select name="pageSize" class="form-select" onchange="this.form.submit()">
+            @{
+                int[] sizes = new[] { 10, 20, 50, 100 };
+                foreach (var s in sizes)
+                {
+                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
+                }
+            }
+        </select>
+    </div>
+    <input type="hidden" name="page" value="1" />
+    <input type="hidden" name="sort" value="@Model.sort" />
+    <div class="col-sm-2">
+        <button class="btn btn-primary w-100">Ara</button>
+    </div>
+    <div class="col-sm-2 text-end">
+        <a asp-page="./Create" class="btn btn-success w-100">+ Yeni Gelir</a>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th>
+                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-seferId="@Model.seferId"
+                       asp-route-sort="@tarihSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
+                        Tarih
+                    </a>
+                </th>
+                <th>
+                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-seferId="@Model.seferId"
+                       asp-route-sort="@acikSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
+                        Açıklama
+                    </a>
+                </th>
+                <th class="text-end">
+                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-seferId="@Model.seferId"
+                       asp-route-sort="@tutarSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
+                        Tutar
+                    </a>
+                </th>
+                <th>PB</th>
+                <th>Sefer</th>
+                <th>Sipariş</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items?.Count > 0)
+            {
+                foreach (var g in Model.Items)
+                {
+                    <tr>
+                        <td>@g.Tarih.ToString("dd.MM.yyyy")</td>
+                        <td>@g.Aciklama</td>
+                        <td class="text-end">@g.Tutar.ToString("N2")</td>
+                        <td>@g.ParaBirimi</td>
+                        <td>
+                            @if (g.SeferID > 0)
+                            {
+                                <a asp-page="/Seferler/Details" asp-route-id="@g.SeferID">
+                                    @(g.SeferKodu ?? ("SF-" + g.SeferID))
+                                </a>
+                            }
+                        </td>
+                        <td>
+                            @if (g.IlgiliSiparisID.HasValue)
+                            {
+                                <a asp-page="/Siparisler/Details" asp-route-id="@g.IlgiliSiparisID.Value">
+                                    @g.IlgiliSiparisID
+                                </a>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-page="./Details" asp-route-id="@g.SeferGelirID" class="btn btn-outline-primary">Detay</a>
+                                <a asp-page="./Edit" asp-route-id="@g.SeferGelirID" class="btn btn-outline-warning">Düzenle</a>
+                                <a asp-page="./Delete" asp-route-id="@g.SeferGelirID" class="btn btn-outline-danger">Sil</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="7" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.Toplamlar?.Count > 0)
+{
+    <div class="card mt-3">
+        <div class="card-header fw-semibold">Toplamlar</div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Para Birimi</th><th class="text-end">Toplam</th></tr></thead>
+                <tbody>
+                    @foreach (var t in Model.Toplamlar)
+                    {
+                        <tr>
+                            <td>@t.ParaBirimi</td>
+                            <td class="text-end">@t.Toplam.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<nav class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted">
+        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+    </div>
+    <ul class="pagination mb-0">
+        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-seferId="@Model.seferId"
+               asp-route-sort="@Model.sort"
+               asp-route-page="@(Model.page - 1)"
+               asp-route-pageSize="@Model.pageSize">Önceki</a>
+        </li>
+        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-seferId="@Model.seferId"
+               asp-route-sort="@Model.sort"
+               asp-route-page="@(Model.page + 1)"
+               asp-route-pageSize="@Model.pageSize">Sonraki</a>
+        </li>
+    </ul>
+</nav>

@@ -1,0 +1,51 @@
+﻿@* Pages/Seferler/Delete.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.Seferler.DeleteModel
+@{
+    ViewData["Title"] = "Sefer Sil";
+    var x = Model.Data!;
+}
+<h2 class="mb-3 text-danger">Sefer Sil</h2>
+
+<div class="alert alert-warning">
+    <strong>Bu seferi silmek istediğinize emin misiniz?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@x.SeferID</dd>
+
+            <dt class="col-sm-3">Kod</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.SeferKodu) ? x.SeferKodu : $"SF-{x.SeferID}")</dd>
+
+            <dt class="col-sm-3">Çekici</dt>
+            <dd class="col-sm-9">@x.CekiciPlaka</dd>
+
+            <dt class="col-sm-3">Dorse</dt>
+            <dd class="col-sm-9">@x.DorsePlaka</dd>
+
+            <dt class="col-sm-3">Sürücü</dt>
+            <dd class="col-sm-9">@x.SurucuAdi</dd>
+
+            <dt class="col-sm-3">Çıkış</dt>
+            <dd class="col-sm-9">@x.CikisTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Dönüş</dt>
+            <dd class="col-sm-9">@x.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Durum</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-@(x.Durum == 0 ? "secondary" : (x.Durum == 1 ? "info" : (x.Durum == 2 ? "primary" : (x.Durum == 3 ? "success" : "dark"))))">
+                    @x.Durum
+                </span>
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form method="post" class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-page="./Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Vazgeç</a>
+</form>

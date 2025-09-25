@@ -1,0 +1,101 @@
+﻿@* Pages/Sevkiyatlar/Details.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.Sevkiyatlar.DetailsModel
+@{
+    ViewData["Title"] = "Sevkiyat Detayı";
+    var x = Model.Data!;
+}
+
+<h2 class="mb-3">Sevkiyat Detayı</h2>
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a asp-page="./Edit" asp-route-id="@x.SevkiyatID" class="btn btn-warning">Düzenle</a>
+    <a asp-page="./Delete" asp-route-id="@x.SevkiyatID" class="btn btn-danger">Sil</a>
+    <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
+    <a asp-page="/SeferSevkiyatlar/Create" asp-route-sevkiyatId="@x.SevkiyatID" class="btn btn-success">+ Sefer’e Bağla</a>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Genel</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">ID</dt>
+                    <dd class="col-sm-8">@x.SevkiyatID</dd>
+
+                    <dt class="col-sm-4">Kod</dt>
+                    <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(x.SevkiyatKodu) ? x.SevkiyatKodu : $"SV-{x.SevkiyatID}")</dd>
+
+                    <dt class="col-sm-4">Sipariş</dt>
+                    <dd class="col-sm-8">
+                        <a asp-page="/Siparisler/Details" asp-route-id="@x.SiparisID">@x.SiparisID</a> — @x.SiparisYukAciklamasi
+                    </dd>
+
+                    <dt class="col-sm-4">Durum</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-@(x.Durum == 0 ? "secondary" : (x.Durum == 1 ? "info" : (x.Durum == 2 ? "primary" : (x.Durum == 3 ? "success" : "dark"))))">
+                            @x.Durum
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Oluşturma</dt>
+                    <dd class="col-sm-8">@x.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-4">Notlar</dt>
+                    <dd class="col-sm-8 text-prewrap">@x.Notlar</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Araç & Müşteri</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Çekici</dt>
+                    <dd class="col-sm-8">@x.CekiciPlaka</dd>
+
+                    <dt class="col-sm-4">Dorse</dt>
+                    <dd class="col-sm-8">@x.DorsePlaka</dd>
+
+                    <dt class="col-sm-4">Sürücü</dt>
+                    <dd class="col-sm-8">@x.SurucuAdi</dd>
+
+                    <dt class="col-sm-4">Yükleme Müşteri</dt>
+                    <dd class="col-sm-8">@x.YuklemeMusteri</dd>
+
+                    <dt class="col-sm-4">Boşaltma Müşteri</dt>
+                    <dd class="col-sm-8">@x.BosaltmaMusteri</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">Adres & Tarihler</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Yükleme</h6>
+                <div>@x.YuklemeAdres</div>
+                <div class="text-muted">@x.YuklemeNoktasi</div>
+                <div>Planlanan: @x.PlanlananYuklemeTarihi?.ToString("dd.MM.yyyy")</div>
+                <div>Gerçek: @x.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</div>
+            </div>
+            <div class="col-md-6">
+                <h6>Boşaltma</h6>
+                <div>@x.BosaltmaAdres</div>
+                <div class="text-muted">@x.BosaltmaNoktasi</div>
+                <div>Varış: @x.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</div>
+                <div>Gümrük Çıkış: @x.GumrukCikisTarihi?.ToString("dd.MM.yyyy HH:mm")</div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <span class="me-4">CMR: @(!string.IsNullOrWhiteSpace(x.CMRNo) ? x.CMRNo : "—")</span>
+            <span>MRN: @(!string.IsNullOrWhiteSpace(x.MRN) ? x.MRN : "—")</span>
+        </div>
+    </div>
+</div>

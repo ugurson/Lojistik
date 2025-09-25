@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Pages/Siparisler/Edit.cshtml.cs
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
 using Lojistik.Data;
-using Lojistik.Extensions; // User.GetFirmaId(), GetUserId()...
-using Lojistik.Models;
+using Lojistik.Extensions; // User.GetFirmaId()
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -14,45 +17,29 @@ namespace Lojistik.Pages.Siparisler
         private readonly AppDbContext _context;
         public EditModel(AppDbContext context) => _context = context;
 
-        [BindProperty]
-        public InputModel Input { get; set; } = new();
-
-        // Firma bazlı müşteri listesi (dropdown)
+        [BindProperty] public InputModel Input { get; set; } = new();
         public SelectList? MusterilerSelect { get; set; }
 
         public class InputModel
         {
-            [Required]
-            public int SiparisID { get; set; }
+            [Required] public int SiparisID { get; set; }
+            [Required, DataType(DataType.Date)] public DateTime SiparisTarihi { get; set; }
 
-            [Required]
-            [DataType(DataType.Date)]
-            public DateTime SiparisTarihi { get; set; }
-
-            // NOT: Entity tarafı int (nullable değil) ise burada da int + [Required]
-            [Required, Display(Name = "Gönderen Müşteri")]
-            public int GonderenMusteriID { get; set; }
-
-            [Required, Display(Name = "Alıcı Müşteri")]
-            public int AliciMusteriID { get; set; }
-
-            [Display(Name = "Ara Tedarikçi")]
+            [Required] public int GonderenMusteriID { get; set; }
+            [Required] public int AliciMusteriID { get; set; }
             public int? AraTedarikciMusteriID { get; set; }
 
-            [Required, StringLength(500)]
-            public string YukAciklamasi { get; set; } = string.Empty;
-
+            [Required, StringLength(200)] public string YukAciklamasi { get; set; } = null!;
+            public int? Adet { get; set; }
+            [StringLength(50)] public string? AdetCinsi { get; set; }
             public int? Kilo { get; set; }
 
-            [DataType(DataType.Currency)]
-            public decimal? Tutar { get; set; }
-
-            [StringLength(3)]
-            public string? ParaBirimi { get; set; } // "TRY","EUR","USD" vb.
-
-            [Display(Name = "Fatura No")]
-            [StringLength(50)]
-            public string? FaturaNo { get; set; }
+            [Range(0, double.MaxValue)] public decimal? Tutar { get; set; }
+            [StringLength(10)] public string? ParaBirimi { get; set; }
+            [StringLength(50)] public string? FaturaNo { get; set; }
+            [StringLength(20)] public string? SubeKodu { get; set; }
+            [StringLength(500)] public string? Notlar { get; set; }
+            [Required] public byte Durum { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync(int id)
@@ -61,25 +48,30 @@ namespace Lojistik.Pages.Siparisler
 
             var s = await _context.Siparisler
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.SiparisID == id && x.FirmaID == firmaId);
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SiparisID == id);
 
-            if (s is null) return NotFound();
+            if (s == null) return RedirectToPage("./Index");
 
             Input = new InputModel
             {
                 SiparisID = s.SiparisID,
                 SiparisTarihi = s.SiparisTarihi,
-                GonderenMusteriID = s.GonderenMusteriID,   // int -> int
-                AliciMusteriID = s.AliciMusteriID,         // int -> int
+                GonderenMusteriID = s.GonderenMusteriID,
+                AliciMusteriID = s.AliciMusteriID,
                 AraTedarikciMusteriID = s.AraTedarikciMusteriID,
                 YukAciklamasi = s.YukAciklamasi,
+                Adet = s.Adet,
+                AdetCinsi = s.AdetCinsi,
                 Kilo = s.Kilo,
                 Tutar = s.Tutar,
                 ParaBirimi = s.ParaBirimi,
-                FaturaNo = s.FaturaNo
+                FaturaNo = s.FaturaNo,
+                SubeKodu = s.SubeKodu,
+                Notlar = s.Notlar,
+                Durum = s.Durum
             };
 
-            await LoadMusterilerAsync(firmaId);
+            await LoadMusterilerAsync(s.GonderenMusteriID);
             return Page();
         }
 
@@ -89,54 +81,46 @@ namespace Lojistik.Pages.Siparisler
 
             if (!ModelState.IsValid)
             {
-                await LoadMusterilerAsync(firmaId);
+                await LoadMusterilerAsync(Input.GonderenMusteriID);
                 return Page();
             }
 
             var s = await _context.Siparisler
-                .FirstOrDefaultAsync(x => x.SiparisID == Input.SiparisID && x.FirmaID == firmaId);
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SiparisID == Input.SiparisID);
 
-            if (s is null) return NotFound();
+            if (s == null) return RedirectToPage("./Index");
 
-            // Sadece izin verilen alanları güncelle
-            s.SiparisTarihi = Input.SiparisTarihi;
-            s.GonderenMusteriID = Input.GonderenMusteriID;   // int -> int (hata yok)
-            s.AliciMusteriID = Input.AliciMusteriID;         // int -> int (hata yok)
+            s.SiparisTarihi = Input.SiparisTarihi.Date;
+            s.GonderenMusteriID = Input.GonderenMusteriID;
+            s.AliciMusteriID = Input.AliciMusteriID;
             s.AraTedarikciMusteriID = Input.AraTedarikciMusteriID;
-            s.YukAciklamasi = Input.YukAciklamasi;
+            s.YukAciklamasi = Input.YukAciklamasi.Trim();
+            s.Adet = Input.Adet;
+            s.AdetCinsi = Input.AdetCinsi?.Trim();
             s.Kilo = Input.Kilo;
             s.Tutar = Input.Tutar;
-            s.ParaBirimi = Input.ParaBirimi;
-            s.FaturaNo = Input.FaturaNo;
+            s.ParaBirimi = string.IsNullOrWhiteSpace(Input.ParaBirimi) ? null : Input.ParaBirimi!.Trim();
+            s.FaturaNo = Input.FaturaNo?.Trim();
+            s.SubeKodu = Input.SubeKodu?.Trim();
+            s.Notlar = Input.Notlar?.Trim();
+            s.Durum = Input.Durum;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                // Düzenleme sonrası Detay'a yönlendirelim
-                return RedirectToPage("./Details", new { id = s.SiparisID });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                ModelState.AddModelError(string.Empty, "Kayıt başka biri tarafından değiştirildi. Lütfen sayfayı yenileyip tekrar deneyin.");
-            }
-            catch (DbUpdateException ex)
-            {
-                ModelState.AddModelError(string.Empty, "Güncelleme sırasında bir hata oluştu: " + ex.Message);
-            }
-
-            await LoadMusterilerAsync(firmaId);
-            return Page();
+            await _context.SaveChangesAsync();
+            return RedirectToPage("./Details", new { id = s.SiparisID });
         }
 
-        private async Task LoadMusterilerAsync(int firmaId)
+        private async Task LoadMusterilerAsync(int? selectedId)
         {
-            var list = await _context.Musteriler
-                .Where(m => m.FirmaID == firmaId)
-                .OrderBy(m => m.MusteriAdi)
-                .Select(m => new { m.MusteriID, m.MusteriAdi })
-                .ToListAsync();
-
-            MusterilerSelect = new SelectList(list, "MusteriID", "MusteriAdi");
+            var firmaId = User.GetFirmaId();
+            MusterilerSelect = new SelectList(
+                await _context.Musteriler
+                    .AsNoTracking()
+                    .Where(m => m.FirmaID == firmaId)
+                    .OrderBy(m => m.MusteriAdi)
+                    .Select(m => new { m.MusteriID, m.MusteriAdi })
+                    .ToListAsync(),
+                "MusteriID", "MusteriAdi", selectedId
+            );
         }
     }
 }

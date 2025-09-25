@@ -1,0 +1,63 @@
+﻿@* Pages/Sevkiyatlar/Delete.cshtml *@
+@page "{id:int}"
+@model Lojistik.Pages.Sevkiyatlar.DeleteModel
+@{
+    ViewData["Title"] = "Sevkiyat Sil";
+    var x = Model.Data!;
+}
+
+<h2 class="mb-3 text-danger">Sevkiyat Sil</h2>
+
+<div class="alert alert-warning">
+    <strong>Bu sevkiyatı silmek istediğinize emin misiniz?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@x.SevkiyatID</dd>
+
+            <dt class="col-sm-3">Kod</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.SevkiyatKodu) ? x.SevkiyatKodu : $"SV-{x.SevkiyatID}")</dd>
+
+            <dt class="col-sm-3">Sipariş</dt>
+            <dd class="col-sm-9">
+                <a asp-page="/Siparisler/Details" asp-route-id="@x.SiparisID">@x.SiparisID</a>
+            </dd>
+
+            <dt class="col-sm-3">Çekici</dt>
+            <dd class="col-sm-9">@x.CekiciPlaka</dd>
+
+            <dt class="col-sm-3">Dorse</dt>
+            <dd class="col-sm-9">@x.DorsePlaka</dd>
+
+            <dt class="col-sm-3">Sürücü</dt>
+            <dd class="col-sm-9">@x.SurucuAdi</dd>
+
+            <dt class="col-sm-3">Yükleme Müşteri</dt>
+            <dd class="col-sm-9">@x.YuklemeMusteri</dd>
+
+            <dt class="col-sm-3">Boşaltma Müşteri</dt>
+            <dd class="col-sm-9">@x.BosaltmaMusteri</dd>
+
+            <dt class="col-sm-3">Yükleme</dt>
+            <dd class="col-sm-9">@x.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Varış</dt>
+            <dd class="col-sm-9">@x.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Durum</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-@(x.Durum == 0 ? "secondary" : (x.Durum == 1 ? "info" : (x.Durum == 2 ? "primary" : (x.Durum == 3 ? "success" : "dark"))))">
+                    @x.Durum
+                </span>
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form method="post" class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-page="./Details" asp-route-id="@x.SevkiyatID" class="btn btn-outline-secondary">Vazgeç</a>
+</form>

@@ -1,16 +1,17 @@
 ﻿@page
-@model Lojistik.Pages.Siparisler.IndexModel
+@model Lojistik.Pages.Sevkiyatlar.IndexModel
 @{
-    ViewData["Title"] = "Siparişler";
-    string tarihSort = Model.sort == "tarih_desc" ? "tarih_asc" : "tarih_desc";
-    string tutarSort = Model.sort == "tutar_desc" ? "tutar_asc" : "tutar_desc";
+    ViewData["Title"] = "Sevkiyatlar";
+    string yuklemeSort = Model.sort == "yukleme_desc" ? "yukleme_asc" : "yukleme_desc";
+    string varisSort = Model.sort == "varis_desc" ? "varis_asc" : "varis_desc";
+    string kodSort = Model.sort == "kod_desc" ? "kod_asc" : "kod_desc";
 }
 
-<h2 class="mb-3">Siparişler</h2>
+<h2 class="mb-3">Sevkiyatlar</h2>
 
 <form method="get" class="row g-2 mb-3">
     <div class="col-sm-4">
-        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (yük açıklaması, fatura no, müşteri)..." />
+        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (kod, plaka, sürücü, CMR, MRN, müşteri)..." />
     </div>
     <div class="col-sm-2">
         <select name="durum" class="form-select" onchange="this.form.submit()">
@@ -33,13 +34,17 @@
             }
         </select>
     </div>
+    @if (Model.siparisId.HasValue)
+    {
+        <input type="hidden" name="siparisId" value="@Model.siparisId" />
+    }
     <input type="hidden" name="page" value="1" />
     <input type="hidden" name="sort" value="@Model.sort" />
     <div class="col-sm-2">
         <button class="btn btn-primary w-100">Ara</button>
     </div>
     <div class="col-sm-2 text-end">
-        <a asp-page="./Create" class="btn btn-success w-100">+ Yeni Sipariş</a>
+        <a asp-page="./Create" asp-route-siparisId="@Model.siparisId" class="btn btn-success w-100">+ Yeni Sevkiyat</a>
     </div>
 </form>
 
@@ -49,21 +54,28 @@
             <tr>
                 <th>ID</th>
                 <th>
-                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum"
-                       asp-route-sort="@tarihSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
-                        Tarih
+                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum" asp-route-siparisId="@Model.siparisId"
+                       asp-route-sort="@kodSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
+                        Kod
                     </a>
                 </th>
-                <th>Yük Açıklaması</th>
-                <th>Gönderen</th>
-                <th>Alıcı</th>
-                <th class="text-end">
-                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum"
-                       asp-route-sort="@tutarSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
-                        Tutar
+                <th>Çekici</th>
+                <th>Dorse</th>
+                <th>Sürücü</th>
+                <th>Yükleme Müşteri</th>
+                <th>Boşaltma Müşteri</th>
+                <th>
+                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum" asp-route-siparisId="@Model.siparisId"
+                       asp-route-sort="@yuklemeSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
+                        Yükleme
                     </a>
                 </th>
-                <th>PB</th>
+                <th>
+                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum" asp-route-siparisId="@Model.siparisId"
+                       asp-route-sort="@varisSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
+                        Varış
+                    </a>
+                </th>
                 <th>Durum</th>
                 <th class="text-end">İşlemler</th>
             </tr>
@@ -74,15 +86,22 @@
                 foreach (var r in Model.Items)
                 {
                     <tr>
-                        <td>@r.SiparisID</td>
-                        <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
-                        <td>@r.YukAciklamasi</td>
-                        <td>@r.Gonderen</td>
-                        <td>@r.Alici</td>
-                        <td class="text-end">
-                            @if (r.Tutar.HasValue)
+                        <td>@r.SevkiyatID</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SevkiyatKodu) ? "SV-" + r.SevkiyatID : r.SevkiyatKodu)</td>
+                        <td>@r.CekiciPlaka</td>
+                        <td>@r.DorsePlaka</td>
+                        <td>@r.SurucuAdi</td>
+                        <td>@r.YuklemeMusteri</td>
+                        <td>@r.BosaltmaMusteri</td>
+                        <td>
+                            @if (r.YuklemeTarihi.HasValue)
                             {
-                                @r.Tutar.Value.ToString("N2")
+                                @r.YuklemeTarihi.Value.ToString("dd.MM.yyyy HH:mm")
+                            }
+                            else if (r.PlanlananYuklemeTarihi.HasValue)
+                            {
+
+                                <span class="text-muted">@r.PlanlananYuklemeTarihi.Value.ToString("dd.MM.yyyy")</span>
                             }
                             else
                             {
@@ -90,7 +109,7 @@
                                 <span class="text-muted">—</span>
                             }
                         </td>
-                        <td>@(string.IsNullOrWhiteSpace(r.ParaBirimi) ? "—" : r.ParaBirimi)</td>
+                        <td>@(r.VarisTarihi?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
                         <td>
                             <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
                                 @r.Durum
@@ -98,9 +117,9 @@
                         </td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
-                                <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
-                                <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
-                                <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
+                                <a asp-page="./Details" asp-route-id="@r.SevkiyatID" class="btn btn-outline-primary">Detay</a>
+                                <a asp-page="./Edit" asp-route-id="@r.SevkiyatID" class="btn btn-outline-warning">Düzenle</a>
+                                <a asp-page="./Delete" asp-route-id="@r.SevkiyatID" class="btn btn-outline-danger">Sil</a>
                             </div>
                         </td>
                     </tr>
@@ -108,7 +127,7 @@
             }
             else
             {
-                <tr><td colspan="9" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+                <tr><td colspan="11" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
             }
         </tbody>
     </table>
@@ -124,6 +143,7 @@
                asp-page="./Index"
                asp-route-q="@Model.q"
                asp-route-durum="@Model.durum"
+               asp-route-siparisId="@Model.siparisId"
                asp-route-sort="@Model.sort"
                asp-route-page="@(Model.page - 1)"
                asp-route-pageSize="@Model.pageSize">Önceki</a>
@@ -133,6 +153,7 @@
                asp-page="./Index"
                asp-route-q="@Model.q"
                asp-route-durum="@Model.durum"
+               asp-route-siparisId="@Model.siparisId"
                asp-route-sort="@Model.sort"
                asp-route-page="@(Model.page + 1)"
                asp-route-pageSize="@Model.pageSize">Sonraki</a>

@@ -1,0 +1,47 @@
+﻿@page "{id:int}"
+@model Lojistik.Pages.SeferSevkiyatlar.DeleteModel
+@{
+    ViewData["Title"] = "Sefer–Sevkiyat Sil";
+    var x = Model.Data!;
+}
+
+<h2 class="mb-3 text-danger">Sefer–Sevkiyat Sil</h2>
+
+<div class="alert alert-warning">
+    <strong>Bu bağlantıyı silmek istediğinize emin misiniz?</strong>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Sefer</dt>
+            <dd class="col-sm-8">
+                <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">@((x.SeferKodu ?? ("SF-" + x.SeferID)))</a>
+            </dd>
+
+            <dt class="col-sm-4">Sevkiyat</dt>
+            <dd class="col-sm-8">
+                <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID">@((x.SevkiyatKodu ?? ("SV-" + x.SevkiyatID)))</a>
+            </dd>
+
+            <dt class="col-sm-4">Yön</dt>
+            <dd class="col-sm-8">
+                <span class="badge bg-@(x.Yon == 0 ? "secondary" : "info")">@((x.Yon == 0) ? "Gidiş" : "Dönüş")</span>
+            </dd>
+
+            <dt class="col-sm-4">Çekici</dt>
+            <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(x.CekiciPlaka) ? x.CekiciPlaka : "—")</dd>
+
+            <dt class="col-sm-4">Dorse</dt>
+            <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(x.DorsePlaka) ? x.DorsePlaka : "—")</dd>
+
+            <dt class="col-sm-4">Sürücü</dt>
+            <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(x.SurucuAdi) ? x.SurucuAdi : "—")</dd>
+        </dl>
+    </div>
+</div>
+
+<form method="post" class="d-flex gap-2">
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Vazgeç</a>
+</form>
