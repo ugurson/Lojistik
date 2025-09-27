@@ -1,21 +1,29 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
 using Lojistik.Extensions; // User.GetFirmaId(), GetUserId()
 using Lojistik.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Lojistik.Pages.Sevkiyatlar
 {
     public class CreateModel : PageModel
     {
         private readonly AppDbContext _context;
-        public CreateModel(AppDbContext context) => _context = context;
+        private readonly IWebHostEnvironment _env;
+        public CreateModel(AppDbContext context, IWebHostEnvironment env)
+        {
+            _context = context;
+            _env = env;
+        }
 
         [BindProperty] public InputModel Input { get; set; } = new();
 
@@ -34,15 +42,14 @@ namespace Lojistik.Pages.Sevkiyatlar
 
             [StringLength(250)] public string? YuklemeAdres { get; set; }
             [StringLength(250)] public string? BosaltmaAdres { get; set; }
-            [StringLength(200)] public string? YuklemeNoktasi { get; set; }
-            [StringLength(200)] public string? BosaltmaNoktasi { get; set; }
 
             [DataType(DataType.Date)] public DateTime? PlanlananYuklemeTarihi { get; set; }
-            public DateTime? YuklemeTarihi { get; set; }
-            public DateTime? GumrukCikisTarihi { get; set; }
-            public DateTime? VarisTarihi { get; set; }
+            [DataType(DataType.Date)] public DateTime? YuklemeTarihi { get; set; }
+            [DataType(DataType.Date)] public DateTime? GumrukCikisTarihi { get; set; }
+            [DataType(DataType.Date)] public DateTime? VarisTarihi { get; set; }
 
-            [StringLength(50)] public string? CMRNo { get; set; }
+            // CMR dosyası
+            public IFormFile? CMRFile { get; set; }
             [StringLength(50)] public string? MRN { get; set; }
 
             [Required] public byte Durum { get; set; } = 0;
@@ -69,11 +76,11 @@ namespace Lojistik.Pages.Sevkiyatlar
                 Input.YuklemeAdres = siparis.GonderenMusteri?.Adres;
                 Input.BosaltmaAdres = siparis.AliciMusteri?.Adres;
 
-                var now = DateTime.Now;
-                Input.PlanlananYuklemeTarihi = now;
-                Input.YuklemeTarihi = now;
-                Input.GumrukCikisTarihi = now;
-                Input.VarisTarihi = now;
+                var today = DateTime.Today;
+                Input.PlanlananYuklemeTarihi = today;
+                Input.YuklemeTarihi = today;
+                Input.GumrukCikisTarihi = today;
+                Input.VarisTarihi = today;
             }
 
             await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
@@ -91,17 +98,27 @@ namespace Lojistik.Pages.Sevkiyatlar
                 return Page();
             }
 
-            // --- Aynı sipariş için sevkiyat var mı kontrol et ---
-            bool varMi = await _context.Sevkiyatlar
-                .AnyAsync(x => x.FirmaID == firmaId && x.SiparisID == Input.SiparisID);
-            if (varMi)
+            // CMR dosyasını kaydet (varsa)
+            string? cmrStoredName = null;
+            if (Input.CMRFile is { Length: > 0 })
             {
-                ModelState.AddModelError(string.Empty, "Bu sipariş için zaten bir sevkiyat oluşturulmuş.");
-                await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
-                return Page();
+                var okExt = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+                var ext = Path.GetExtension(Input.CMRFile.FileName).ToLowerInvariant();
+                if (!okExt.Contains(ext))
+                {
+                    ModelState.AddModelError("Input.CMRFile", "Yalnızca PDF/JPG/PNG yükleyebilirsiniz.");
+                    await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
+                    return Page();
+                }
+
+                var folder = Path.Combine(_env.WebRootPath, "uploads", "cmr");
+                Directory.CreateDirectory(folder);
+                cmrStoredName = $"CMR_{Guid.NewGuid():N}{ext}";
+                var fullPath = Path.Combine(folder, cmrStoredName);
+                await using var fs = System.IO.File.Create(fullPath);
+                await Input.CMRFile.CopyToAsync(fs);
             }
 
-            // --- Yeni Sevkiyat kaydı ---
             var e = new Sevkiyat
             {
                 FirmaID = firmaId,
@@ -109,36 +126,32 @@ namespace Lojistik.Pages.Sevkiyatlar
                 CreatedByKullaniciID = userId,
                 CreatedAt = DateTime.Now,
 
-                SubeKodu = null,
                 SiparisID = Input.SiparisID,
                 DorseID = Input.DorseID,
+
                 YuklemeMusteriID = Input.YuklemeMusteriID,
                 BosaltmaMusteriID = Input.BosaltmaMusteriID,
                 YuklemeAdres = Input.YuklemeAdres?.Trim(),
                 BosaltmaAdres = Input.BosaltmaAdres?.Trim(),
-                YuklemeNoktasi = Input.YuklemeNoktasi?.Trim(),
-                BosaltmaNoktasi = Input.BosaltmaNoktasi?.Trim(),
+
                 PlanlananYuklemeTarihi = Input.PlanlananYuklemeTarihi?.Date,
-                YuklemeTarihi = Input.YuklemeTarihi,
-                GumrukCikisTarihi = Input.GumrukCikisTarihi,
-                VarisTarihi = Input.VarisTarihi,
-                CMRNo = Input.CMRNo?.Trim(),
+                YuklemeTarihi = Input.YuklemeTarihi?.Date,
+                GumrukCikisTarihi = Input.GumrukCikisTarihi?.Date,
+                VarisTarihi = Input.VarisTarihi?.Date,
+
+                CMRNo = cmrStoredName, // dosya adı/path
                 MRN = Input.MRN?.Trim(),
+
                 Durum = Input.Durum,
                 Notlar = Input.Notlar?.Trim()
             };
 
             _context.Sevkiyatlar.Add(e);
-
-            // --- Siparişin durumunu 1 (Onaylı) yap ---
-            var siparis = await _context.Siparisler
-                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == Input.SiparisID);
-            if (siparis != null)
-            {
-                siparis.Durum = 1;
-            }
-
             await _context.SaveChangesAsync();
+
+            // Sipariş durumu 1 (Onaylı) değilse 1’e çekmek istersen burada yapabilirsin:
+            // var sip = await _context.Siparisler.FirstOrDefaultAsync(x => x.SiparisID == e.SiparisID && x.FirmaID == firmaId);
+            // if (sip is not null && sip.Durum < 1) { sip.Durum = 1; await _context.SaveChangesAsync(); }
 
             return RedirectToPage("./Details", new { id = e.SevkiyatID });
         }

@@ -6,7 +6,7 @@
 
 <h2 class="mb-3">Yeni Sevkiyat</h2>
 
-<form method="post" class="row g-3">
+<form method="post" class="row g-3" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <div class="col-md-4">
@@ -55,26 +55,27 @@
     </div>
     <div class="col-md-3">
         <label asp-for="Input.YuklemeTarihi" class="form-label">Yükleme</label>
-        <input asp-for="Input.YuklemeTarihi" type="datetime-local" class="form-control" />
+        <input asp-for="Input.YuklemeTarihi" type="date" class="form-control" />
         <span asp-validation-for="Input.YuklemeTarihi" class="text-danger"></span>
     </div>
     <div class="col-md-3">
         <label asp-for="Input.GumrukCikisTarihi" class="form-label">Gümrük Çıkış</label>
-        <input asp-for="Input.GumrukCikisTarihi" type="datetime-local" class="form-control" />
+        <input asp-for="Input.GumrukCikisTarihi" type="date" class="form-control" />
         <span asp-validation-for="Input.GumrukCikisTarihi" class="text-danger"></span>
     </div>
     <div class="col-md-3">
         <label asp-for="Input.VarisTarihi" class="form-label">Varış</label>
-        <input asp-for="Input.VarisTarihi" type="datetime-local" class="form-control" />
+        <input asp-for="Input.VarisTarihi" type="date" class="form-control" />
         <span asp-validation-for="Input.VarisTarihi" class="text-danger"></span>
     </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.CMRNo" class="form-label">CMR No</label>
-        <input asp-for="Input.CMRNo" class="form-control" />
-        <span asp-validation-for="Input.CMRNo" class="text-danger"></span>
+    <div class="col-md-6">
+        <label class="form-label">CMR (dosya yükle)</label>
+        <input asp-for="Input.CMRFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+        <small class="text-muted">PDF/JPG/PNG</small>
+        <span asp-validation-for="Input.CMRFile" class="text-danger"></span>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6">
         <label asp-for="Input.MRN" class="form-label">MRN</label>
         <input asp-for="Input.MRN" class="form-control" />
         <span asp-validation-for="Input.MRN" class="text-danger"></span>

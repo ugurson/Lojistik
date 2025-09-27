@@ -4,41 +4,124 @@
     ViewData["Title"] = "Sevkiyat Düzenle";
 }
 
-<h2>Sevkiyat Düzenle</h2>
+<h2 class="mb-3">Sevkiyat Düzenle</h2>
 
-<form method="post">
-    <input type="hidden" asp-for="Input.SevkiyatID" />
+@if (Model.Input is null)
+{
+    <div class="alert alert-danger">Kayıt bulunamadı.</div>
+}
+else
+{
+    <form method="post" class="row g-3" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Input.SevkiyatID" />
+        <input type="hidden" asp-for="Input.SiparisID" />
+        <input type="hidden" asp-for="Input.ExistingCMR" />
 
-    <div class="mb-3">
-        <label asp-for="Input.DorseID" class="form-label"></label>
-        <select asp-for="Input.DorseID" class="form-select" asp-items="Model.DorselerSelect"></select>
-    </div>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <div class="mb-3">
-        <label asp-for="Input.PlanlananYuklemeTarihi" class="form-label"></label>
-        <input asp-for="Input.PlanlananYuklemeTarihi" type="date" class="form-control" />
-    </div>
+        <div class="col-md-4">
+            <label class="form-label">Sipariş</label>
+            <input class="form-control" value="@Model.Input.SiparisID" disabled />
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.YuklemeTarihi" class="form-label"></label>
-        <input asp-for="Input.YuklemeTarihi" type="datetime-local" class="form-control" />
-    </div>
+        <div class="col-md-4">
+            <label asp-for="Input.DorseID" class="form-label">Dorse</label>
+            <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select">
+                <option value="">(Yok)</option>
+            </select>
+            <span asp-validation-for="Input.DorseID" class="text-danger"></span>
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.VarisTarihi" class="form-label"></label>
-        <input asp-for="Input.VarisTarihi" type="datetime-local" class="form-control" />
-    </div>
+        <div class="col-md-6">
+            <label asp-for="Input.YuklemeMusteriID" class="form-label">Yükleme Müşteri</label>
+            <select asp-for="Input.YuklemeMusteriID" asp-items="Model.YuklemeMusteriSelect" class="form-select"></select>
+            <span asp-validation-for="Input.YuklemeMusteriID" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.BosaltmaMusteriID" class="form-label">Boşaltma Müşteri</label>
+            <select asp-for="Input.BosaltmaMusteriID" asp-items="Model.BosaltmaMusteriSelect" class="form-select"></select>
+            <span asp-validation-for="Input.BosaltmaMusteriID" class="text-danger"></span>
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Durum" class="form-label"></label>
-        <select asp-for="Input.Durum" class="form-select">
-            <option value="0">0 - Yeni</option>
-            <option value="1">1 - Planlandı</option>
-            <option value="2">2 - Yolda</option>
-            <option value="3">3 - Tamamlandı</option>
-        </select>
-    </div>
+        <div class="col-md-6">
+            <label asp-for="Input.YuklemeAdres" class="form-label">Yükleme Adres</label>
+            <input asp-for="Input.YuklemeAdres" class="form-control" />
+            <span asp-validation-for="Input.YuklemeAdres" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.BosaltmaAdres" class="form-label">Boşaltma Adres</label>
+            <input asp-for="Input.BosaltmaAdres" class="form-control" />
+            <span asp-validation-for="Input.BosaltmaAdres" class="text-danger"></span>
+        </div>
 
-    <button type="submit" class="btn btn-success">Kaydet</button>
-    <a asp-page="./Index" class="btn btn-secondary">İptal</a>
-</form>
+        <div class="col-md-3">
+            <label asp-for="Input.PlanlananYuklemeTarihi" class="form-label">Planlanan Yükleme</label>
+            <input asp-for="Input.PlanlananYuklemeTarihi" type="date" class="form-control" />
+            <span asp-validation-for="Input.PlanlananYuklemeTarihi" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.YuklemeTarihi" class="form-label">Yükleme</label>
+            <input asp-for="Input.YuklemeTarihi" type="date" class="form-control" />
+            <span asp-validation-for="Input.YuklemeTarihi" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.GumrukCikisTarihi" class="form-label">Gümrük Çıkış</label>
+            <input asp-for="Input.GumrukCikisTarihi" type="date" class="form-control" />
+            <span asp-validation-for="Input.GumrukCikisTarihi" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.VarisTarihi" class="form-label">Varış</label>
+            <input asp-for="Input.VarisTarihi" type="date" class="form-control" />
+            <span asp-validation-for="Input.VarisTarihi" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">CMR (dosya yükle)</label>
+            @if (!string.IsNullOrWhiteSpace(Model.Input.ExistingCMR))
+            {
+                <div class="mb-1">
+                    <a class="small" asp-append-version="true"
+                       href="~/uploads/cmr/@Model.Input.ExistingCMR" target="_blank">Mevcut CMR’i aç</a>
+                </div>
+            }
+            <input asp-for="Input.CMRFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+            <small class="text-muted">Yeni dosya seçerseniz eskisinin üzerine yazılır.</small>
+            <span asp-validation-for="Input.CMRFile" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.MRN" class="form-label">MRN</label>
+            <input asp-for="Input.MRN" class="form-control" />
+            <span asp-validation-for="Input.MRN" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Input.Durum" class="form-label">Durum</label>
+            <select asp-for="Input.Durum" class="form-select">
+                <option value="0">0 - Yeni</option>
+                <option value="1">1 - Onaylı</option>
+                <option value="2">2 - Hazırlanıyor</option>
+                <option value="3">3 - Sevkte</option>
+                <option value="4">4 - Tamamlandı</option>
+                <option value="5">5 - İptal</option>
+            </select>
+            <span asp-validation-for="Input.Durum" class="text-danger"></span>
+        </div>
+
+        <div class="col-12">
+            <label asp-for="Input.Notlar" class="form-label">Notlar</label>
+            <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
+            <span asp-validation-for="Input.Notlar" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Kaydet</button>
+            <a asp-page="/Siparisler/Details" asp-route-id="@Model.Input!.SiparisID" class="btn btn-outline-secondary">Vazgeç</a>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

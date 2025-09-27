@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,15 +14,21 @@ namespace Lojistik.Pages.Siparisler
     {
         private readonly AppDbContext _context;
         public DetailsModel(AppDbContext context) => _context = context;
+
         public bool HasSevkiyat { get; set; } = false;
+
         public record Item(
             int SiparisID,
             DateTime SiparisTarihi,
             string YukAciklamasi,
             int GonderenMusteriID,
             string? Gonderen,
+            string? GonderenUlke,
+            string? GonderenSehir,
             int AliciMusteriID,
             string? Alici,
+            string? AliciUlke,
+            string? AliciSehir,
             int? AraTedarikciMusteriID,
             string? AraTedarikci,
             int? Adet,
@@ -46,8 +52,19 @@ namespace Lojistik.Pages.Siparisler
             byte Durum
         );
 
+        public record SeferRow(
+            int SeferID,
+            string? SeferKodu,
+            DateTime? CikisTarihi,
+            string? CekiciPlaka,
+            string? DorsePlaka,
+            string? SurucuAdi,
+            byte Durum
+        );
+
         public Item? Data { get; set; }
         public List<SevkiyatRow> Sevkiyatlar { get; set; } = new();
+        public List<SeferRow> Seferler { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -62,8 +79,12 @@ namespace Lojistik.Pages.Siparisler
                     s.YukAciklamasi,
                     s.GonderenMusteriID,
                     s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
+                    s.GonderenMusteri != null ? s.GonderenMusteri.Ulke!.UlkeAdi : null,
+                    s.GonderenMusteri != null ? s.GonderenMusteri.Sehir!.SehirAdi : null,
                     s.AliciMusteriID,
                     s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
+                    s.AliciMusteri != null ? s.AliciMusteri.Ulke!.UlkeAdi : null,
+                    s.AliciMusteri != null ? s.AliciMusteri.Sehir!.SehirAdi : null,
                     s.AraTedarikciMusteriID,
                     s.AraTedarikciMusteri != null ? s.AraTedarikciMusteri.MusteriAdi : null,
                     s.Adet,
@@ -81,6 +102,7 @@ namespace Lojistik.Pages.Siparisler
 
             if (Data == null) return RedirectToPage("./Index");
 
+            // İlişkili Sevkiyatlar
             Sevkiyatlar = await _context.Sevkiyatlar
                 .AsNoTracking()
                 .Where(x => x.FirmaID == firmaId && x.SiparisID == id)
@@ -94,7 +116,37 @@ namespace Lojistik.Pages.Siparisler
                     x.Durum
                 ))
                 .ToListAsync();
+
             HasSevkiyat = Sevkiyatlar.Any();
+
+            // İlişkili Seferler (SeferSevkiyatlar üzerinden)
+            var seferFlat = await _context.SeferSevkiyatlar
+                .AsNoTracking()
+                .Where(x => x.FirmaID == firmaId && x.Sevkiyat.SiparisID == id)
+                .Select(x => new
+                {
+                    x.Sefer.SeferID,
+                    x.Sefer.SeferKodu,
+                    x.Sefer.CikisTarihi,
+                    Cekici = x.Sefer.Arac != null ? x.Sefer.Arac.Plaka : null,
+                    Dorse = x.Sefer.Dorse != null ? x.Sefer.Dorse.Plaka : null,
+                    x.Sefer.SurucuAdi,
+                    x.Sefer.Durum
+                })
+                .ToListAsync();
+
+            Seferler = seferFlat
+                .GroupBy(a => a.SeferID)
+                .Select(g =>
+                {
+                    var f = g.First();
+                    return new SeferRow(
+                        f.SeferID, f.SeferKodu, f.CikisTarihi,
+                        f.Cekici, f.Dorse, f.SurucuAdi, f.Durum
+                    );
+                })
+                .OrderByDescending(r => r.SeferID)
+                .ToList();
 
             return Page();
         }

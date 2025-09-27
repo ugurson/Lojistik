@@ -1,5 +1,4 @@
-﻿@* Pages/Siparisler/Details.cshtml *@
-@page "{id:int}"
+﻿@page "{id:int}"
 @model Lojistik.Pages.Siparisler.DetailsModel
 @{
     ViewData["Title"] = "Sipariş Detayı";
@@ -8,30 +7,18 @@
 
 <h2 class="mb-3">Sipariş Detayı</h2>
 
-@if (TempData["DelError"] is string delErr)
-{
-    <div class="alert alert-danger">@delErr</div>
-}
-@if (TempData["DelDiag"] is string delDiag)
-{
-    <div class="alert alert-info"><small>@delDiag</small></div>
-}
-
 <div class="mb-3 d-flex gap-2 flex-wrap">
     <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
     <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
     <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
 
-    @* Sevkiyat oluştur butonu kontrol *@
     @if (Model.HasSevkiyat)
     {
         <button class="btn btn-success" disabled>Sevkiyat Oluştur</button>
     }
     else
     {
-        <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">
-            + Sevkiyat Oluştur
-        </a>
+        <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
     }
 </div>
 
@@ -41,9 +28,7 @@
             <div class="card-header fw-semibold">Genel</div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">ID</dt>
-                    <dd class="col-sm-8">@s.SiparisID</dd>
-
+                    @* ID gösterilmiyor *@
                     <dt class="col-sm-4">Tarih</dt>
                     <dd class="col-sm-8">@s.SiparisTarihi.ToString("dd.MM.yyyy")</dd>
 
@@ -73,10 +58,20 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-4">Gönderen</dt>
-                    <dd class="col-sm-8">@s.Gonderen</dd>
+                    <dd class="col-sm-8">
+                        @s.Gonderen
+                        <div class="text-muted small">
+                            @(string.Join(" / ", new[] { s.GonderenUlke, s.GonderenSehir }.Where(x => !string.IsNullOrWhiteSpace(x))))
+                        </div>
+                    </dd>
 
                     <dt class="col-sm-4">Alıcı</dt>
-                    <dd class="col-sm-8">@s.Alici</dd>
+                    <dd class="col-sm-8">
+                        @s.Alici
+                        <div class="text-muted small">
+                            @(string.Join(" / ", new[] { s.AliciUlke, s.AliciSehir }.Where(x => !string.IsNullOrWhiteSpace(x))))
+                        </div>
+                    </dd>
 
                     <dt class="col-sm-4">Ara Tedarikçi</dt>
                     <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(s.AraTedarikci) ? s.AraTedarikci : "—")</dd>
@@ -92,7 +87,7 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm mb-3">
     <div class="card-header fw-semibold">İlişkili Sevkiyatlar</div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -120,16 +115,12 @@
                                 <td>@r.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@r.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>
-                                    <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
-                                        @r.Durum
-                                    </span>
+                                    <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">@r.Durum</span>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm">
                                         <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-outline-primary">Aç</a>
                                         <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-outline-warning">Düzenle</a>
-
-                                        @* === BURASI: Sayfa değişmeden SIL === *@
                                         <form method="post"
                                               asp-page="/Sevkiyatlar/Delete"
                                               class="d-inline"
@@ -147,6 +138,58 @@
                     else
                     {
                         <tr><td colspan="7" class="text-center text-muted">Sevkiyat yok.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">İlişkili Seferler</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kod</th>
+                        <th>Çıkış</th>
+                        <th>Çekici</th>
+                        <th>Dorse</th>
+                        <th>Sürücü</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Seferler?.Count > 0)
+                    {
+                        foreach (var r in Model.Seferler)
+                        {
+                            <tr>
+                                <td>@r.SeferID</td>
+                                <td>@(string.IsNullOrWhiteSpace(r.SeferKodu) ? $"SF-{r.SeferID}" : r.SeferKodu)</td>
+                                <td>@r.CikisTarihi?.ToString("dd.MM.yyyy")</td>
+                                <td>@r.CekiciPlaka</td>
+                                <td>@r.DorsePlaka</td>
+                                <td>@r.SurucuAdi</td>
+                                <td>
+                                    <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
+                                        @r.Durum
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-outline-primary">Aç</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="8" class="text-center text-muted">Sefer yok.</td></tr>
                     }
                 </tbody>
             </table>

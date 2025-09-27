@@ -1,67 +1,182 @@
-﻿@* Pages/Siparisler/Index.cshtml *@
-@page
+﻿@page
 @model Lojistik.Pages.Siparisler.IndexModel
 @{
     ViewData["Title"] = "Siparişler";
 }
+
 <h2 class="mb-3">Siparişler</h2>
 
-<div class="mb-3 text-end">
-    <a asp-page="./Create" class="btn btn-success">+ Yeni Sipariş</a>
-</div>
-<div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Tarih</th>
-                <th>Gönderen</th>
-                <th>Alıcı</th>
-                <th>Alıcı Ülke</th>
-                <th>Araç</th>
-                <th>Dorse</th>
-                <th class="text-end">Tutar</th>
-                <th>PB</th>
-                <th>Durum</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.Items?.Count > 0)
-            {
-                foreach (var r in Model.Items)
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-5">
+        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (terim, müşteri, sipariş no)..." />
+    </div>
+    <div class="col-sm-3">
+        <select name="pageSize" class="form-select" onchange="this.form.submit()">
+            @{
+                int[] sizes = new[] { 10, 20, 50, 100 };
+                foreach (var s in sizes)
+                {
+                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
+                }
+            }
+        </select>
+    </div>
+
+    <input type="hidden" name="page" value="1" />
+
+    <div class="col-sm-2">
+        <button class="btn btn-primary w-100">Ara</button>
+    </div>
+    <div class="col-sm-2 d-flex gap-2">
+        <a asp-page="./Index"
+           asp-route-q="@Model.q"
+           asp-route-pageSize="@Model.pageSize"
+           asp-route-groupBy="@(Model.groupBy == "sefer" ? null : "sefer")"
+           class="btn btn-outline-secondary w-100">
+            @(Model.groupBy == "sefer" ? "Gruplamayı Kapat" : "Sefer Koduna Göre Grupla")
+        </a>
+    </div>
+</form>
+
+@if (Model.groupBy == "sefer")
+{
+    var groups = Model.Items
+        .OrderByDescending(x => x.SiparisTarihi)
+        .GroupBy(x => string.IsNullOrWhiteSpace(x.SeferKodu) ? "(Sefer yok)" : x.SeferKodu);
+
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Gönderen</th>
+                    <th>Alıcı</th>
+                    <th>Alıcı Ülke</th>
+                    <th>Alıcı Şehir</th>
+                    <th>Dorse</th>
+                    <th>Sefer Kodu</th>
+                    <th>Sefer Çekici</th>
+                    <th>Sürücü</th>
+                    <th>Tutar</th>
+                    <th>PB</th>
+                    <th>Durum</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in groups)
+                {
+                    <tr class="table-light">
+                        <td colspan="13" class="fw-semibold">@g.Key</td>
+                    </tr>
+                    @foreach (var r in g)
+                    {
+                        <tr>
+                            <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                            <td>@r.Gonderen</td>
+                            <td>@r.Alici</td>
+                            <td>@r.AliciUlke</td>
+                            <td>@r.AliciSehir</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.SeferKodu) ? "—" : r.SeferKodu)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.SeferAracPlaka) ? "—" : r.SeferAracPlaka)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.SeferSurucuAdi) ? "—" : r.SeferSurucuAdi)</td>
+                            <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
+                            <td>@r.ParaBirimi</td>
+                            <td>
+                                <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
+                                    @r.Durum
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
+                                    <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
+                                    <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Gönderen</th>
+                    <th>Alıcı</th>
+                    <th>Alıcı Ülke</th>
+                    <th>Alıcı Şehir</th>
+                    <th>Dorse</th>
+                    <th>Sefer Kodu</th>
+                    <th>Sefer Çekici</th>
+                    <th>Sürücü</th>
+                    <th>Tutar</th>
+                    <th>PB</th>
+                    <th>Durum</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Items)
                 {
                     <tr>
                         <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                         <td>@r.Gonderen</td>
                         <td>@r.Alici</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.AliciUlke) ? "—" : r.AliciUlke)</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.CekiciPlaka) ? "—" : r.CekiciPlaka)</td>
+                        <td>@r.AliciUlke</td>
+                        <td>@r.AliciSehir</td>
                         <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
-                        <td class="text-end">@((r.Tutar?.ToString("N2")) ?? "—")</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.ParaBirimi) ? "—" : r.ParaBirimi)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SeferKodu) ? "—" : r.SeferKodu)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SeferAracPlaka) ? "—" : r.SeferAracPlaka)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SeferSurucuAdi) ? "—" : r.SeferSurucuAdi)</td>
+                        <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
+                        <td>@r.ParaBirimi</td>
                         <td>
-                            <span class="badge bg-@(r.Durum == 0 ? "secondary"
-                                                                                      : (r.Durum == 1 ? "info"
-                                                                                      : (r.Durum == 2 ? "primary"
-                                                                                      : (r.Durum == 3 ? "warning"
-                                                                                      : (r.Durum == 4 ? "success" : "dark")))))">
-                        @r.DurumText
-                    </span>
-                </td>
-                <td class="text-end">
-                    <div class="btn-group btn-group-sm">
-                        <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
-                        <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
-                        <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
-                    </div>
-                </td>
-            </tr>
-                        }
-            }
-            else
-            {
-                <tr><td colspan="11" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
-            }
-        </tbody>
-    </table>
-</div>
+                            <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
+                                @r.Durum
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
+                                <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
+                                <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<nav class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted">
+        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+    </div>
+    <ul class="pagination mb-0">
+        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-page="@(Model.page - 1)"
+               asp-route-pageSize="@Model.pageSize"
+               asp-route-groupBy="@Model.groupBy">Önceki</a>
+        </li>
+        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-page="@(Model.page + 1)"
+               asp-route-pageSize="@Model.pageSize"
+               asp-route-groupBy="@Model.groupBy">Sonraki</a>
+        </li>
+    </ul>
+</nav>
