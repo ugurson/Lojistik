@@ -56,15 +56,34 @@ namespace Lojistik.Pages.Siparisler
             var firmaId = User.GetFirmaId();
 
             var e = await _context.Siparisler
+                .Include(s => s.Sevkiyatlar) // sadece sevkiyatları çekiyoruz
                 .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == id);
 
             if (e != null)
             {
+                // Siparişe bağlı tüm sevkiyatları dolaş
+                foreach (var sev in e.Sevkiyatlar.ToList())
+                {
+                    // Önce bu sevkiyata bağlı SeferSevkiyat kayıtlarını sil
+                    var baglantilar = await _context.SeferSevkiyatlar
+                        .Where(x => x.SevkiyatID == sev.SevkiyatID)
+                        .ToListAsync();
+
+                    if (baglantilar.Any())
+                        _context.SeferSevkiyatlar.RemoveRange(baglantilar);
+
+                    // Sonra sevkiyat kaydını sil
+                    _context.Sevkiyatlar.Remove(sev);
+                }
+
+                // En son siparişi sil
                 _context.Siparisler.Remove(e);
+
                 await _context.SaveChangesAsync();
             }
 
             return RedirectToPage("./Index");
         }
+
     }
 }

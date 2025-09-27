@@ -28,7 +28,9 @@ namespace Lojistik.Pages.Siparisler
             decimal? Tutar,
             string? ParaBirimi,
             byte Durum,
-            string DurumText
+            string DurumText,
+            string? CekiciPlaka,
+            string? DorsePlaka
         );
 
         public IList<Row> Items { get; set; } = new List<Row>();
@@ -49,14 +51,24 @@ namespace Lojistik.Pages.Siparisler
                     Gonderen = s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
                     Alici = s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
                     AliciUlke = s.AliciMusteri != null && s.AliciMusteri.Ulke != null
-              ? s.AliciMusteri.Ulke.UlkeAdi   // ülke adı kolonu (string)
-              : null,
+                        ? s.AliciMusteri.Ulke.UlkeAdi
+                        : null,
                     s.Adet,
                     s.AdetCinsi,
                     s.Kilo,
                     s.Tutar,
                     s.ParaBirimi,
-                    s.Durum
+                    s.Durum,
+
+                    // son sevkiyatın araç/dorse plakaları
+                    CekiciPlaka = s.Sevkiyatlar
+                        .OrderByDescending(v => v.SevkiyatID)
+                        .Select(v => v.Arac != null ? v.Arac.Plaka : null)
+                        .FirstOrDefault(),
+                    DorsePlaka = s.Sevkiyatlar
+                        .OrderByDescending(v => v.SevkiyatID)
+                        .Select(v => v.Dorse != null ? v.Dorse.Plaka : null)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
 
@@ -74,7 +86,9 @@ namespace Lojistik.Pages.Siparisler
                     x.Tutar,
                     x.ParaBirimi,
                     x.Durum,
-                    GetDurumText(x.Durum)
+                    GetDurumText(x.Durum),
+                    x.CekiciPlaka,
+                    x.DorsePlaka
                 ))
                 .ToList();
         }

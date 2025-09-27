@@ -1,9 +1,9 @@
-﻿@* Pages/Seferler/Create.cshtml *@
-@page
+﻿@page
 @model Lojistik.Pages.Seferler.CreateModel
 @{
     ViewData["Title"] = "Yeni Sefer";
 }
+
 <h2 class="mb-3">Yeni Sefer</h2>
 
 <form method="post" class="row g-3">
@@ -11,8 +11,7 @@
 
     <div class="col-md-4">
         <label asp-for="Input.SeferKodu" class="form-label">Sefer Kodu</label>
-        <input asp-for="Input.SeferKodu" class="form-control" />
-        <span asp-validation-for="Input.SeferKodu" class="text-danger"></span>
+        <input asp-for="Input.SeferKodu" class="form-control" readonly />
     </div>
 
     <div class="col-md-4">
@@ -29,36 +28,28 @@
         <span asp-validation-for="Input.DorseID" class="text-danger"></span>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-4">
         <label asp-for="Input.SurucuAdi" class="form-label">Sürücü Adı</label>
         <input asp-for="Input.SurucuAdi" class="form-control" />
         <span asp-validation-for="Input.SurucuAdi" class="text-danger"></span>
     </div>
-    <div class="col-md-6 d-none">
-        <label asp-for="Input.SurucuID" class="form-label">Sürücü ID</label>
-        <input asp-for="Input.SurucuID" class="form-control" />
-        <span asp-validation-for="Input.SurucuID" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-6">
-        <label asp-for="Input.CikisTarihi" class="form-label">Çıkış</label>
-        <input asp-for="Input.CikisTarihi" type="datetime-local" class="form-control" />
-        <span asp-validation-for="Input.CikisTarihi" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="Input.DonusTarihi" class="form-label">Dönüş</label>
-        <input asp-for="Input.DonusTarihi" type="datetime-local" class="form-control" />
-        <span asp-validation-for="Input.DonusTarihi" class="text-danger"></span>
-    </div>
 
     <div class="col-md-3">
+        <label asp-for="Input.CikisTarihi" class="form-label">Çıkış</label>
+        <input asp-for="Input.CikisTarihi" type="date" class="form-control" />
+        <span asp-validation-for="Input.CikisTarihi" class="text-danger"></span>
+    </div>
+
+
+
+    <div class="col-md-2">
         <label asp-for="Input.Durum" class="form-label">Durum</label>
         <select asp-for="Input.Durum" class="form-select">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
+            <option value="0">0 - Yeni</option>
+            <option value="1">1 - Planlandı</option>
+            <option value="2">2 - Yolda</option>
+            <option value="3">3 - Tamamlandı</option>
+            <option value="4">4 - İptal</option>
         </select>
         <span asp-validation-for="Input.Durum" class="text-danger"></span>
     </div>

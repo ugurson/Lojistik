@@ -18,6 +18,7 @@ namespace Lojistik.Models
         [Required] public int AracID { get; set; }
         public int? DorseID { get; set; }
         public int? SurucuID { get; set; }
+        public Siparis Siparis { get; set; } = default!;
 
         [StringLength(100)] public string? SurucuAdi { get; set; }
         [StringLength(30)] public string? SevkiyatKodu { get; set; }
@@ -49,7 +50,8 @@ namespace Lojistik.Models
         public Kullanici? Kullanici { get; set; }
         [ForeignKey(nameof(CreatedByKullaniciID))] public Kullanici? CreatedByKullanici { get; set; }
 
-        public Siparis? Siparis { get; set; }
+
+
         public Arac? Arac { get; set; }
         [ForeignKey(nameof(DorseID))] public Arac? Dorse { get; set; }
         [ForeignKey(nameof(YuklemeMusteriID))] public Musteri? YuklemeMusteri { get; set; }

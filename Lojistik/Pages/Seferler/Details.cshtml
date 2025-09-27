@@ -1,57 +1,101 @@
-﻿@* Pages/Seferler/Details.cshtml *@
-@page "{id:int}"
+﻿@page
 @model Lojistik.Pages.Seferler.DetailsModel
 @{
     ViewData["Title"] = "Sefer Detayı";
-    var x = Model.Data!;
 }
+
 <h2 class="mb-3">Sefer Detayı</h2>
 
-<div class="mb-3 d-flex gap-2 flex-wrap">
-    <a asp-page="./Edit" asp-route-id="@x.SeferID" class="btn btn-warning">Düzenle</a>
-    <a asp-page="./Delete" asp-route-id="@x.SeferID" class="btn btn-danger">Sil</a>
-    <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
-    <a asp-page="/SeferMasraflari/Create" asp-route-seferId="@x.SeferID" class="btn btn-outline-primary">+ Masraf</a>
-    <a asp-page="/SeferGelirleri/Create" asp-route-seferId="@x.SeferID" class="btn btn-outline-success">+ Gelir</a>
-    <a asp-page="/SeferSevkiyatlar/Create" asp-route-seferId="@x.SeferID" class="btn btn-success">+ Sevkiyat Bağla</a>
+<div class="mb-3 d-flex gap-2">
+    <a asp-page="./Edit" asp-route-id="@Model.Data?.SeferID" class="btn btn-warning">Düzenle</a>
+    <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
+    <a asp-page="./AddSiparis" asp-route-seferId="@Model.Data.SeferID" class="btn btn-success">
+        + Sipariş Ekle
+    </a>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">ID</dt>
-            <dd class="col-sm-9">@x.SeferID</dd>
 
-            <dt class="col-sm-3">Kod</dt>
-            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.SeferKodu) ? x.SeferKodu : $"SF-{x.SeferID}")</dd>
 
-            <dt class="col-sm-3">Çıkış</dt>
-            <dd class="col-sm-9">@x.CikisTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+@if (Model.Data != null)
+{
+    <div class="card mb-4">
+        <div class="card-header">Genel Bilgiler</div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Sefer Kodu</dt>
+                <dd class="col-sm-9">@Model.Data.SeferKodu</dd>
 
-            <dt class="col-sm-3">Dönüş</dt>
-            <dd class="col-sm-9">@x.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+                <dt class="col-sm-3">Çekici</dt>
+                <dd class="col-sm-9">@Model.Data.AracPlaka</dd>
 
-            <dt class="col-sm-3">Çekici</dt>
-            <dd class="col-sm-9">@x.CekiciPlaka</dd>
+                <dt class="col-sm-3">Dorse</dt>
+                <dd class="col-sm-9">@Model.Data.DorsePlaka</dd>
 
-            <dt class="col-sm-3">Dorse</dt>
-            <dd class="col-sm-9">@x.DorsePlaka</dd>
+                <dt class="col-sm-3">Sürücü</dt>
+                <dd class="col-sm-9">@Model.Data.SurucuAdi</dd>
 
-            <dt class="col-sm-3">Sürücü</dt>
-            <dd class="col-sm-9">@x.SurucuAdi</dd>
+                <dt class="col-sm-3">Çıkış</dt>
+                <dd class="col-sm-9">@Model.Data.CikisTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
 
-            <dt class="col-sm-3">Durum</dt>
-            <dd class="col-sm-9">
-                <span class="badge bg-@(x.Durum == 0 ? "secondary" : (x.Durum == 1 ? "info" : (x.Durum == 2 ? "primary" : (x.Durum == 3 ? "success" : "dark"))))">
-                    @x.Durum
-                </span>
-            </dd>
+                <dt class="col-sm-3">Dönüş</dt>
+                <dd class="col-sm-9">@Model.Data.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
 
-            <dt class="col-sm-3">Oluşturma</dt>
-            <dd class="col-sm-9">@x.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
+                <dt class="col-sm-3">Durum</dt>
+                <dd class="col-sm-9">@Model.Data.Durum</dd>
 
-            <dt class="col-sm-3">Notlar</dt>
-            <dd class="col-sm-9 text-prewrap">@x.Notlar</dd>
-        </dl>
+                <dt class="col-sm-3">Notlar</dt>
+                <dd class="col-sm-9">@Model.Data.Notlar</dd>
+            </dl>
+        </div>
     </div>
-</div>
+
+    <h4>Bağlı Siparişler</h4>
+    <table class="table table-sm table-bordered table-hover align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tarih</th>
+                <th>Yük Açıklaması</th>
+                <th>Gönderen</th>
+                <th>Alıcı</th>
+                <th>Ülke</th>
+                <th>Şehir</th>
+                <th class="text-end">Tutar</th>
+                <th>PB</th>
+                <th>Durum</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Siparisler.Count > 0)
+            {
+                foreach (var s in Model.Siparisler)
+                {
+                    <tr>
+                        <td>@s.SiparisID</td>
+                        <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                        <td>@s.YukAciklamasi</td>
+                        <td>@s.Gonderen</td>
+                        <td>@s.Alici</td>
+                        <td>@s.AliciUlke</td>
+                        <td>@s.AliciSehir</td>
+                        <td class="text-end">@s.Tutar?.ToString("N2")</td>
+                        <td>@s.ParaBirimi</td>
+                        <td>
+                            <span class="badge bg-@Lojistik.Pages.Seferler.DetailsModel.GetDurumBadgeClass(s.Durum)">
+                                @Lojistik.Pages.Seferler.DetailsModel.GetDurumText(s.Durum)
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID" class="btn btn-sm btn-outline-primary">Aç</a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="11" class="text-center text-muted">Bağlı sipariş yok.</td></tr>
+            }
+        </tbody>
+    </table>
+}

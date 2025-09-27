@@ -1,5 +1,4 @@
-// Pages/Sevkiyatlar/Create.cshtml.cs
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,7 +20,6 @@ namespace Lojistik.Pages.Sevkiyatlar
         [BindProperty] public InputModel Input { get; set; } = new();
 
         public SelectList? SiparisSelect { get; set; }
-        public SelectList? CekicilerSelect { get; set; }
         public SelectList? DorselerSelect { get; set; }
         public SelectList? YuklemeMusteriSelect { get; set; }
         public SelectList? BosaltmaMusteriSelect { get; set; }
@@ -29,14 +27,7 @@ namespace Lojistik.Pages.Sevkiyatlar
         public class InputModel
         {
             [Required] public int SiparisID { get; set; }
-
-            [Required] public int AracID { get; set; }
             public int? DorseID { get; set; }
-
-            public int? SurucuID { get; set; }
-            [StringLength(100)] public string? SurucuAdi { get; set; }
-
-            [StringLength(30)] public string? SevkiyatKodu { get; set; }
 
             public int? YuklemeMusteriID { get; set; }
             public int? BosaltmaMusteriID { get; set; }
@@ -60,8 +51,32 @@ namespace Lojistik.Pages.Sevkiyatlar
 
         public async Task<IActionResult> OnGetAsync(int? siparisId = null)
         {
-            await LoadSelectsAsync(siparisId, null, null, null);
-            if (siparisId.HasValue) Input.SiparisID = siparisId.Value;
+            var firmaId = User.GetFirmaId();
+
+            if (siparisId.HasValue)
+            {
+                var siparis = await _context.Siparisler
+                    .Include(x => x.GonderenMusteri)
+                    .Include(x => x.AliciMusteri)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.SiparisID == siparisId.Value && x.FirmaID == firmaId);
+
+                if (siparis == null) return NotFound();
+
+                Input.SiparisID = siparis.SiparisID;
+                Input.YuklemeMusteriID = siparis.GonderenMusteriID;
+                Input.BosaltmaMusteriID = siparis.AliciMusteriID;
+                Input.YuklemeAdres = siparis.GonderenMusteri?.Adres;
+                Input.BosaltmaAdres = siparis.AliciMusteri?.Adres;
+
+                var now = DateTime.Now;
+                Input.PlanlananYuklemeTarihi = now;
+                Input.YuklemeTarihi = now;
+                Input.GumrukCikisTarihi = now;
+                Input.VarisTarihi = now;
+            }
+
+            await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
             return Page();
         }
 
@@ -72,10 +87,21 @@ namespace Lojistik.Pages.Sevkiyatlar
 
             if (!ModelState.IsValid)
             {
-                await LoadSelectsAsync(Input.SiparisID, Input.AracID, Input.DorseID, Input.YuklemeMusteriID);
+                await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
                 return Page();
             }
 
+            // --- Aynı sipariş için sevkiyat var mı kontrol et ---
+            bool varMi = await _context.Sevkiyatlar
+                .AnyAsync(x => x.FirmaID == firmaId && x.SiparisID == Input.SiparisID);
+            if (varMi)
+            {
+                ModelState.AddModelError(string.Empty, "Bu sipariş için zaten bir sevkiyat oluşturulmuş.");
+                await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
+                return Page();
+            }
+
+            // --- Yeni Sevkiyat kaydı ---
             var e = new Sevkiyat
             {
                 FirmaID = firmaId,
@@ -85,11 +111,7 @@ namespace Lojistik.Pages.Sevkiyatlar
 
                 SubeKodu = null,
                 SiparisID = Input.SiparisID,
-                AracID = Input.AracID,
                 DorseID = Input.DorseID,
-                SurucuID = Input.SurucuID,
-                SurucuAdi = Input.SurucuAdi?.Trim(),
-                SevkiyatKodu = Input.SevkiyatKodu?.Trim(),
                 YuklemeMusteriID = Input.YuklemeMusteriID,
                 BosaltmaMusteriID = Input.BosaltmaMusteriID,
                 YuklemeAdres = Input.YuklemeAdres?.Trim(),
@@ -107,12 +129,21 @@ namespace Lojistik.Pages.Sevkiyatlar
             };
 
             _context.Sevkiyatlar.Add(e);
+
+            // --- Siparişin durumunu 1 (Onaylı) yap ---
+            var siparis = await _context.Siparisler
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == Input.SiparisID);
+            if (siparis != null)
+            {
+                siparis.Durum = 1;
+            }
+
             await _context.SaveChangesAsync();
 
             return RedirectToPage("./Details", new { id = e.SevkiyatID });
         }
 
-        private async Task LoadSelectsAsync(int? siparisId, int? cekiciId, int? dorseId, int? yuklemeMusteriId)
+        private async Task LoadSelectsAsync(int? siparisId, int? dorseId, int? yuklemeMusteriId)
         {
             var firmaId = User.GetFirmaId();
 
@@ -124,16 +155,6 @@ namespace Lojistik.Pages.Sevkiyatlar
                     .Select(x => new { x.SiparisID, Text = x.SiparisID + " - " + x.YukAciklamasi })
                     .ToListAsync(),
                 "SiparisID", "Text", siparisId
-            );
-
-            CekicilerSelect = new SelectList(
-                await _context.Araclar
-                    .AsNoTracking()
-                    .Where(a => a.FirmaID == firmaId && (a.IsDorse == false || a.IsDorse == null))
-                    .OrderBy(a => a.Plaka)
-                    .Select(a => new { a.AracID, a.Plaka })
-                    .ToListAsync(),
-                "AracID", "Plaka", cekiciId
             );
 
             DorselerSelect = new SelectList(

@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Seferler";
     string cikisSort = Model.sort == "cikis_desc" ? "cikis_asc" : "cikis_desc";
-    string donusSort = Model.sort == "donus_desc" ? "donus_asc" : "donus_desc";
     string kodSort = Model.sort == "kod_desc" ? "kod_asc" : "kod_desc";
 }
 
@@ -60,15 +59,11 @@
                         Çıkış
                     </a>
                 </th>
-                <th>
-                    <a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum"
-                       asp-route-sort="@donusSort" asp-route-page="1" asp-route-pageSize="@Model.pageSize">
-                        Dönüş
-                    </a>
-                </th>
                 <th>Çekici</th>
                 <th>Dorse</th>
                 <th>Sürücü</th>
+                <th>Ülke</th>
+                <th>Şehir</th>
                 <th>Durum</th>
                 <th class="text-end">İşlemler</th>
             </tr>
@@ -80,11 +75,12 @@
                 {
                     <tr>
                         <td>@(r.SeferKodu ?? ("SF-" + r.SeferID))</td>
-                        <td>@r.CikisTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
-                        <td>@r.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@r.CikisTarihi?.ToString("dd.MM.yyyy")</td>
                         <td>@r.CekiciPlaka</td>
                         <td>@r.DorsePlaka</td>
                         <td>@r.SurucuAdi</td>
+                        <td>@r.Ulke</td>
+                        <td>@r.Sehir</td>
                         <td>
                             <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
                                 @r.Durum
@@ -102,7 +98,7 @@
             }
             else
             {
-                <tr><td colspan="8" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
             }
         </tbody>
     </table>

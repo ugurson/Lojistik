@@ -15,6 +15,8 @@ namespace Lojistik.Models
         public int? KullaniciID { get; set; }
         public int? CreatedByKullaniciID { get; set; }
 
+        public ICollection<Sevkiyat> Sevkiyatlar { get; set; } = new List<Sevkiyat>();
+
         // Müşteriler
         [Required] public int GonderenMusteriID { get; set; }
         [Required] public int AliciMusteriID { get; set; }

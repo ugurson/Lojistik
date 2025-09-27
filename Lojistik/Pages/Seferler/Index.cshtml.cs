@@ -1,5 +1,4 @@
-// Pages/Seferler/Index.cshtml.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,11 +19,13 @@ namespace Lojistik.Pages.Seferler
             int SeferID,
             string? SeferKodu,
             DateTime? CikisTarihi,
-            DateTime? DonusTarihi,
+            DateTime? DonusTarihi, // kullanmıyoruz ama şimdilik dursun
             string? CekiciPlaka,
             string? DorsePlaka,
             string? SurucuAdi,
-            byte Durum
+            byte Durum,
+            string? Ulke,
+            string? Sehir
         );
 
         public IList<Row> Items { get; set; } = new List<Row>();
@@ -64,25 +65,32 @@ namespace Lojistik.Pages.Seferler
             {
                 "cikis_asc" => query.OrderBy(s => s.CikisTarihi).ThenByDescending(s => s.SeferID),
                 "cikis_desc" => query.OrderByDescending(s => s.CikisTarihi).ThenByDescending(s => s.SeferID),
-                "donus_asc" => query.OrderBy(s => s.DonusTarihi).ThenByDescending(s => s.SeferID),
-                "donus_desc" => query.OrderByDescending(s => s.DonusTarihi).ThenByDescending(s => s.SeferID),
                 "kod_asc" => query.OrderBy(s => s.SeferKodu),
                 "kod_desc" => query.OrderByDescending(s => s.SeferKodu),
                 _ => query.OrderByDescending(s => s.CikisTarihi).ThenByDescending(s => s.SeferID)
             };
 
             TotalCount = await query.CountAsync();
-
             Items = await query
                 .Select(s => new Row(
                     s.SeferID,
                     s.SeferKodu,
                     s.CikisTarihi,
-                    s.DonusTarihi,
+                    null, // DonusTarihi kaldırıldı
                     s.Arac != null ? s.Arac.Plaka : null,
                     s.Dorse != null ? s.Dorse.Plaka : null,
                     s.SurucuAdi,
-                    s.Durum
+                    s.Durum,
+                    // Ülke
+                    s.SeferSevkiyatlar
+                        .OrderByDescending(xx => xx.SevkiyatID)
+                        .Select(xx => xx.Sevkiyat.Siparis.AliciMusteri.Ulke.UlkeAdi)
+                        .FirstOrDefault(),
+                    // Şehir
+                    s.SeferSevkiyatlar
+                        .OrderByDescending(xx => xx.SevkiyatID)
+                        .Select(xx => xx.Sevkiyat.Siparis.AliciMusteri.Sehir.SehirAdi)
+                        .FirstOrDefault()
                 ))
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

@@ -1,4 +1,3 @@
-// Pages/Siparisler/Details.cshtml.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +14,7 @@ namespace Lojistik.Pages.Siparisler
     {
         private readonly AppDbContext _context;
         public DetailsModel(AppDbContext context) => _context = context;
-
+        public bool HasSevkiyat { get; set; } = false;
         public record Item(
             int SiparisID,
             DateTime SiparisTarihi,
@@ -40,10 +39,7 @@ namespace Lojistik.Pages.Siparisler
 
         public record SevkiyatRow(
             int SevkiyatID,
-            string? SevkiyatKodu,
-            string? CekiciPlaka,
             string? DorsePlaka,
-            string? SurucuAdi,
             DateTime? PlanlananYuklemeTarihi,
             DateTime? YuklemeTarihi,
             DateTime? VarisTarihi,
@@ -91,16 +87,14 @@ namespace Lojistik.Pages.Siparisler
                 .OrderByDescending(x => x.SevkiyatID)
                 .Select(x => new SevkiyatRow(
                     x.SevkiyatID,
-                    x.SevkiyatKodu,
-                    x.Arac != null ? x.Arac.Plaka : null,
                     x.Dorse != null ? x.Dorse.Plaka : null,
-                    x.SurucuAdi,
                     x.PlanlananYuklemeTarihi,
                     x.YuklemeTarihi,
                     x.VarisTarihi,
                     x.Durum
                 ))
                 .ToListAsync();
+            HasSevkiyat = Sevkiyatlar.Any();
 
             return Page();
         }

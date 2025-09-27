@@ -13,15 +13,12 @@
     <table class="table table-sm table-hover align-middle">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Tarih</th>
                 <th>Gönderen</th>
                 <th>Alıcı</th>
                 <th>Alıcı Ülke</th>
-                <th>Yük Açıklaması</th>
-                <th class="text-end">Adet</th>
-                <th>Adet Cinsi</th>
-                <th class="text-end">Kilo</th>
+                <th>Araç</th>
+                <th>Dorse</th>
                 <th class="text-end">Tutar</th>
                 <th>PB</th>
                 <th>Durum</th>
@@ -34,35 +31,36 @@
                 foreach (var r in Model.Items)
                 {
                     <tr>
-                        <td>@r.SiparisID</td>
                         <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                         <td>@r.Gonderen</td>
                         <td>@r.Alici</td>
                         <td>@(string.IsNullOrWhiteSpace(r.AliciUlke) ? "—" : r.AliciUlke)</td>
-                        <td class="text-truncate" style="max-width:260px">@r.YukAciklamasi</td>
-                        <td class="text-end">@r.Adet?.ToString("N0")</td>
-                        <td>@r.AdetCinsi</td>
-                        <td class="text-end">@r.Kilo?.ToString("N0")</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.CekiciPlaka) ? "—" : r.CekiciPlaka)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
                         <td class="text-end">@((r.Tutar?.ToString("N2")) ?? "—")</td>
                         <td>@(string.IsNullOrWhiteSpace(r.ParaBirimi) ? "—" : r.ParaBirimi)</td>
                         <td>
-                            <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "warning" : (r.Durum == 4 ? "success" : "dark")))))">
-                                @r.DurumText
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm">
-                                <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
-                                <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
-                                <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
-                            </div>
-                        </td>
-                    </tr>
-                }
+                            <span class="badge bg-@(r.Durum == 0 ? "secondary"
+                                                                                      : (r.Durum == 1 ? "info"
+                                                                                      : (r.Durum == 2 ? "primary"
+                                                                                      : (r.Durum == 3 ? "warning"
+                                                                                      : (r.Durum == 4 ? "success" : "dark")))))">
+                        @r.DurumText
+                    </span>
+                </td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm">
+                        <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
+                        <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
+                        <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
+                    </div>
+                </td>
+            </tr>
+                        }
             }
             else
             {
-                <tr><td colspan="13" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+                <tr><td colspan="11" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
             }
         </tbody>
     </table>

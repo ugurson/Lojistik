@@ -1,5 +1,4 @@
-﻿@* Pages/Sevkiyatlar/Create.cshtml *@
-@page
+﻿@page
 @model Lojistik.Pages.Sevkiyatlar.CreateModel
 @{
     ViewData["Title"] = "Yeni Sevkiyat";
@@ -12,16 +11,11 @@
 
     <div class="col-md-4">
         <label asp-for="Input.SiparisID" class="form-label">Sipariş</label>
-        <select asp-for="Input.SiparisID" asp-items="Model.SiparisSelect" class="form-select">
+        <select asp-for="Input.SiparisID" asp-items="Model.SiparisSelect" class="form-select" disabled>
             <option value="">Seçiniz...</option>
         </select>
+        <input type="hidden" asp-for="Input.SiparisID" />
         <span asp-validation-for="Input.SiparisID" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-4">
-        <label asp-for="Input.AracID" class="form-label">Çekici</label>
-        <select asp-for="Input.AracID" asp-items="Model.CekicilerSelect" class="form-select"></select>
-        <span asp-validation-for="Input.AracID" class="text-danger"></span>
     </div>
 
     <div class="col-md-4">
@@ -32,36 +26,14 @@
         <span asp-validation-for="Input.DorseID" class="text-danger"></span>
     </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.SurucuAdi" class="form-label">Sürücü Adı</label>
-        <input asp-for="Input.SurucuAdi" class="form-control" />
-        <span asp-validation-for="Input.SurucuAdi" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-4 d-none">
-        <label asp-for="Input.SurucuID" class="form-label">SürücüID</label>
-        <input asp-for="Input.SurucuID" class="form-control" />
-        <span asp-validation-for="Input.SurucuID" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-4">
-        <label asp-for="Input.SevkiyatKodu" class="form-label">Sevkiyat Kodu</label>
-        <input asp-for="Input.SevkiyatKodu" class="form-control" />
-        <span asp-validation-for="Input.SevkiyatKodu" class="text-danger"></span>
-    </div>
-
     <div class="col-md-6">
         <label asp-for="Input.YuklemeMusteriID" class="form-label">Yükleme Müşteri</label>
-        <select asp-for="Input.YuklemeMusteriID" asp-items="Model.YuklemeMusteriSelect" class="form-select">
-            <option value="">(Seçiniz)</option>
-        </select>
+        <select asp-for="Input.YuklemeMusteriID" asp-items="Model.YuklemeMusteriSelect" class="form-select"></select>
         <span asp-validation-for="Input.YuklemeMusteriID" class="text-danger"></span>
     </div>
     <div class="col-md-6">
         <label asp-for="Input.BosaltmaMusteriID" class="form-label">Boşaltma Müşteri</label>
-        <select asp-for="Input.BosaltmaMusteriID" asp-items="Model.BosaltmaMusteriSelect" class="form-select">
-            <option value="">(Seçiniz)</option>
-        </select>
+        <select asp-for="Input.BosaltmaMusteriID" asp-items="Model.BosaltmaMusteriSelect" class="form-select"></select>
         <span asp-validation-for="Input.BosaltmaMusteriID" class="text-danger"></span>
     </div>
 
@@ -74,17 +46,6 @@
         <label asp-for="Input.BosaltmaAdres" class="form-label">Boşaltma Adres</label>
         <input asp-for="Input.BosaltmaAdres" class="form-control" />
         <span asp-validation-for="Input.BosaltmaAdres" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-6">
-        <label asp-for="Input.YuklemeNoktasi" class="form-label">Yükleme Noktası</label>
-        <input asp-for="Input.YuklemeNoktasi" class="form-control" />
-        <span asp-validation-for="Input.YuklemeNoktasi" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="Input.BosaltmaNoktasi" class="form-label">Boşaltma Noktası</label>
-        <input asp-for="Input.BosaltmaNoktasi" class="form-control" />
-        <span asp-validation-for="Input.BosaltmaNoktasi" class="text-danger"></span>
     </div>
 
     <div class="col-md-3">
@@ -122,11 +83,12 @@
     <div class="col-md-3">
         <label asp-for="Input.Durum" class="form-label">Durum</label>
         <select asp-for="Input.Durum" class="form-select">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
+            <option value="0">0 - Yeni</option>
+            <option value="1">1 - Onaylı</option>
+            <option value="2">2 - Hazırlanıyor</option>
+            <option value="3">3 - Sevkte</option>
+            <option value="4">4 - Tamamlandı</option>
+            <option value="5">5 - İptal</option>
         </select>
         <span asp-validation-for="Input.Durum" class="text-danger"></span>
     </div>

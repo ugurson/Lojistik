@@ -8,11 +8,31 @@
 
 <h2 class="mb-3">Sipariş Detayı</h2>
 
+@if (TempData["DelError"] is string delErr)
+{
+    <div class="alert alert-danger">@delErr</div>
+}
+@if (TempData["DelDiag"] is string delDiag)
+{
+    <div class="alert alert-info"><small>@delDiag</small></div>
+}
+
 <div class="mb-3 d-flex gap-2 flex-wrap">
     <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
     <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
     <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
-    <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
+
+    @* Sevkiyat oluştur butonu kontrol *@
+    @if (Model.HasSevkiyat)
+    {
+        <button class="btn btn-success" disabled>Sevkiyat Oluştur</button>
+    }
+    else
+    {
+        <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">
+            + Sevkiyat Oluştur
+        </a>
+    }
 </div>
 
 <div class="row g-3 mb-3">
@@ -66,9 +86,6 @@
 
                     <dt class="col-sm-4">Tutar</dt>
                     <dd class="col-sm-8">@((s.Tutar?.ToString("N2")) ?? "—") @s.ParaBirimi</dd>
-
-                    <dt class="col-sm-4">Şube Kodu</dt>
-                    <dd class="col-sm-8">@(!string.IsNullOrWhiteSpace(s.SubeKodu) ? s.SubeKodu : "—")</dd>
                 </dl>
             </div>
         </div>
@@ -83,10 +100,7 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Kod</th>
-                        <th>Çekici</th>
                         <th>Dorse</th>
-                        <th>Sürücü</th>
                         <th>Planlanan</th>
                         <th>Yükleme</th>
                         <th>Varış</th>
@@ -101,10 +115,7 @@
                         {
                             <tr>
                                 <td>@r.SevkiyatID</td>
-                                <td>@(r.SevkiyatKodu ?? ("SV-" + r.SevkiyatID))</td>
-                                <td>@r.CekiciPlaka</td>
-                                <td>@r.DorsePlaka</td>
-                                <td>@r.SurucuAdi</td>
+                                <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
                                 <td>@r.PlanlananYuklemeTarihi?.ToString("dd.MM.yyyy")</td>
                                 <td>@r.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@r.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
@@ -114,14 +125,28 @@
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-sm btn-outline-primary">Aç</a>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-outline-primary">Aç</a>
+                                        <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-outline-warning">Düzenle</a>
+
+                                        @* === BURASI: Sayfa değişmeden SIL === *@
+                                        <form method="post"
+                                              asp-page="/Sevkiyatlar/Delete"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Bu sevkiyatı silmek istediğinize emin misiniz?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@r.SevkiyatID" />
+                                            <input type="hidden" name="siparisId" value="@s.SiparisID" />
+                                            <button type="submit" class="btn btn-outline-danger">Sil</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         }
                     }
                     else
                     {
-                        <tr><td colspan="10" class="text-center text-muted">Sevkiyat yok.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted">Sevkiyat yok.</td></tr>
                     }
                 </tbody>
             </table>
