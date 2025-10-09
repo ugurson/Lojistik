@@ -66,6 +66,26 @@ namespace Lojistik.Pages.Siparisler
         public List<SevkiyatRow> Sevkiyatlar { get; set; } = new();
         public List<SeferRow> Seferler { get; set; } = new();
 
+        public async Task<IActionResult> OnPostSonlandirAsync(int id)
+        {
+            var firmaId = User.GetFirmaId();
+
+            var s = await _context.Siparisler
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SiparisID == id);
+
+            if (s == null)
+                return RedirectToPage("./Index");
+
+            // Zaten 7 ise dokunma
+            if (s.Durum != 7)
+            {
+                s.Durum = 7;
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Sipariş sonlandırıldı (Durum = 7).";
+            }
+
+            return RedirectToPage(new { id });
+        }
         public async Task<IActionResult> OnGetAsync(int id)
         {
             var firmaId = User.GetFirmaId();

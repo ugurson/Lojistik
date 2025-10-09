@@ -1,0 +1,83 @@
+﻿@page
+@model Lojistik.Pages.Soforler.IndexModel
+@{
+    ViewData["Title"] = "Şoförler";
+}
+
+<h2 class="mb-3">Şoförler</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-5">
+        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (ad, TCKN, telefon, kart no)..." />
+    </div>
+    <div class="col-sm-3">
+        <select name="durum" class="form-select" onchange="this.form.submit()">
+            <option value="">Tümü</option>
+            <option value="Aktif" selected="@(Model.durum == "Aktif")">Aktif</option>
+            <option value="Pasif" selected="@(Model.durum == "Pasif")">Pasif</option>
+        </select>
+    </div>
+    <input type="hidden" name="sort" value="@Model.sort" />
+    <div class="col-sm-2">
+        <button class="btn btn-primary w-100">Ara</button>
+    </div>
+    <div class="col-sm-2 text-end">
+        <a class="btn btn-success w-100" asp-page="Create">Yeni Şoför</a>
+    </div>
+</form>
+
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th><a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum" asp-route-sort="ad">Ad Soyad</a></th>
+            <th>Telefon</th>
+            <th>Sınıf</th>
+            <th>Takograf Kart</th>
+            <th>Geçerlilikler</th>
+            <th><a asp-page="./Index" asp-route-q="@Model.q" asp-route-durum="@Model.durum" asp-route-sort="durum">Durum</a></th>
+            <th style="width:160px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Items)
+        {
+            string Badge(DateTime? dt)
+            {
+                if (dt == null) return "<span class=\"badge text-bg-secondary\">—</span>";
+                var days = (dt.Value - DateTime.Today).TotalDays;
+                if (days < 0) return $"<span class=\"badge text-bg-danger\">{dt:dd.MM.yyyy}</span>";
+                if (days <= 30) return $"<span class=\"badge text-bg-warning\">{dt:dd.MM.yyyy}</span>";
+                return $"<span class=\"badge text-bg-success\">{dt:dd.MM.yyyy}</span>";
+            }
+            <tr>
+                <td>@r.AdSoyad</td>
+                <td>@r.Telefon</td>
+                <td>@r.EhliyetSinifi</td>
+                <td>@r.SurucuKartNo</td>
+                <td>
+                    @Html.Raw(Badge(r.EhliyetGecerlilikTarihi))
+                    @Html.Raw(Badge(r.PasaportBitisTarihi))
+                    @Html.Raw(Badge(r.VizeBitisTarihi))
+                </td>
+                <td>
+                    @if (r.Durum == 1)
+                    {
+                        <span class="badge text-bg-success">Aktif</span>
+                    }
+                    else
+                    {
+
+                        <span class="badge text-bg-secondary">Pasif</span>
+                    }
+                </td>
+                <td class="text-end">
+                    <div class="btn-group">
+                        <a class="btn btn-outline-primary btn-sm" asp-page="Details" asp-route-id="@r.SoforID">Detay</a>
+                        <a class="btn btn-outline-secondary btn-sm" asp-page="Edit" asp-route-id="@r.SoforID">Düzenle</a>
+                        <a class="btn btn-outline-danger btn-sm" asp-page="Delete" asp-route-id="@r.SoforID">Sil</a>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

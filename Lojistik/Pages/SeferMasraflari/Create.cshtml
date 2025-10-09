@@ -1,74 +1,63 @@
-﻿@* Pages/SeferMasraflari/Create.cshtml *@
-@page
+﻿@page
 @model Lojistik.Pages.SeferMasraflari.CreateModel
 @{
     ViewData["Title"] = "Masraf Ekle";
 }
-<h2 class="mb-3">Sefer Masrafı Ekle</h2>
+<h2 class="mb-3">Masraf Ekle</h2>
 
 <form method="post" class="row g-3">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="col-md-6">
-        <label asp-for="Input.SeferID" class="form-label">Sefer</label>
-        <select asp-for="Input.SeferID" asp-items="Model.SeferSelect" class="form-select">
-            <option value="">Seçiniz...</option>
-        </select>
-        <span asp-validation-for="Input.SeferID" class="text-danger"></span>
-    </div>
+    <input type="hidden" asp-for="Input.SeferID" />
 
     <div class="col-md-3">
-        <label asp-for="Input.Tarih" class="form-label">Tarih</label>
-        <input asp-for="Input.Tarih" type="date" class="form-control" />
+        <label asp-for="Input.Tarih" class="form-label"></label>
+        <input asp-for="Input.Tarih" class="form-control" />
         <span asp-validation-for="Input.Tarih" class="text-danger"></span>
     </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.MasrafTipi" class="form-label">Tip</label>
-        <input asp-for="Input.MasrafTipi" class="form-control" />
+    <div class="col-md-4">
+        <label asp-for="Input.MasrafTipi" class="form-label"></label>
+        <select asp-for="Input.MasrafTipi" class="form-select" asp-items="Model.MasrafTipleri"></select>
         <span asp-validation-for="Input.MasrafTipi" class="text-danger"></span>
     </div>
 
     <div class="col-md-3">
-        <label asp-for="Input.Tutar" class="form-label">Tutar</label>
+        <label asp-for="Input.Tutar" class="form-label"></label>
         <input asp-for="Input.Tutar" class="form-control" />
         <span asp-validation-for="Input.Tutar" class="text-danger"></span>
     </div>
 
     <div class="col-md-2">
-        <label asp-for="Input.ParaBirimi" class="form-label">PB</label>
-        <input asp-for="Input.ParaBirimi" class="form-control" />
+        <label asp-for="Input.ParaBirimi" class="form-label"></label>
+        <select asp-for="Input.ParaBirimi" class="form-select" asp-items="Model.ParaBirimleri"></select>
         <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
     </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.FaturaBelgeNo" class="form-label">Fatura/Belge</label>
-        <input asp-for="Input.FaturaBelgeNo" class="form-control" />
-        <span asp-validation-for="Input.FaturaBelgeNo" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-2">
-        <label asp-for="Input.Ulke" class="form-label">Ülke</label>
-        <input asp-for="Input.Ulke" class="form-control" />
-        <span asp-validation-for="Input.Ulke" class="text-danger"></span>
-    </div>
-
     <div class="col-md-4">
-        <label asp-for="Input.Yer" class="form-label">Yer</label>
+        <label asp-for="Input.FaturaBelgeNo" class="form-label"></label>
+        <input asp-for="Input.FaturaBelgeNo" class="form-control" />
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Input.Ulke" class="form-label"></label>
+        <input asp-for="Input.Ulke" class="form-control" />
+    </div>
+
+    <div class="col-md-5">
+        <label asp-for="Input.Yer" class="form-label"></label>
         <input asp-for="Input.Yer" class="form-control" />
-        <span asp-validation-for="Input.Yer" class="text-danger"></span>
     </div>
 
     <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
-        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
-        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
+        <label asp-for="Input.Notlar" class="form-label"></label>
+        <textarea asp-for="Input.Notlar" class="form-control" rows="2"></textarea>
     </div>
 
     <div class="col-12 d-flex gap-2">
-        <button class="btn btn-success" type="submit">Kaydet</button>
-        <a asp-page="/Seferler/Index" class="btn btn-outline-secondary">İptal</a>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a asp-page="/Seferler/Details" asp-route-id="@Model.Input.SeferID" class="btn btn-secondary">Vazgeç</a>
     </div>
 </form>
 
-@section Scripts{ <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

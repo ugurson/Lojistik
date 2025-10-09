@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
-using Lojistik.Extensions; // User.GetFirmaId(), GetUserId()
+using Lojistik.Extensions; // User.GetFirmaId()
 using Lojistik.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -33,12 +33,14 @@ namespace Lojistik.Pages.Sevkiyatlar
 
         public class InputModel
         {
-            public int SevkiyatID { get; set; }
+            [Required] public int SevkiyatID { get; set; }
             [Required] public int SiparisID { get; set; }
 
+            [Required(ErrorMessage = "Dorse seçiniz.")]
             public int? DorseID { get; set; }
-            public int? YuklemeMusteriID { get; set; }
-            public int? BosaltmaMusteriID { get; set; }
+
+            [Required] public int YuklemeMusteriID { get; set; }
+            [Required] public int BosaltmaMusteriID { get; set; }
 
             [StringLength(250)] public string? YuklemeAdres { get; set; }
             [StringLength(250)] public string? BosaltmaAdres { get; set; }
@@ -52,7 +54,6 @@ namespace Lojistik.Pages.Sevkiyatlar
             public string? ExistingCMR { get; set; }
 
             [StringLength(50)] public string? MRN { get; set; }
-            [Required] public byte Durum { get; set; } = 0;
             [StringLength(500)] public string? Notlar { get; set; }
         }
 
@@ -61,6 +62,8 @@ namespace Lojistik.Pages.Sevkiyatlar
             var firmaId = User.GetFirmaId();
 
             var e = await _context.Sevkiyatlar
+                .Include(x => x.Siparis).ThenInclude(s => s.GonderenMusteri)
+                .Include(x => x.Siparis).ThenInclude(s => s.AliciMusteri)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SevkiyatID == id);
 
@@ -71,8 +74,8 @@ namespace Lojistik.Pages.Sevkiyatlar
                 SevkiyatID = e.SevkiyatID,
                 SiparisID = e.SiparisID,
                 DorseID = e.DorseID,
-                YuklemeMusteriID = e.YuklemeMusteriID,
-                BosaltmaMusteriID = e.BosaltmaMusteriID,
+                YuklemeMusteriID = e.YuklemeMusteriID ?? 0,
+                BosaltmaMusteriID = e.BosaltmaMusteriID ?? 0,
                 YuklemeAdres = e.YuklemeAdres,
                 BosaltmaAdres = e.BosaltmaAdres,
                 PlanlananYuklemeTarihi = e.PlanlananYuklemeTarihi,
@@ -81,31 +84,34 @@ namespace Lojistik.Pages.Sevkiyatlar
                 VarisTarihi = e.VarisTarihi,
                 ExistingCMR = e.CMRNo,
                 MRN = e.MRN,
-                Durum = e.Durum,
                 Notlar = e.Notlar
             };
 
-            await LoadSelectsAsync(firmaId, Input.DorseID, Input.YuklemeMusteriID);
+            await LoadSelectsAsync(firmaId, Input.DorseID, Input.YuklemeMusteriID, Input.BosaltmaMusteriID);
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (Input is null) return RedirectToPage("./Index");
+
             var firmaId = User.GetFirmaId();
+
+            // Dorse boş ise uyarı verip beklet
+            if (Input.DorseID == null)
+                ModelState.AddModelError("Input.DorseID", "Dorse seçiniz.");
 
             if (!ModelState.IsValid)
             {
-                await LoadSelectsAsync(firmaId, Input.DorseID, Input.YuklemeMusteriID);
+                await LoadSelectsAsync(firmaId, Input.DorseID, Input.YuklemeMusteriID, Input.BosaltmaMusteriID);
                 return Page();
             }
 
             var e = await _context.Sevkiyatlar
                 .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SevkiyatID == Input.SevkiyatID);
-
             if (e == null) return RedirectToPage("./Index");
 
-            // CMR yükleme (yeni dosya seçildiyse değiştir)
+            // CMR dosyası
             if (Input.CMRFile is { Length: > 0 })
             {
                 var okExt = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
@@ -113,7 +119,7 @@ namespace Lojistik.Pages.Sevkiyatlar
                 if (!okExt.Contains(ext))
                 {
                     ModelState.AddModelError("Input.CMRFile", "Yalnızca PDF/JPG/PNG yükleyebilirsiniz.");
-                    await LoadSelectsAsync(firmaId, Input.DorseID, Input.YuklemeMusteriID);
+                    await LoadSelectsAsync(firmaId, Input.DorseID, Input.YuklemeMusteriID, Input.BosaltmaMusteriID);
                     return Page();
                 }
 
@@ -124,18 +130,15 @@ namespace Lojistik.Pages.Sevkiyatlar
                 await using (var fs = System.IO.File.Create(full))
                     await Input.CMRFile.CopyToAsync(fs);
 
-                // eski dosyayı sil
                 if (!string.IsNullOrWhiteSpace(e.CMRNo))
                 {
-                    var oldPath = Path.Combine(folder, e.CMRNo);
-                    if (System.IO.File.Exists(oldPath))
-                        System.IO.File.Delete(oldPath);
+                    var old = Path.Combine(folder, e.CMRNo);
+                    if (System.IO.File.Exists(old)) System.IO.File.Delete(old);
                 }
-
                 e.CMRNo = newName;
             }
 
-            // alanları güncelle
+            // Alanları güncelle (Durum'a dokunmuyoruz)
             e.DorseID = Input.DorseID;
             e.YuklemeMusteriID = Input.YuklemeMusteriID;
             e.BosaltmaMusteriID = Input.BosaltmaMusteriID;
@@ -146,36 +149,59 @@ namespace Lojistik.Pages.Sevkiyatlar
             e.GumrukCikisTarihi = Input.GumrukCikisTarihi?.Date;
             e.VarisTarihi = Input.VarisTarihi?.Date;
             e.MRN = Input.MRN?.Trim();
-            e.Durum = Input.Durum;
             e.Notlar = Input.Notlar?.Trim();
 
             await _context.SaveChangesAsync();
-            return RedirectToPage("./Details", new { id = e.SevkiyatID });
+
+            // Kayıt sonrası → Sipariş Detayı
+            return RedirectToPage("/Siparisler/Details", new { id = e.SiparisID });
         }
 
-        private async Task LoadSelectsAsync(int firmaId, int? dorseId, int? yuklemeMusteriId)
+        private async Task LoadSelectsAsync(int firmaId, int? dorseId, int? yuklemeMusteriId, int? bosaltmaMusteriId)
         {
             DorselerSelect = new SelectList(
                 await _context.Araclar
                     .AsNoTracking()
-                    .Where(a => a.FirmaID == firmaId && a.IsDorse == true)
+                    .Where(a => a.FirmaID == firmaId && a.IsDorse)
                     .OrderBy(a => a.Plaka)
                     .Select(a => new { a.AracID, a.Plaka })
                     .ToListAsync(),
                 "AracID", "Plaka", dorseId
             );
 
-            YuklemeMusteriSelect = new SelectList(
-                await _context.Musteriler
+            if (yuklemeMusteriId.HasValue)
+            {
+                var ad = await _context.Musteriler
                     .AsNoTracking()
-                    .Where(m => m.FirmaID == firmaId)
-                    .OrderBy(m => m.MusteriAdi)
-                    .Select(m => new { m.MusteriID, m.MusteriAdi })
-                    .ToListAsync(),
-                "MusteriID", "MusteriAdi", yuklemeMusteriId
-            );
+                    .Where(m => m.MusteriID == yuklemeMusteriId.Value && m.FirmaID == firmaId)
+                    .Select(m => m.MusteriAdi)
+                    .FirstOrDefaultAsync() ?? "—";
 
-            BosaltmaMusteriSelect = YuklemeMusteriSelect;
+                YuklemeMusteriSelect = new SelectList(
+                    new[] { new { MusteriID = yuklemeMusteriId.Value, Ad = ad } },
+                    "MusteriID", "Ad", yuklemeMusteriId.Value);
+            }
+            else
+            {
+                YuklemeMusteriSelect = new SelectList(Enumerable.Empty<object>(), "X", "Y");
+            }
+
+            if (bosaltmaMusteriId.HasValue)
+            {
+                var ad = await _context.Musteriler
+                    .AsNoTracking()
+                    .Where(m => m.MusteriID == bosaltmaMusteriId.Value && m.FirmaID == firmaId)
+                    .Select(m => m.MusteriAdi)
+                    .FirstOrDefaultAsync() ?? "—";
+
+                BosaltmaMusteriSelect = new SelectList(
+                    new[] { new { MusteriID = bosaltmaMusteriId.Value, Ad = ad } },
+                    "MusteriID", "Ad", bosaltmaMusteriId.Value);
+            }
+            else
+            {
+                BosaltmaMusteriSelect = new SelectList(Enumerable.Empty<object>(), "X", "Y");
+            }
         }
     }
 }

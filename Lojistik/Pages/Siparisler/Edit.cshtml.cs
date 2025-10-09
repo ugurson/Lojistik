@@ -18,7 +18,10 @@ namespace Lojistik.Pages.Siparisler
         public EditModel(AppDbContext context) => _context = context;
 
         [BindProperty] public InputModel Input { get; set; } = new();
+
         public SelectList? MusterilerSelect { get; set; }
+        public SelectList? AraTedarikciSelect { get; set; }
+        public SelectList? ParaBirimleriSelect { get; set; }
 
         public class InputModel
         {
@@ -34,10 +37,14 @@ namespace Lojistik.Pages.Siparisler
             [StringLength(50)] public string? AdetCinsi { get; set; }
             public int? Kilo { get; set; }
 
-            [Range(0, double.MaxValue)] public decimal? Tutar { get; set; }
-            [StringLength(10)] public string? ParaBirimi { get; set; }
+            // Yenisi (decimal için doğru Range)
+            // InputModel içinde:
+            [Range(typeof(decimal), "0", "9999999999999,99", ErrorMessage = "Geçersiz tutar.")]
+            public decimal? Tutar { get; set; }
+
+            [StringLength(10)] public string? ParaBirimi { get; set; } // PB combobox
             [StringLength(50)] public string? FaturaNo { get; set; }
-            [StringLength(20)] public string? SubeKodu { get; set; }
+            // ŞubeKodu KALDIRILDI
             [StringLength(500)] public string? Notlar { get; set; }
             [Required] public byte Durum { get; set; }
         }
@@ -66,12 +73,17 @@ namespace Lojistik.Pages.Siparisler
                 Tutar = s.Tutar,
                 ParaBirimi = s.ParaBirimi,
                 FaturaNo = s.FaturaNo,
-                SubeKodu = s.SubeKodu,
                 Notlar = s.Notlar,
                 Durum = s.Durum
             };
 
-            await LoadMusterilerAsync(s.GonderenMusteriID);
+            await LoadSelectsAsync(
+                selectedGonderenId: s.GonderenMusteriID,
+                selectedAliciId: s.AliciMusteriID,
+                selectedAraId: s.AraTedarikciMusteriID,
+                selectedPB: s.ParaBirimi
+            );
+
             return Page();
         }
 
@@ -81,7 +93,12 @@ namespace Lojistik.Pages.Siparisler
 
             if (!ModelState.IsValid)
             {
-                await LoadMusterilerAsync(Input.GonderenMusteriID);
+                await LoadSelectsAsync(
+                    selectedGonderenId: Input.GonderenMusteriID,
+                    selectedAliciId: Input.AliciMusteriID,
+                    selectedAraId: Input.AraTedarikciMusteriID,
+                    selectedPB: Input.ParaBirimi
+                );
                 return Page();
             }
 
@@ -101,7 +118,6 @@ namespace Lojistik.Pages.Siparisler
             s.Tutar = Input.Tutar;
             s.ParaBirimi = string.IsNullOrWhiteSpace(Input.ParaBirimi) ? null : Input.ParaBirimi!.Trim();
             s.FaturaNo = Input.FaturaNo?.Trim();
-            s.SubeKodu = Input.SubeKodu?.Trim();
             s.Notlar = Input.Notlar?.Trim();
             s.Durum = Input.Durum;
 
@@ -109,18 +125,29 @@ namespace Lojistik.Pages.Siparisler
             return RedirectToPage("./Details", new { id = s.SiparisID });
         }
 
-        private async Task LoadMusterilerAsync(int? selectedId)
+        private async Task LoadSelectsAsync(int? selectedGonderenId, int? selectedAliciId, int? selectedAraId, string? selectedPB)
         {
             var firmaId = User.GetFirmaId();
-            MusterilerSelect = new SelectList(
-                await _context.Musteriler
-                    .AsNoTracking()
-                    .Where(m => m.FirmaID == firmaId)
-                    .OrderBy(m => m.MusteriAdi)
-                    .Select(m => new { m.MusteriID, m.MusteriAdi })
-                    .ToListAsync(),
-                "MusteriID", "MusteriAdi", selectedId
-            );
+
+            var musteriList = await _context.Musteriler
+                .AsNoTracking()
+                .Where(m => m.FirmaID == firmaId)
+                .OrderBy(m => m.MusteriAdi)
+                .Select(m => new { m.MusteriID, m.MusteriAdi })
+                .ToListAsync();
+
+            MusterilerSelect = new SelectList(musteriList, "MusteriID", "MusteriAdi", selectedGonderenId);
+            // Edit.cshtml tarafında Gönderen ve Alıcı ikisi de MusterilerSelect'i kullanıyor (ayrı selected değerini Razor belirler)
+            AraTedarikciSelect = new SelectList(musteriList, "MusteriID", "MusteriAdi", selectedAraId);
+
+            // Para birimleri – Create ile aynı set
+            var pb = new[]
+            {
+                new { Value = "TL",  Text = "TL - Türk Lirası" },
+                new { Value = "EUR", Text = "EUR - Euro" },
+                new { Value = "USD", Text = "USD - Amerikan Doları" }
+            };
+            ParaBirimleriSelect = new SelectList(pb, "Value", "Text", selectedPB);
         }
     }
 }

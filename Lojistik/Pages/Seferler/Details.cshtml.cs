@@ -30,7 +30,21 @@ namespace Lojistik.Pages.Seferler
             string? Notlar,
             DateTime CreatedAt
         );
+        public record MasrafRow(
+        int SeferMasrafID,
+        DateTime Tarih,
+        string MasrafTipi,
+        decimal Tutar,
+        string ParaBirimi,
+        string? FaturaBelgeNo,
+        string? Ulke,
+        string? Yer,
+        string? Notlar
+        );
+        public List<MasrafRow> Masraflar { get; set; } = new();
+        public Dictionary<string, decimal> MasrafToplamlari { get; set; } = new();
 
+        // DURUM KALDIRILDI, FATURANO EKLENDİ
         public record SiparisRow(
             int SiparisID,
             DateTime SiparisTarihi,
@@ -41,7 +55,7 @@ namespace Lojistik.Pages.Seferler
             string? AliciSehir,
             decimal? Tutar,
             string? ParaBirimi,
-            byte Durum
+            string? FaturaNo
         );
 
         public async Task<IActionResult> OnGetAsync(int id)
@@ -82,22 +96,47 @@ namespace Lojistik.Pages.Seferler
                         ? x.Sevkiyat.Siparis.AliciMusteri.Sehir.SehirAdi : null,
                     x.Sevkiyat.Siparis.Tutar,
                     x.Sevkiyat.Siparis.ParaBirimi,
-                    x.Sevkiyat.Siparis.Durum
+                    x.Sevkiyat.Siparis.FaturaNo   // <<< EKLENDİ
                 ))
                 .ToListAsync();
+
+            Masraflar = await _context.SeferMasraflari
+    .AsNoTracking()
+    .Where(m => m.FirmaID == firmaId && m.SeferID == id)
+    .OrderByDescending(m => m.Tarih)
+    .Select(m => new MasrafRow(
+        m.SeferMasrafID,
+        m.Tarih,
+        m.MasrafTipi,
+        m.Tutar,
+        m.ParaBirimi,
+        m.FaturaBelgeNo,
+        m.Ulke,
+        m.Yer,
+        m.Notlar
+    ))
+    .ToListAsync();
+
+            MasrafToplamlari = await _context.SeferMasraflari
+                .AsNoTracking()
+                .Where(m => m.FirmaID == firmaId && m.SeferID == id)
+                .GroupBy(m => m.ParaBirimi)
+                .Select(g => new { PB = g.Key!, Sum = g.Sum(x => x.Tutar) })
+                .ToDictionaryAsync(x => x.PB, x => x.Sum);
 
             return Page();
         }
 
+        // (Aşağıdaki yardımcılar kalsa da olur; artık kullanılmıyorlar)
         public static string GetDurumBadgeClass(byte durum) =>
             durum switch
             {
-                0 => "secondary",   // Yeni
-                1 => "info",        // Onaylı
-                2 => "primary",     // Hazırlanıyor
-                3 => "warning",     // Sevkte
-                4 => "success",     // Tamamlandı
-                5 => "dark",        // İptal
+                0 => "secondary",
+                1 => "info",
+                2 => "primary",
+                3 => "warning",
+                4 => "success",
+                5 => "dark",
                 _ => "secondary"
             };
 

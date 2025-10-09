@@ -35,10 +35,12 @@ namespace Lojistik.Pages.Sevkiyatlar
         public class InputModel
         {
             [Required] public int SiparisID { get; set; }
+
+            [Required(ErrorMessage = "Dorse seçiniz.")]
             public int? DorseID { get; set; }
 
-            public int? YuklemeMusteriID { get; set; }
-            public int? BosaltmaMusteriID { get; set; }
+            [Required] public int YuklemeMusteriID { get; set; }
+            [Required] public int BosaltmaMusteriID { get; set; }
 
             [StringLength(250)] public string? YuklemeAdres { get; set; }
             [StringLength(250)] public string? BosaltmaAdres { get; set; }
@@ -48,11 +50,10 @@ namespace Lojistik.Pages.Sevkiyatlar
             [DataType(DataType.Date)] public DateTime? GumrukCikisTarihi { get; set; }
             [DataType(DataType.Date)] public DateTime? VarisTarihi { get; set; }
 
-            // CMR dosyası
             public IFormFile? CMRFile { get; set; }
             [StringLength(50)] public string? MRN { get; set; }
 
-            [Required] public byte Durum { get; set; } = 0;
+            // Durum inputtan gelmeyecek; her zaman 0 (Yeni) atanacak
             [StringLength(500)] public string? Notlar { get; set; }
         }
 
@@ -83,7 +84,7 @@ namespace Lojistik.Pages.Sevkiyatlar
                 Input.VarisTarihi = today;
             }
 
-            await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
+            await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID, Input.BosaltmaMusteriID);
             return Page();
         }
 
@@ -92,9 +93,13 @@ namespace Lojistik.Pages.Sevkiyatlar
             var firmaId = User.GetFirmaId();
             var userId = User.GetUserId();
 
+            // Dorse zorunluluğunu bir kez daha kontrol et
+            if (Input.DorseID == null)
+                ModelState.AddModelError("Input.DorseID", "Dorse seçiniz.");
+
             if (!ModelState.IsValid)
             {
-                await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
+                await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID, Input.BosaltmaMusteriID);
                 return Page();
             }
 
@@ -107,7 +112,7 @@ namespace Lojistik.Pages.Sevkiyatlar
                 if (!okExt.Contains(ext))
                 {
                     ModelState.AddModelError("Input.CMRFile", "Yalnızca PDF/JPG/PNG yükleyebilirsiniz.");
-                    await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID);
+                    await LoadSelectsAsync(Input.SiparisID, Input.DorseID, Input.YuklemeMusteriID, Input.BosaltmaMusteriID);
                     return Page();
                 }
 
@@ -139,27 +144,36 @@ namespace Lojistik.Pages.Sevkiyatlar
                 GumrukCikisTarihi = Input.GumrukCikisTarihi?.Date,
                 VarisTarihi = Input.VarisTarihi?.Date,
 
-                CMRNo = cmrStoredName, // dosya adı/path
+                CMRNo = cmrStoredName,
                 MRN = Input.MRN?.Trim(),
 
-                Durum = Input.Durum,
+                Durum = 0, // her zaman Yeni
                 Notlar = Input.Notlar?.Trim()
             };
 
             _context.Sevkiyatlar.Add(e);
             await _context.SaveChangesAsync();
 
-            // Sipariş durumu 1 (Onaylı) değilse 1’e çekmek istersen burada yapabilirsin:
-            // var sip = await _context.Siparisler.FirstOrDefaultAsync(x => x.SiparisID == e.SiparisID && x.FirmaID == firmaId);
-            // if (sip is not null && sip.Durum < 1) { sip.Durum = 1; await _context.SaveChangesAsync(); }
+            // >>> YENİ: Sipariş durumunu 1 (Onaylı) yap
+            var siparis = await _context.Siparisler
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SiparisID == e.SiparisID);
 
-            return RedirectToPage("./Details", new { id = e.SevkiyatID });
+            if (siparis != null && siparis.Durum != 7 && siparis.Durum != 1)
+            {
+                siparis.Durum = 1;
+                await _context.SaveChangesAsync();
+            }
+            // <<<
+
+            // Kaydetten sonra İLGİLİ SİPARİŞİN detayına dön
+            return RedirectToPage("/Siparisler/Details", new { id = e.SiparisID });
         }
 
-        private async Task LoadSelectsAsync(int? siparisId, int? dorseId, int? yuklemeMusteriId)
+        private async Task LoadSelectsAsync(int? siparisId, int? dorseId, int? yuklemeMusteriId, int? bosaltmaMusteriId)
         {
             var firmaId = User.GetFirmaId();
 
+            // Sipariş listesi (sadece gösterim; UI'da disabled)
             SiparisSelect = new SelectList(
                 await _context.Siparisler
                     .AsNoTracking()
@@ -170,27 +184,49 @@ namespace Lojistik.Pages.Sevkiyatlar
                 "SiparisID", "Text", siparisId
             );
 
+            // Dorse listesi (Araclar tablosunda IsDorse == true)
             DorselerSelect = new SelectList(
                 await _context.Araclar
                     .AsNoTracking()
-                    .Where(a => a.FirmaID == firmaId && a.IsDorse == true)
+                    .Where(a => a.FirmaID == firmaId && a.IsDorse)
                     .OrderBy(a => a.Plaka)
                     .Select(a => new { a.AracID, a.Plaka })
                     .ToListAsync(),
                 "AracID", "Plaka", dorseId
             );
 
-            YuklemeMusteriSelect = new SelectList(
-                await _context.Musteriler
-                    .AsNoTracking()
-                    .Where(m => m.FirmaID == firmaId)
-                    .OrderBy(m => m.MusteriAdi)
-                    .Select(m => new { m.MusteriID, m.MusteriAdi })
-                    .ToListAsync(),
-                "MusteriID", "MusteriAdi", yuklemeMusteriId
-            );
+            // Yükleme/Bosaltma müşteri select'lerini TEK seçenekle doldur (UI'da disabled)
+            if (yuklemeMusteriId.HasValue)
+            {
+                var ad = await _context.Musteriler
+                    .Where(m => m.MusteriID == yuklemeMusteriId.Value)
+                    .Select(m => m.MusteriAdi)
+                    .FirstOrDefaultAsync() ?? "—";
 
-            BosaltmaMusteriSelect = YuklemeMusteriSelect;
+                YuklemeMusteriSelect = new SelectList(
+                    new[] { new { MusteriID = yuklemeMusteriId.Value, Ad = ad } },
+                    "MusteriID", "Ad", yuklemeMusteriId.Value);
+            }
+            else
+            {
+                YuklemeMusteriSelect = new SelectList(Enumerable.Empty<object>(), "X", "Y");
+            }
+
+            if (bosaltmaMusteriId.HasValue)
+            {
+                var ad = await _context.Musteriler
+                    .Where(m => m.MusteriID == bosaltmaMusteriId.Value)
+                    .Select(m => m.MusteriAdi)
+                    .FirstOrDefaultAsync() ?? "—";
+
+                BosaltmaMusteriSelect = new SelectList(
+                    new[] { new { MusteriID = bosaltmaMusteriId.Value, Ad = ad } },
+                    "MusteriID", "Ad", bosaltmaMusteriId.Value);
+            }
+            else
+            {
+                BosaltmaMusteriSelect = new SelectList(Enumerable.Empty<object>(), "X", "Y");
+            }
         }
     }
 }

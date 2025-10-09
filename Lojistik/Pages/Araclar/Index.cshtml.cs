@@ -23,6 +23,7 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)] public bool? IsDorse { get; set; }
     [BindProperty(SupportsGet = true)] public string? Durum { get; set; }
     [BindProperty(SupportsGet = true)] public string? Notlar { get; set; }
+    [BindProperty(SupportsGet = true)] public int? Ozmal { get; set; }
 
     // ---- Sıralama ----
     [BindProperty(SupportsGet = true)] public string? SortField { get; set; } = "Plaka";
@@ -37,6 +38,9 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
+        // Varsayılan: ilk açılışta sadece ÖZMAL (1)
+        if (Ozmal is null) Ozmal = 1;
+
         // Güvenlik/sınırlar
         if (PageIndex < 1) PageIndex = 1;
         if (PageSize is < 1 or > 200) PageSize = 40;
@@ -71,6 +75,9 @@ public class IndexModel : PageModel
 
         if (!string.IsNullOrWhiteSpace(Notlar))
             query = query.Where(a => EF.Functions.Like(a.Notlar ?? "", $"%{Notlar}%"));
+
+        if (Ozmal.HasValue)
+            query = query.Where(a => a.Ozmal == Ozmal.Value);
 
         // 3) Toplam ve sıralama
         TotalCount = await query.CountAsync();

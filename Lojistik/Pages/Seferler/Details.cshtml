@@ -14,8 +14,6 @@
     </a>
 </div>
 
-
-
 @if (Model.Data != null)
 {
     <div class="card mb-4">
@@ -35,13 +33,15 @@
                 <dd class="col-sm-9">@Model.Data.SurucuAdi</dd>
 
                 <dt class="col-sm-3">Çıkış</dt>
-                <dd class="col-sm-9">@Model.Data.CikisTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
+                <!-- SAAT KALDIRILDI -->
+                <dd class="col-sm-9">@Model.Data.CikisTarihi?.ToString("dd.MM.yyyy")</dd>
 
                 <dt class="col-sm-3">Dönüş</dt>
                 <dd class="col-sm-9">@Model.Data.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
 
-                <dt class="col-sm-3">Durum</dt>
-                <dd class="col-sm-9">@Model.Data.Durum</dd>
+                @* DURUM SATIRI GİZLENDİ *@
+                @* <dt class="col-sm-3">Durum</dt>
+                <dd class="col-sm-9">@Model.Data.Durum</dd> *@
 
                 <dt class="col-sm-3">Notlar</dt>
                 <dd class="col-sm-9">@Model.Data.Notlar</dd>
@@ -53,7 +53,8 @@
     <table class="table table-sm table-bordered table-hover align-middle">
         <thead>
             <tr>
-                <th>ID</th>
+                <!-- ID KOLONU GİZLENDİ -->
+                <th class="d-none">ID</th>
                 <th>Tarih</th>
                 <th>Yük Açıklaması</th>
                 <th>Gönderen</th>
@@ -62,7 +63,8 @@
                 <th>Şehir</th>
                 <th class="text-end">Tutar</th>
                 <th>PB</th>
-                <th>Durum</th>
+                <!-- DURUM KALDIRILDI, YERİNE FATURA NO EKLENDİ -->
+                <th>Fatura No</th>
                 <th>İşlemler</th>
             </tr>
         </thead>
@@ -72,7 +74,8 @@
                 foreach (var s in Model.Siparisler)
                 {
                     <tr>
-                        <td>@s.SiparisID</td>
+                        <!-- ID GİZLİ HÜCRE -->
+                        <td class="d-none">@s.SiparisID</td>
                         <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                         <td>@s.YukAciklamasi</td>
                         <td>@s.Gonderen</td>
@@ -81,11 +84,7 @@
                         <td>@s.AliciSehir</td>
                         <td class="text-end">@s.Tutar?.ToString("N2")</td>
                         <td>@s.ParaBirimi</td>
-                        <td>
-                            <span class="badge bg-@Lojistik.Pages.Seferler.DetailsModel.GetDurumBadgeClass(s.Durum)">
-                                @Lojistik.Pages.Seferler.DetailsModel.GetDurumText(s.Durum)
-                            </span>
-                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(s.FaturaNo) ? "—" : s.FaturaNo)</td>
                         <td>
                             <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID" class="btn btn-sm btn-outline-primary">Aç</a>
                         </td>
@@ -98,4 +97,62 @@
             }
         </tbody>
     </table>
+    <hr />
+    <h4 class="mt-4 d-flex justify-content-between align-items-center">
+        <span>Sefer Masrafları</span>
+        <a class="btn btn-success btn-sm"
+           asp-page="/SeferMasraflari/Create"
+           asp-route-seferId="@Model.Data?.SeferID">
+            + Masraf Ekle
+        </a>
+    </h4>
+
+    @if (Model.MasrafToplamlari?.Count > 0)
+    {
+        <div class="alert alert-info py-2">
+            <strong>Toplam:</strong>
+            @foreach (var kv in Model.MasrafToplamlari)
+            {
+                <span class="me-3">@kv.Value.ToString("N2") @kv.Key</span>
+            }
+        </div>
+    }
+
+    <table class="table table-sm table-bordered table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th>Masraf Tipi</th>
+                <th class="text-end">Tutar</th>
+                <th>PB</th>
+                <th>Fatura/Belge No</th>
+                <th>Ülke</th>
+                <th>Yer</th>
+                <th>Notlar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Masraflar?.Count > 0)
+            {
+                foreach (var m in Model.Masraflar)
+                {
+                    <tr>
+                        <td>@m.Tarih.ToString("dd.MM.yyyy")</td>
+                        <td>@m.MasrafTipi</td>
+                        <td class="text-end">@m.Tutar.ToString("N2")</td>
+                        <td>@m.ParaBirimi</td>
+                        <td>@(string.IsNullOrWhiteSpace(m.FaturaBelgeNo) ? "—" : m.FaturaBelgeNo)</td>
+                        <td>@m.Ulke</td>
+                        <td>@m.Yer</td>
+                        <td>@m.Notlar</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="8" class="text-center text-muted">Bu sefere kayıtlı masraf yok.</td></tr>
+            }
+        </tbody>
+    </table>
+
 }

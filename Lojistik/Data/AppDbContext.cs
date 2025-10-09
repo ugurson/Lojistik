@@ -20,6 +20,8 @@ namespace Lojistik.Data
         public DbSet<SeferMasraf> SeferMasraflari { get; set; } = default!;
         public DbSet<SeferGelir> SeferGelirleri { get; set; } = default!;
 
+        public DbSet<Sofor> Soforler { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -116,6 +118,35 @@ namespace Lojistik.Data
                  .IsUnique()
                  .HasFilter("[BitisTarihi] IS NULL");
             });
+
+            modelBuilder.Entity<Sofor>(e =>
+            {
+                e.ToTable("Soforler");
+
+                e.Property(p => p.CreatedAt)
+                    .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                e.HasIndex(p => new { p.FirmaID, p.AdSoyad }).HasDatabaseName("IX_Soforler_Firma_AdSoyad");
+                e.HasIndex(p => new { p.FirmaID, p.Durum }).HasDatabaseName("IX_Soforler_Firma_Durum");
+
+                e.HasIndex(p => new { p.FirmaID, p.TCKimlikNo })
+                    .HasDatabaseName("UX_Soforler_Firma_TCKN")
+                    .IsUnique()
+                    .HasFilter("[TCKimlikNo] IS NOT NULL");
+
+                e.HasIndex(p => new { p.FirmaID, p.SurucuKartNo })
+                    .HasDatabaseName("UX_Soforler_Firma_SurucuKartNo")
+                    .IsUnique()
+                    .HasFilter("[SurucuKartNo] IS NOT NULL");
+
+                e.HasIndex(p => new { p.FirmaID, p.PasaportNo })
+                    .HasDatabaseName("UX_Soforler_Firma_Pasaport")
+                    .IsUnique()
+                    .HasFilter("[PasaportNo] IS NOT NULL");
+
+                e.HasCheckConstraint("CK_Soforler_Durum", "[Durum] IN (0,1)");
+            });
+
         }
         public DbSet<Lojistik.Models.Musteri> Musteri { get; set; } = default!;
     }

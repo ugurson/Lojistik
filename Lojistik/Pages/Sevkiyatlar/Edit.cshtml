@@ -12,11 +12,15 @@
 }
 else
 {
-    <form method="post" class="row g-3" enctype="multipart/form-data">
+    <form method="post" class="row g-3" enctype="multipart/form-data" autocomplete="off">
         @Html.AntiForgeryToken()
+
+        <!-- Post edilecek alanlar -->
         <input type="hidden" asp-for="Input.SevkiyatID" />
         <input type="hidden" asp-for="Input.SiparisID" />
         <input type="hidden" asp-for="Input.ExistingCMR" />
+        <input type="hidden" asp-for="Input.YuklemeMusteriID" />
+        <input type="hidden" asp-for="Input.BosaltmaMusteriID" />
 
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -27,21 +31,20 @@ else
 
         <div class="col-md-4">
             <label asp-for="Input.DorseID" class="form-label">Dorse</label>
-            <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select">
-                <option value="">(Yok)</option>
+            <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select" required>
+                <option value="">(Seçiniz)</option>
             </select>
             <span asp-validation-for="Input.DorseID" class="text-danger"></span>
         </div>
 
         <div class="col-md-6">
-            <label asp-for="Input.YuklemeMusteriID" class="form-label">Yükleme Müşteri</label>
-            <select asp-for="Input.YuklemeMusteriID" asp-items="Model.YuklemeMusteriSelect" class="form-select"></select>
-            <span asp-validation-for="Input.YuklemeMusteriID" class="text-danger"></span>
+            <label class="form-label">Yükleme Müşteri</label>
+            <!-- yalnızca görüntüleme: disabled; gerçek değer yukarıdaki hidden ile post ediliyor -->
+            <select class="form-select" asp-items="Model.YuklemeMusteriSelect" disabled></select>
         </div>
         <div class="col-md-6">
-            <label asp-for="Input.BosaltmaMusteriID" class="form-label">Boşaltma Müşteri</label>
-            <select asp-for="Input.BosaltmaMusteriID" asp-items="Model.BosaltmaMusteriSelect" class="form-select"></select>
-            <span asp-validation-for="Input.BosaltmaMusteriID" class="text-danger"></span>
+            <label class="form-label">Boşaltma Müşteri</label>
+            <select class="form-select" asp-items="Model.BosaltmaMusteriSelect" disabled></select>
         </div>
 
         <div class="col-md-6">
@@ -96,18 +99,7 @@ else
             <span asp-validation-for="Input.MRN" class="text-danger"></span>
         </div>
 
-        <div class="col-md-3">
-            <label asp-for="Input.Durum" class="form-label">Durum</label>
-            <select asp-for="Input.Durum" class="form-select">
-                <option value="0">0 - Yeni</option>
-                <option value="1">1 - Onaylı</option>
-                <option value="2">2 - Hazırlanıyor</option>
-                <option value="3">3 - Sevkte</option>
-                <option value="4">4 - Tamamlandı</option>
-                <option value="5">5 - İptal</option>
-            </select>
-            <span asp-validation-for="Input.Durum" class="text-danger"></span>
-        </div>
+        <!-- DURUM alanı kaldırıldı -->
 
         <div class="col-12">
             <label asp-for="Input.Notlar" class="form-label">Notlar</label>

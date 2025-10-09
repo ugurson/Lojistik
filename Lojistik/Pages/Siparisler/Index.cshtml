@@ -4,9 +4,35 @@
     ViewData["Title"] = "Siparişler";
 }
 
+@functions {
+    string DurumMetni(byte d) => d switch
+    {
+        0 => "Taslak",
+        1 => "Yüklendi",
+        2 => "Araca Bağlandı",
+        3 => "Tamamlandı",
+        7 => "Sonlandırıldı",
+        _ => "Bilinmiyor"
+    };
+    string DurumBadge(byte d) => d switch
+    {
+        0 => "secondary",
+        1 => "info",
+        2 => "primary",
+        3 => "success",
+        7 => "danger",
+        _ => "dark"
+    };
+}
+
 <h2 class="mb-3">Siparişler</h2>
 
-<form method="get" class="row g-2 mb-3">
+<div class="d-flex justify-content-start gap-3 mb-3">
+    <a asp-page="./Create" class="btn btn-success">+ Yeni Sipariş</a>
+    <a asp-page="./Sonlanan" class="btn btn-outline-danger">Sonlandırılan Siparişler</a>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
     <div class="col-sm-5">
         <input name="q" value="@Model.q" class="form-control" placeholder="Ara (terim, müşteri, sipariş no)..." />
     </div>
@@ -27,13 +53,14 @@
     <div class="col-sm-2">
         <button class="btn btn-primary w-100">Ara</button>
     </div>
-    <div class="col-sm-2 d-flex gap-2">
+
+    <div class="col-sm-2">
         <a asp-page="./Index"
            asp-route-q="@Model.q"
            asp-route-pageSize="@Model.pageSize"
            asp-route-groupBy="@(Model.groupBy == "sefer" ? null : "sefer")"
            class="btn btn-outline-secondary w-100">
-            @(Model.groupBy == "sefer" ? "Gruplamayı Kapat" : "Sefer Koduna Göre Grupla")
+            @(Model.groupBy == "sefer" ? "Gruplamayı Kapat" : "Sefer Grupla")
         </a>
     </div>
 </form>
@@ -48,6 +75,7 @@
         <table class="table table-sm table-hover align-middle">
             <thead>
                 <tr>
+                    <th>Sp</th>
                     <th>Tarih</th>
                     <th>Gönderen</th>
                     <th>Alıcı</th>
@@ -67,11 +95,12 @@
                 @foreach (var g in groups)
                 {
                     <tr class="table-light">
-                        <td colspan="13" class="fw-semibold">@g.Key</td>
+                        <td colspan="14" class="fw-semibold">@g.Key</td>
                     </tr>
                     @foreach (var r in g)
                     {
                         <tr>
+                            <td>@r.SiparisID</td>
                             <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                             <td>@r.Gonderen</td>
                             <td>@r.Alici</td>
@@ -84,15 +113,13 @@
                             <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
                             <td>@r.ParaBirimi</td>
                             <td>
-                                <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
-                                    @r.Durum
-                                </span>
+                                <span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span>
                             </td>
                             <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
-                                    <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
-                                    <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
+                                <div class="d-inline-flex flex-wrap gap-1">
+                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-primary btn-sm">Detay</a>
+                                    <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-warning btn-sm">Düzenle</a>
+                                    <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-danger btn-sm">Sil</a>
                                 </div>
                             </td>
                         </tr>
@@ -108,6 +135,7 @@ else
         <table class="table table-sm table-hover align-middle">
             <thead>
                 <tr>
+                    <th>Sp</th>
                     <th>Tarih</th>
                     <th>Gönderen</th>
                     <th>Alıcı</th>
@@ -127,6 +155,7 @@ else
                 @foreach (var r in Model.Items)
                 {
                     <tr>
+                        <td>@r.SiparisID</td>
                         <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                         <td>@r.Gonderen</td>
                         <td>@r.Alici</td>
@@ -139,15 +168,13 @@ else
                         <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
                         <td>@r.ParaBirimi</td>
                         <td>
-                            <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
-                                @r.Durum
-                            </span>
+                            <span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span>
                         </td>
                         <td class="text-end">
-                            <div class="btn-group btn-group-sm">
-                                <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
-                                <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-outline-warning">Düzenle</a>
-                                <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-outline-danger">Sil</a>
+                            <div class="d-inline-flex flex-wrap gap-1">
+                                <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-primary btn-sm">Detay</a>
+                                <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-warning btn-sm">Düzenle</a>
+                                <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-danger btn-sm">Sil</a>
                             </div>
                         </td>
                     </tr>

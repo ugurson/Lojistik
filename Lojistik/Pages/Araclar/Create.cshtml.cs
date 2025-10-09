@@ -21,6 +21,8 @@ namespace Lojistik.Pages.Araclar
             _context = context;
         }
 
+
+        
         public IActionResult OnGet()
         {
             AracTipleri = new List<SelectListItem>
@@ -44,6 +46,9 @@ namespace Lojistik.Pages.Araclar
         [BindProperty]
         public Arac Arac { get; set; } = default!;
 
+        [BindProperty]
+        public bool OzmalMi { get; set; } = true;
+
         // For more information, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
@@ -55,6 +60,9 @@ namespace Lojistik.Pages.Araclar
             // FirmaID’yi login olan kullanıcıya göre ayarla
             Arac.FirmaID = User.GetFirmaId();
             Arac.CreatedByKullaniciID = User.GetUserId();
+
+            ModelState.Remove("Arac.Ozmal");
+            Arac.Ozmal = OzmalMi ? 1 : 0;   // ✔ 1 = özmal, 0 = kiralık
 
             _context.Araclar.Add(Arac);
             await _context.SaveChangesAsync();

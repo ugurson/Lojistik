@@ -28,9 +28,17 @@
         <span asp-validation-for="Input.DorseID" class="text-danger"></span>
     </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.SurucuAdi" class="form-label">Sürücü Adı</label>
-        <input asp-for="Input.SurucuAdi" class="form-control" />
+    <!-- ✅ Sürücü seçimi veya elle giriş -->
+    <div class="col-md-6">
+        <label class="form-label">Sürücü (Listeden Seç)</label>
+        <select asp-for="Input.SoforID" asp-items="Model.SoforlerSelect" class="form-select">
+            <option value="">(Listeden seç ya da boş bırak)</option>
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Input.SurucuAdi" class="form-label">Sürücü Adı (Elle)</label>
+        <input asp-for="Input.SurucuAdi" class="form-control" placeholder="İstersen elle yaz" />
+        <small class="text-muted">Not: Eğer her ikisi de dolu ise <strong>elle yazılan</strong> ad kullanılacaktır.</small>
         <span asp-validation-for="Input.SurucuAdi" class="text-danger"></span>
     </div>
 
@@ -40,7 +48,11 @@
         <span asp-validation-for="Input.CikisTarihi" class="text-danger"></span>
     </div>
 
-
+    <div class="col-md-3">
+        <label asp-for="Input.DonusTarihi" class="form-label">Dönüş</label>
+        <input asp-for="Input.DonusTarihi" type="date" class="form-control" />
+        <span asp-validation-for="Input.DonusTarihi" class="text-danger"></span>
+    </div>
 
     <div class="col-md-2">
         <label asp-for="Input.Durum" class="form-label">Durum</label>

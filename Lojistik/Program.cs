@@ -6,6 +6,11 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+var culture = new CultureInfo("tr-TR");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
@@ -45,14 +50,6 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// TR yerelleştirme
-var supportedCultures = new[] { new CultureInfo("tr-TR") };
-app.UseRequestLocalization(new RequestLocalizationOptions
-{
-    DefaultRequestCulture = new RequestCulture("tr-TR"),
-    SupportedCultures = supportedCultures,
-    SupportedUICultures = supportedCultures
-});
 
 if (!app.Environment.IsDevelopment())
 {

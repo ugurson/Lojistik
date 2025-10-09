@@ -47,7 +47,7 @@ namespace Lojistik.Pages.Siparisler
 
             var query = _context.Siparisler
                 .AsNoTracking()
-                .Where(s => s.FirmaID == firmaId);
+                .Where(s => s.FirmaID == firmaId && s.Durum != 7);
 
             if (!string.IsNullOrWhiteSpace(q))
             {

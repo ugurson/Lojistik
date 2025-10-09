@@ -9,7 +9,31 @@
 <h2>Araç Listesi</h2>
 
 <div class="d-flex justify-content-between align-items-center mb-2">
-    <a asp-page="Create" class="btn btn-success">Yeni Araç</a>
+    <div>
+        <a asp-page="Create" class="btn btn-success">Yeni Araç</a>&nbsp;
+        <a asp-page="Index"
+           asp-route-Ozmal="0"
+           asp-route-PageIndex="1"
+           asp-route-PageSize="@Model.PageSize"
+           asp-route-SortField="@Model.SortField"
+           asp-route-SortDir="@Model.SortDir"
+           class="btn btn-outline-primary">Kiralık araçlar</a>&nbsp;
+        <a asp-page="Index"
+           asp-route-Ozmal="1"
+           asp-route-PageIndex="1"
+           asp-route-PageSize="@Model.PageSize"
+           asp-route-SortField="@Model.SortField"
+           asp-route-SortDir="@Model.SortDir"
+           class="btn btn-outline-secondary">Özmal araçlar</a>
+
+        <span class="ms-2 fw-bold small text-muted align-middle">
+            @(Model.Ozmal == 0
+                        ? "Kiralık araçlar gösteriliyor"
+                        : Model.Ozmal == 1
+                        ? "Özmal araçlar gösteriliyor"
+                        : "Tüm araçlar gösteriliyor")
+        </span>
+    </div>
 
     <!-- Sayfa boyutu seçimi -->
     <form method="get" class="d-flex align-items-center gap-2">
@@ -36,6 +60,7 @@
         <input type="hidden" name="IsDorse" value="@(Model.IsDorse?.ToString().ToLower())" />
         <input type="hidden" name="Durum" value="@Model.Durum" />
         <input type="hidden" name="Notlar" value="@Model.Notlar" />
+        <input type="hidden" name="Ozmal" value="@Model.Ozmal" />
     </form>
 </div>
 

@@ -5,20 +5,77 @@
     var s = Model.Data!;
 }
 
+@functions {
+    // Sipariş durumu (değiştirmedik)
+    string DurumMetni(byte d) => d switch
+    {
+        0 => "Taslak",
+        1 => "Yüklendi",
+        2 => "Araca Bağlandı",
+        3 => "Tamamlandı",
+        7 => "Sonlandırıldı",
+        _ => "Bilinmiyor"
+    };
+    string DurumBadge(byte d) => d switch
+    {
+        0 => "secondary",
+        1 => "info",
+        2 => "primary",
+        3 => "success",
+        7 => "danger",
+        _ => "dark"
+    };
+
+    // Sefer durumu (isteğine göre özel)
+    string SeferDurumMetni(byte d) => d switch
+    {
+        0 => "Aktif",
+        1 => "Kapalı",
+        _ => "Bilinmiyor"
+    };
+    string SeferDurumBadge(byte d) => d switch
+    {
+        0 => "success", // Aktif
+        1 => "danger",  // Kapalı
+        _ => "secondary"
+    };
+}
+
 <h2 class="mb-3">Sipariş Detayı</h2>
+
+@if (TempData["StatusMessage"] is string msg && !string.IsNullOrWhiteSpace(msg))
+{
+    <div class="alert alert-success py-2 px-3">@msg</div>
+}
 
 <div class="mb-3 d-flex gap-2 flex-wrap">
     <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
     <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
     <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
 
-    @if (Model.HasSevkiyat)
+    @* Sonlandırılmış siparişte sevkiyat oluşturma tamamen pasif *@
+    @if (s.Durum == 7)
+    {
+        <button class="btn btn-success" disabled>+ Sevkiyat Oluştur</button>
+    }
+    else if (Model.HasSevkiyat)
     {
         <button class="btn btn-success" disabled>Sevkiyat Oluştur</button>
     }
     else
     {
         <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
+    }
+
+    @if (s.Durum != 7)
+    {
+        <form method="post" asp-page-handler="Sonlandir" asp-route-id="@s.SiparisID" class="ms-auto">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Bu siparişi sonlandırmak (Durum=7) istiyor musunuz?');">
+                Siparişi Sonlandır
+            </button>
+        </form>
     }
 </div>
 
@@ -28,7 +85,6 @@
             <div class="card-header fw-semibold">Genel</div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    @* ID gösterilmiyor *@
                     <dt class="col-sm-4">Tarih</dt>
                     <dd class="col-sm-8">@s.SiparisTarihi.ToString("dd.MM.yyyy")</dd>
 
@@ -37,9 +93,7 @@
 
                     <dt class="col-sm-4">Durum</dt>
                     <dd class="col-sm-8">
-                        <span class="badge bg-@(s.Durum == 0 ? "secondary" : (s.Durum == 1 ? "info" : (s.Durum == 2 ? "primary" : (s.Durum == 3 ? "success" : "dark"))))">
-                            @s.Durum
-                        </span>
+                        <span class="badge bg-@DurumBadge(s.Durum)">@DurumMetni(s.Durum)</span>
                     </dd>
 
                     <dt class="col-sm-4">Oluşturma</dt>
@@ -94,12 +148,12 @@
             <table class="table table-sm table-hover mb-0 align-middle">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        @* ID kolonu gizli *@
                         <th>Dorse</th>
                         <th>Planlanan</th>
                         <th>Yükleme</th>
                         <th>Varış</th>
-                        <th>Durum</th>
+                        @* Durum kolonu kaldırıldı *@
                         <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
@@ -108,36 +162,44 @@
                     {
                         foreach (var r in Model.Sevkiyatlar)
                         {
+                            var finalized = s.Durum == 7;
                             <tr>
-                                <td>@r.SevkiyatID</td>
                                 <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
                                 <td>@r.PlanlananYuklemeTarihi?.ToString("dd.MM.yyyy")</td>
-                                <td>@r.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
-                                <td>@r.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</td>
-                                <td>
-                                    <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">@r.Durum</span>
-                                </td>
+                                <td>@r.YuklemeTarihi?.ToString("dd.MM.yyyy")</td>
+                                <td>@r.VarisTarihi?.ToString("dd.MM.yyyy")</td>
                                 <td class="text-end">
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-outline-primary">Aç</a>
-                                        <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-outline-warning">Düzenle</a>
-                                        <form method="post"
-                                              asp-page="/Sevkiyatlar/Delete"
-                                              class="d-inline"
-                                              onsubmit="return confirm('Bu sevkiyatı silmek istediğinize emin misiniz?');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@r.SevkiyatID" />
-                                            <input type="hidden" name="siparisId" value="@s.SiparisID" />
-                                            <button type="submit" class="btn btn-outline-danger">Sil</button>
-                                        </form>
+                                    <div class="d-inline-flex flex-wrap gap-1">
+                                        @if (s.Durum == 7)  // finalized
+                                        {
+                                            <a class="btn btn-primary btn-sm disabled" tabindex="-1" aria-disabled="true">Aç</a>
+                                            <a class="btn btn-warning btn-sm disabled" tabindex="-1" aria-disabled="true">Düzenle</a>
+                                            <button type="button" class="btn btn-danger btn-sm" disabled>Sil</button>
+                                        }
+                                        else
+                                        {
+                                            <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-primary btn-sm">Aç</a>
+                                            <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-warning btn-sm">Düzenle</a>
+
+                                            <form method="post"
+                                                  asp-page="/Sevkiyatlar/Delete"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Bu sevkiyatı silmek istediğinize emin misiniz?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@r.SevkiyatID" />
+                                                <input type="hidden" name="siparisId" value="@s.SiparisID" />
+                                                <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                                            </form>
+                                        }
                                     </div>
                                 </td>
+
                             </tr>
                         }
                     }
                     else
                     {
-                        <tr><td colspan="7" class="text-center text-muted">Sevkiyat yok.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted">Sevkiyat yok.</td></tr>
                     }
                 </tbody>
             </table>
@@ -152,11 +214,11 @@
             <table class="table table-sm table-hover mb-0 align-middle">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        @* ID kolonu gizli *@
                         <th>Kod</th>
                         <th>Çıkış</th>
                         <th>Çekici</th>
-                        <th>Dorse</th>
+                        @* Dorse kolonu kaldırıldı *@
                         <th>Sürücü</th>
                         <th>Durum</th>
                         <th class="text-end">İşlemler</th>
@@ -168,20 +230,17 @@
                         foreach (var r in Model.Seferler)
                         {
                             <tr>
-                                <td>@r.SeferID</td>
                                 <td>@(string.IsNullOrWhiteSpace(r.SeferKodu) ? $"SF-{r.SeferID}" : r.SeferKodu)</td>
                                 <td>@r.CikisTarihi?.ToString("dd.MM.yyyy")</td>
                                 <td>@r.CekiciPlaka</td>
-                                <td>@r.DorsePlaka</td>
+                                @* Dorse hücresi kaldırıldı *@
                                 <td>@r.SurucuAdi</td>
                                 <td>
-                                    <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
-                                        @r.Durum
-                                    </span>
+                                    <span class="badge bg-@SeferDurumBadge(r.Durum)">@SeferDurumMetni(r.Durum)</span>
                                 </td>
                                 <td class="text-end">
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-outline-primary">Aç</a>
+                                    <div class="d-inline-flex flex-wrap gap-1">
+                                        <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-primary btn-sm">Aç</a>
                                     </div>
                                 </td>
                             </tr>
@@ -189,7 +248,7 @@
                     }
                     else
                     {
-                        <tr><td colspan="8" class="text-center text-muted">Sefer yok.</td></tr>
+                        <tr><td colspan="6" class="text-center text-muted">Sefer yok.</td></tr>
                     }
                 </tbody>
             </table>

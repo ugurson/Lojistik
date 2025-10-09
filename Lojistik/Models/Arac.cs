@@ -1,4 +1,6 @@
-﻿namespace Lojistik.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Lojistik.Models
 {
     public class Arac
     {
@@ -21,6 +23,8 @@
         public Kullanici? CreatedByKullanici { get; set; }
         public ICollection<AracBelgesi> Belgeler { get; set; } = new List<AracBelgesi>();
         public ICollection<AracKademe> Kademeler { get; set; } = new List<AracKademe>(); // [YENİ]
+        [Display(Name = "Özmal")]
+        public int Ozmal { get; set; } = 1; // 1: özmal, 0: değil
 
     }
 }

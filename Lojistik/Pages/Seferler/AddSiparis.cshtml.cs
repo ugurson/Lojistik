@@ -26,24 +26,29 @@ namespace Lojistik.Pages.Seferler
             SeferID = seferId;
 
             var siparisler = await _context.Siparisler
-                .AsNoTracking()
-                .Where(s => s.FirmaID == firmaId && s.Durum == 1) // sadece onaylı siparişler
-                .Select(s => new
-                {
-                    s.SiparisID,
-                    // dorse plakası → sevkiyat üzerinden
-                    DorsePlaka = s.Sevkiyatlar
-                        .OrderByDescending(v => v.SevkiyatID)
-                        .Select(v => v.Dorse != null ? v.Dorse.Plaka : "(Dorse Yok)")
-                        .FirstOrDefault(),
-                    // alıcı
-                    Alici = s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : "-",
-                    // ülke
-                    Ulke = s.AliciMusteri != null && s.AliciMusteri.Sehir != null
-                           ? s.AliciMusteri.Sehir.Ulke.UlkeAdi
-                           : "-"
-                })
-                .ToListAsync();
+                    .AsNoTracking()
+                    .Where(s => s.FirmaID == firmaId && (s.Durum == 1 || s.Durum == 2))
+                    .Select(s => new
+                    {
+                        s.SiparisID,
+                        DorsePlaka = s.Sevkiyatlar
+                            .OrderByDescending(v => v.SevkiyatID)
+                            .Select(v => v.Dorse != null ? v.Dorse.Plaka : "(Dorse Yok)")
+                            .FirstOrDefault(),
+                        Alici = s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : "-",
+                        Ulke = s.AliciMusteri != null && s.AliciMusteri.Sehir != null
+                                ? s.AliciMusteri.Sehir.Ulke.UlkeAdi
+                                : "-",
+                        // ⬇ Son bağlı sefer kodu (correlated subquery)
+                        SonSefer = _context.SeferSevkiyatlar
+                            .Where(ss => ss.FirmaID == firmaId && ss.Sevkiyat.SiparisID == s.SiparisID)
+                            .OrderByDescending(ss => ss.SeferID)
+                            .Select(ss => string.IsNullOrEmpty(ss.Sefer.SeferKodu)
+                                            ? $"SF-{ss.SeferID}"
+                                            : ss.Sefer.SeferKodu)
+                            .FirstOrDefault()
+                    })
+                    .ToListAsync();
 
             // ✅ SelectList oluştururken Text alanını direkt formatlıyoruz
             SiparislerSelect = new SelectList(

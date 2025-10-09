@@ -1,0 +1,92 @@
+﻿@page
+@model Lojistik.Pages.Siparisler.SonlananModel
+@{
+    ViewData["Title"] = "Sonlandırılan Siparişler";
+}
+
+<h2 class="mb-3">Sonlandırılan Siparişler</h2>
+
+<div class="d-flex gap-2 mb-3">
+    <a asp-page="./Index" class="btn btn-outline-secondary">Aktif Siparişlere Dön</a>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-sm-5">
+        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (terim, müşteri, sipariş no)..." />
+    </div>
+    <div class="col-sm-3">
+        <select name="pageSize" class="form-select" onchange="this.form.submit()">
+            @{
+                int[] sizes = new[] { 10, 20, 50, 100 };
+                foreach (var s in sizes)
+                {
+                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
+                }
+            }
+        </select>
+    </div>
+    <input type="hidden" name="page" value="1" />
+    <div class="col-sm-2">
+        <button class="btn btn-primary w-100">Ara</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th>Gönderen</th>
+                <th>Alıcı</th>
+                <th>Alıcı Ülke</th>
+                <th>Alıcı Şehir</th>
+                <th>Tutar</th>
+                <th>PB</th>
+                <th>Durum</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr>
+                    <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                    <td>@r.Gonderen</td>
+                    <td>@r.Alici</td>
+                    <td>@r.AliciUlke</td>
+                    <td>@r.AliciSehir</td>
+                    <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
+                    <td>@r.ParaBirimi</td>
+                    <td><span class="badge bg-danger">Sonlandırıldı</span></td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<nav class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted">
+        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+    </div>
+    <ul class="pagination mb-0">
+        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Sonlanan"
+               asp-route-q="@Model.q"
+               asp-route-page="@(Model.page - 1)"
+               asp-route-pageSize="@Model.pageSize">Önceki</a>
+        </li>
+        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Sonlanan"
+               asp-route-q="@Model.q"
+               asp-route-page="@(Model.page + 1)"
+               asp-route-pageSize="@Model.pageSize">Sonraki</a>
+        </li>
+    </ul>
+</nav>

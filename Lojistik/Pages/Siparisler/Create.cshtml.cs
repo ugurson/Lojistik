@@ -1,8 +1,4 @@
 ﻿// Pages/Siparisler/Create.cshtml.cs
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 using Lojistik.Data;
 using Lojistik.Extensions; // User.GetFirmaId(), GetUserId()
 using Lojistik.Models;
@@ -10,6 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Lojistik.Pages.Siparisler
 {
@@ -37,7 +38,7 @@ namespace Lojistik.Pages.Siparisler
             public int? Kilo { get; set; }
 
             [Required, StringLength(200)] public string YukAciklamasi { get; set; } = null!;
-
+            [Column(TypeName = "decimal(18,2)")]
             public decimal? Tutar { get; set; }
             [StringLength(10)] public string? ParaBirimi { get; set; } = "TRY";
 

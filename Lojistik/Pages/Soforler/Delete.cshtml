@@ -1,0 +1,15 @@
+﻿@page "{id:int}"
+@model Lojistik.Pages.Soforler.DeleteModel
+@{
+    ViewData["Title"] = "Şoför Sil";
+}
+<h2 class="mb-3">Şoför Sil</h2>
+
+<div class="alert alert-warning">
+    <p><strong>@Model.Data.AdSoyad</strong> kaydını silmek istediğinize emin misiniz?</p>
+</div>
+
+<form method="post">
+    <button class="btn btn-danger">Evet, Sil</button>
+    <a class="btn btn-outline-secondary" asp-page="Details" asp-route-id="@Model.Data.SoforID">Vazgeç</a>
+</form>
