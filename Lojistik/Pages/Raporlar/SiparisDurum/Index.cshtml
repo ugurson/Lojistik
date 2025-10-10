@@ -1,0 +1,159 @@
+﻿@page
+@model Lojistik.Pages.Raporlar.SiparisDurum.IndexModel
+@{
+    ViewData["Title"] = "Sipariş Durum Raporu";
+}
+
+<h2 class="mb-3">Sipariş Durum Raporu</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-2">
+        <label class="form-label">Başlangıç</label>
+        <input type="date" class="form-control" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="col-sm-2">
+        <label class="form-label">Bitiş</label>
+        <input type="date" class="form-control" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="col-sm-3">
+        <label class="form-label">Arama</label>
+        <input name="q" value="@Model.q" class="form-control" placeholder="Sip.No / müşteri / fatura no" />
+    </div>
+    <div class="col-sm-3">
+        <label class="form-label">Durum(lar)</label>
+        <select name="Durumlar" class="form-select" multiple size="5">
+            @{
+                var durumOps = new (byte, string)[] {
+                        (0, "Açık"), (1, "Yüklendi"), (2, "Sevk"), (7, "Teslim Edildi")
+                        };
+                var selected = Model.Durumlar ?? new List<byte>();
+                foreach (var d in durumOps)
+                {
+                    <option value="@d.Item1" selected="@(selected.Contains(d.Item1))">@d.Item2</option>
+                }
+            }
+        </select>
+        <small class="text-muted">Ctrl/Cmd ile çoklu seçim</small>
+    </div>
+    <div class="col-sm-2">
+        <label class="form-label">Para Birimi</label>
+        <select name="PB" class="form-select">
+            <option value="">(Hepsi)</option>
+            <option value="TRY" selected="@(Model.PB == "TRY")">TRY</option>
+            <option value="EUR" selected="@(Model.PB == "EUR")">EUR</option>
+            <option value="USD" selected="@(Model.PB == "USD")">USD</option>
+        </select>
+    </div>
+    <div class="col-12 d-flex gap-2 mt-2">
+        <button class="btn btn-primary">Uygula</button>
+        <a class="btn btn-outline-secondary" href="@Url.Page(null, new { Start = (DateTime?)null, End = (DateTime?)null, q = (string?)null, PB = (string?)null, Durumlar = (string?)null })">Sıfırla</a>
+        <a class="btn btn-success"
+           href="@Url.Page(null, "Export", new { Model.Start, Model.End, Model.q, Model.PB, Durumlar = Model.Durumlar })">
+            Excel'e Aktar
+        </a>
+    </div>
+</form>
+
+<!-- Durum Özeti (Toplam Kilo KALDIRILDI) -->
+<div class="card mb-3">
+    <div class="card-header">Durum Özeti</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Durum</th>
+                        <th>PB</th>
+                        <th class="text-end">Adet</th>
+                        <th class="text-end">Toplam Tutar (PB)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Ozet.Count == 0)
+                    {
+                        <tr><td colspan="4" class="text-center text-muted">Kayıt bulunamadı</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model.Ozet)
+                        {
+                            var badge = r.Durum switch
+                            {
+                                0 => "bg-secondary",
+                                1 => "bg-info",
+                                2 => "bg-primary",
+                                3 => "bg-success",
+                                9 => "bg-danger",
+                                _ => "bg-light text-dark"
+                            };
+                            <tr>
+                                <td><span class="badge @badge">@r.DurumAd</span></td>
+                                <td>@r.ParaBirimi</td>
+                                <td class="text-end">@r.Adet</td>
+                                <td class="text-end">@(r.ToplamTutar.HasValue? String.Format("{0:n2}", r.ToplamTutar) : "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Detay -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Detay Kayıtları (ilk 1000)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tarih</th>
+                        <th>SipNo</th>   <!-- sadece başlık -->
+                        <th>Durum</th>
+                        <th class="text-end">Kilo</th>
+                        <th>Gönderen</th>
+                        <th>Alıcı</th>
+                        <th>Alıcı Ülke</th>
+                        <th class="text-end">Tutar</th>
+                        <th>PB</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Detay.Count == 0)
+                    {
+                        <tr><td colspan="9" class="text-center text-muted">Kayıt bulunamadı</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var d in Model.Detay)
+                        {
+                            var badge = d.Durum switch
+                            {
+                                0 => "bg-secondary",
+                                1 => "bg-info",
+                                2 => "bg-primary",
+                                3 => "bg-success",
+                                9 => "bg-danger",
+                                _ => "bg-light text-dark"
+                            };
+                            <tr>
+                                <td>@d.Tarih.ToString("dd.MM.yyyy")</td>
+                                <td>@d.SiparisID</td>  <!-- SipNo başlığı altında ID gösterimi -->
+                                <td><span class="badge @badge">@d.DurumAd</span></td>
+                                <td class="text-end">@String.Format("{0:n2}", d.Kilo ?? 0)</td>
+                                <td>@d.Gonderen</td>
+                                <td>@d.Alici</td>
+                                <td>@d.AliciUlke</td>
+                                <td class="text-end">@String.Format("{0:n2}", d.Tutar ?? 0)</td>
+                                <td>@d.ParaBirimi</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
