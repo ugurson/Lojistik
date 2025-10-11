@@ -1,0 +1,117 @@
+﻿@page
+@model Lojistik.Pages.Cari.ManuelIslemModel
+@{
+    ViewData["Title"] = "Manuel İşlem Ekle";
+}
+
+<h2 class="mb-3">Manuel İşlem Ekle</h2>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@e.ErrorMessage</div>
+        }
+    </div>
+}
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+<form method="post" class="row g-3">
+    <div class="col-md-6">
+        <label class="form-label">Müşteri</label>
+        <select asp-for="Input.MusteriID" class="form-select" asp-items="Model.MusteriOptions">
+            <option value="">— Seçin —</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label">Para Birimi</label>
+        <select asp-for="Input.ParaBirimi" class="form-select">
+            <option>TL</option>
+            <option>EUR</option>
+            <option>USD</option>
+            <option>GBP</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label">Tarih</label>
+        <input asp-for="Input.Tarih" type="date" class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label">Tutar (±)</label>
+        <input asp-for="Input.TutarSigned" type="number" step="0.01" class="form-control"
+               placeholder="+2200 alacak, -150 kesinti" />
+        <div class="form-text">Pozitif: Alacak artar • Negatif: Borç/Kesinti</div>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Kur (opsiyonel)</label>
+        <input asp-for="Input.Kur" type="number" step="0.000001" class="form-control" />
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Kategori</label>
+        <select asp-for="Input.Kategori" class="form-select">
+            <option>Manuel</option>
+            <option>Kesinti</option>
+            <option>İade</option>
+            <option>Düzeltme</option>
+            <option>Fiyat Farkı</option>
+            <option>Diğer</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Evrak No (opsiyonel)</label>
+        <input asp-for="Input.EvrakNo" class="form-control" maxlength="50" />
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Şube Kodu (opsiyonel)</label>
+        <input asp-for="Input.SubeKodu" class="form-control" maxlength="20" />
+    </div>
+
+    <div class="col-12">
+        <label class="form-label">Açıklama</label>
+        <input asp-for="Input.Aciklama" class="form-control" maxlength="300" />
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+        <button class="btn btn-success">Kaydet</button>
+        <a asp-page="./Index" class="btn btn-outline-secondary">Cari Özeti</a>
+        @if (Model.GuncelNetPB.HasValue && Model.Input.MusteriID > 0)
+        {
+            <span class="badge bg-secondary align-self-center ms-auto">
+                Güncel Net: @Model.GuncelNetPB.Value.ToString("N2") @Model.Input.ParaBirimi
+            </span>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // küçük konfor: müşteri/PB değişince sayfayı GET ile tazele, üstte “Güncel Net” görünsün
+        (function(){
+          const selM = document.querySelector('[name="Input.MusteriID"]');
+          const selPB = document.querySelector('[name="Input.ParaBirimi"]');
+          function refresh(){
+            const mid = selM.value;
+            const pb = selPB.value;
+            if(mid) {
+              const url = new URL(window.location.href);
+              url.searchParams.set('musteriId', mid);
+              if (pb) url.searchParams.set('pb', pb);
+              window.location = url.toString();
+            }
+          }
+          if (selM) selM.addEventListener('change', refresh);
+          if (selPB) selPB.addEventListener('change', refresh);
+        })();
+    </script>
+}

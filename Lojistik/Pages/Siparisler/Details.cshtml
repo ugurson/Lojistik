@@ -67,16 +67,11 @@
         <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
     }
 
-    @if (s.Durum != 7)
-    {
-        <form method="post" asp-page-handler="Sonlandir" asp-route-id="@s.SiparisID" class="ms-auto">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-danger"
-                    onclick="return confirm('Bu siparişi sonlandırmak (Durum=7) istiyor musunuz?');">
-                Siparişi Sonlandır
-            </button>
-        </form>
-    }
+    @* ======= CARI EK: Carileştir butonu (mevcut yapıyı bozmadan eklendi) ======= *@
+    <button type="button" class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#carilestirModal">
+        Cariye İşle
+    </button>
+    @* İleride .cs güncellemesinden sonra "Cari Kaydı Kaldır" koşullu olarak eklenecek *@
 </div>
 
 <div class="row g-3 mb-3">
@@ -101,6 +96,32 @@
 
                     <dt class="col-sm-4">Notlar</dt>
                     <dd class="col-sm-8 text-prewrap">@s.Notlar</dd>
+                    <dt class="col-sm-4">Cari</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.Cari.IsCarilestirildi)
+                        {
+                            <span class="badge bg-success me-2">Carileştirildi</span>
+                            <span>@(Model.Cari.MusteriAdi ?? "—") (@Model.Cari.Taraf)</span>
+
+                            <form method="post"
+                                  asp-page-handler="CariCikart"
+                                  asp-route-id="@s.SiparisID"
+                                  class="d-inline me-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="btn btn-danger btn-sm"
+                                        style="position:relative; top:.25em;"
+                                        onclick="return confirm('Bu siparişe ait cari hareket silinsin mi?');">
+                                    Cariye İşlemeyi Kaldır
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Carileştirilmedi</span>
+                        }
+                    </dd>
+
                 </dl>
             </div>
         </div>
@@ -255,3 +276,60 @@
         </div>
     </div>
 </div>
+
+@* ======= CARI EK: Carileştir Modalı (mevcut yapıyı bozmadan eklendi) ======= *@
+<div class="modal fade" id="carilestirModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="Carilestir" class="modal-content">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+                <h5 class="modal-title">Siparişi Cariye İşle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="id" value="@s.SiparisID" />
+
+                <div class="mb-2">
+                    <label class="form-label">Para Birimi</label>
+                    <input class="form-control" name="ParaBirimi" value="@s.ParaBirimi" readonly />
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label d-block">Cari Tarafı</label>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="Hedef" id="hedefAlici" value="Alici" checked />
+                        <label class="form-check-label" for="hedefAlici">
+                            Alıcı (@(s.Alici ?? "—"))
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="Hedef" id="hedefGonderen" value="Gonderen" />
+                        <label class="form-check-label" for="hedefGonderen">
+                            Gönderen (@(s.Gonderen ?? "—"))
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="Hedef" id="hedefAra" value="Ara"
+                               @(s.AraTedarikciMusteriID == null ? "disabled" : "") />
+                        <label class="form-check-label" for="hedefAra">
+                            Ara Tedarikçi (@(s.AraTedarikci ?? "—")) @(s.AraTedarikciMusteriID == null ? "— yok —" : "")
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Açıklama</label>
+                    <input class="form-control" name="Aciklama" maxlength="300" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                <button class="btn btn-primary" type="submit">Carileştir</button>
+            </div>
+        </form>
+    </div>
+</div>
+

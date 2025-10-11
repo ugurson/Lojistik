@@ -1,0 +1,132 @@
+﻿@page
+@model Lojistik.Pages.Cari.EkstreModel
+@{
+    ViewData["Title"] = "Cari Ekstre";
+}
+
+<h2 class="mb-3">Cari Ekstre</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <input type="hidden" name="musteriId" value="@Model.musteriId" />
+            <div class="col-md-4">
+                <label class="form-label">Müşteri</label>
+                <input class="form-control" value="@Model.MusteriAdi" readonly />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Para Birimi</label>
+                <input class="form-control" name="pb" value="@Model.pb" readonly />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Başlangıç</label>
+                <input class="form-control" type="date" name="d1" value="@(Model.d1?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Bitiş</label>
+                <input class="form-control" type="date" name="d2" value="@(Model.d2?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary">Uygula</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="d-flex gap-2 mb-3">
+    <a asp-page-handler="ExportExcel"
+       asp-route-musteriId="@Model.musteriId"
+       asp-route-pb="@Model.pb"
+       asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
+       asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
+       class="btn btn-outline-primary">
+        Excel (CSV)
+    </a>
+
+    <a asp-page-handler="ExportPdf"
+       asp-route-musteriId="@Model.musteriId"
+       asp-route-pb="@Model.pb"
+       asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
+       asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
+       class="btn btn-outline-danger">
+        PDF
+    </a>
+</div>
+<div class="mb-2">
+    <span class="badge bg-secondary me-2">Açılış: @Model.AcilisBakiye.ToString("N2") @Model.pb</span>
+    <span class="badge bg-info me-2">Dönem Borç: @Model.ToplamBorc.ToString("N2")</span>
+    <span class="badge bg-info me-2">Dönem Alacak: @Model.ToplamAlacak.ToString("N2")</span>
+    <span class="badge bg-success">Kapanış: @Model.KapanisBakiye.ToString("N2") @Model.pb</span>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th style="width:110px;">Tarih</th>
+                <th>İşlem</th>
+                <th>Evrak No</th>
+                <th>Açıklama</th>
+                <th class="text-end">Borç (@Model.pb)</th>
+                <th class="text-end">Alacak (@Model.pb)</th>
+                <th class="text-end">Bakiye (@Model.pb)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="table-light">
+                <td colspan="6" class="text-end fw-semibold">Açılış Bakiyesi</td>
+                <td class="text-end fw-semibold">@Model.AcilisBakiye.ToString("N2")</td>
+            </tr>
+
+            @if (Model.Items.Count == 0)
+            {
+                <tr><td colspan="7" class="text-center text-muted">Seçili aralıkta hareket yok.</td></tr>
+            }
+            else
+            {
+                foreach (var r in Model.Items)
+                {
+                    <tr>
+                        <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
+                        <td>@r.IslemTuru</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.EvrakNo) ? "—" : r.EvrakNo)</td>
+                        <td>@r.Aciklama</td>
+                        <td class="text-end">@r.Borc.ToString("N2")</td>
+                        <td class="text-end">@r.Alacak.ToString("N2")</td>
+                        <td class="text-end fw-semibold">
+                            @r.Bakiye.ToString("N2")
+                            @* İptal butonu: sadece Tahsilat satırlarında *@
+                            @if (r.IptalEdilebilir)
+                            {
+                                <form method="post" asp-page-handler="Iptal"
+                                      class="d-inline ms-2"
+                                      onsubmit="return confirm('Bu tahsilatı silmek istediğinize emin misiniz?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.CariHareketID" />
+                                    <input type="hidden" name="musteriId" value="@Model.musteriId" />
+                                    <input type="hidden" name="pb" value="@Model.pb" />
+                                    <input type="hidden" name="d1" value="@(Model.d1?.ToString("yyyy-MM-dd"))" />
+                                    <input type="hidden" name="d2" value="@(Model.d2?.ToString("yyyy-MM-dd"))" />
+                                    <button class="btn btn-outline-danger btn-sm">Sil</button>
+                                </form>
+                            }
+
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+        <tfoot>
+            <tr class="table-light fw-semibold">
+                <td colspan="4" class="text-end">Toplam</td>
+                <td class="text-end">@Model.ToplamBorc.ToString("N2")</td>
+                <td class="text-end">@Model.ToplamAlacak.ToString("N2")</td>
+                <td class="text-end">@Model.KapanisBakiye.ToString("N2")</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="d-flex gap-2">
+    <a asp-page="./Index" class="btn btn-outline-secondary">Geri</a>
+    @* İstersen burada "Excel'e Aktar" butonunu etkinleştiririz *@
+</div>

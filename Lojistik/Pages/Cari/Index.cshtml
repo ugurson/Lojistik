@@ -1,0 +1,110 @@
+﻿@page
+@model Lojistik.Pages.Cari.IndexModel
+@{
+    ViewData["Title"] = "Cari Özeti";
+}
+
+<h2 class="mb-3">Cari Özeti</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-6">
+        <input name="q" value="@Model.q" class="form-control" placeholder="Müşteri ara..." />
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary w-100">Ara</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Müşteri</th>
+                <th>PB</th>
+                <th class="text-end">Borç (PB)</th>
+                <th class="text-end">Alacak (PB)</th>
+                <th class="text-end">Net (PB)</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+
+        @* === PB'ye göre gruplanmış gövde === *@
+        <tbody>
+            @{
+                var groups = Model.Items
+                .GroupBy(x => x.ParaBirimi)
+                .OrderBy(g => g.Key); // PB alfabetik: EUR, TL, USD...
+            }
+
+            @if (!groups.Any())
+            {
+                <tr><td colspan="6" class="text-center text-muted">Kayıt yok.</td></tr>
+            }
+            else
+            {
+                foreach (var g in groups)
+                {
+                    <!-- Grup başlığı -->
+                    <tr class="table-active">
+                        <td colspan="6" class="fw-semibold">Para Birimi: @g.Key</td>
+                    </tr>
+
+                    <!-- Grup satırları -->
+                    @foreach (var r in g.OrderByDescending(x => x.NetPB).ThenBy(x => x.MusteriAdi))
+                    {
+                        var detayUrl = Url.Page("./Ekstre", new { musteriId = r.MusteriID, pb = r.ParaBirimi }); // hedef sayfa
+                         <tr class="rowlink" data-href="@detayUrl" style="cursor:pointer;">
+                         <td>@r.MusteriAdi</td>
+                         <td>@r.ParaBirimi</td>
+                         <td class="text-end">@r.BorcPB.ToString("N2")</td>
+                          <td class="text-end">@r.AlacakPB.ToString("N2")</td>
+                         <td class="text-end fw-semibold">@r.NetPB.ToString("N2")</td>
+                         <td class="text-end">
+                         <div class="btn-group">
+                         <a asp-page="./Tahsilat"
+                         asp-route-musteriId="@r.MusteriID"
+                           asp-route-pb="@r.ParaBirimi"
+
+                                               class="btn btn-success btn-sm">
+                                                            Tahsilat
+                                                             </a>
+                                       <a asp-page="./Ekstre"
+                                      asp-route-musteriId="@r.MusteriID"
+                                         asp-route-pb="@r.ParaBirimi"
+                                            class="btn btn-primary btn-sm">
+                                                               Detay
+                                                                 </a>
+                                                 </div>
+                         </td>
+                                </tr>
+                    }
+
+                    @* Grup alt toplamı *@
+                    var subBorc = g.Sum(x => x.BorcPB);
+                    var subAlacak = g.Sum(x => x.AlacakPB);
+                    var subNet = subAlacak - subBorc;
+
+                    <tr class="table-light fw-semibold">
+                        <td>Toplam</td>
+                        <td>@g.Key</td>
+                        <td class="text-end"><strong>@subBorc.ToString("N2")</strong></td>
+                        <td class="text-end"><strong>@subAlacak.ToString("N2")</strong></td>
+                        <td class="text-end"><strong>@subNet.ToString("N2")</strong></td>
+                        <td></td>
+                    </tr>
+                }
+            }
+        </tbody>
+        @* Not: tfoot kaldırıldı; her PB grubunun alt toplamı tbody içinde gösteriliyor *@
+    </table>
+    <script>
+        document.addEventListener('click', function (e) {
+          const row = e.target.closest('tr.rowlink');
+          // Buton veya linke tıklanmışsa satır navigasyonunu engelle
+          if (e.target.closest('a, button')) return;
+          if (row && row.dataset.href) {
+            window.location = row.dataset.href;
+          }
+        });
+    </script>
+</div>

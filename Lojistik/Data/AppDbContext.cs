@@ -19,6 +19,7 @@ namespace Lojistik.Data
         public DbSet<SeferSevkiyat> SeferSevkiyatlar { get; set; } = default!;
         public DbSet<SeferMasraf> SeferMasraflari { get; set; } = default!;
         public DbSet<SeferGelir> SeferGelirleri { get; set; } = default!;
+        public DbSet<Lojistik.Models.CariHareket> CariHareketler { get; set; } = default!;
 
         public DbSet<Sofor> Soforler { get; set; } = default!;
 
@@ -146,6 +147,33 @@ namespace Lojistik.Data
 
                 e.HasCheckConstraint("CK_Soforler_Durum", "[Durum] IN (0,1)");
             });
+            modelBuilder.Entity<CariHareket>(e =>
+            {
+                e.ToTable("CariHareketler");
+                e.HasKey(x => x.CariHareketID);
+
+                e.Property(x => x.IslemTuru).HasMaxLength(30).IsRequired();
+                e.Property(x => x.EvrakNo).HasMaxLength(50);
+                e.Property(x => x.Aciklama).HasMaxLength(300);
+                e.Property(x => x.ParaBirimi).HasMaxLength(10).IsRequired();
+
+                e.Property(x => x.Tutar).HasColumnType("decimal(18,2)");
+                e.Property(x => x.Kur).HasColumnType("decimal(18,6)");
+
+                // İndeksler
+                e.HasIndex(x => new { x.FirmaID, x.MusteriID, x.Tarih })
+                 .HasDatabaseName("IX_CariHareketler_Firma_Musteri_Tarih");
+
+                e.HasIndex(x => x.IlgiliSiparisID).HasDatabaseName("IX_CariHareketler_IlgiliSiparis");
+                e.HasIndex(x => x.IlgiliSevkiyatID).HasDatabaseName("IX_CariHareketler_IlgiliSevkiyat");
+
+                // Sipariş başına tek hareket (filtered unique)
+                e.HasIndex(x => new { x.FirmaID, x.IlgiliSiparisID })
+                 .HasDatabaseName("UX_CariHareketler_Firma_Siparis")
+                 .IsUnique()
+                 .HasFilter("[IlgiliSiparisID] IS NOT NULL");
+            });
+
 
         }
         public DbSet<Lojistik.Models.Musteri> Musteri { get; set; } = default!;

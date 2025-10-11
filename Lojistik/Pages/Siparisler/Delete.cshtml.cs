@@ -55,35 +55,64 @@ namespace Lojistik.Pages.Siparisler
         {
             var firmaId = User.GetFirmaId();
 
-            var e = await _context.Siparisler
-                .Include(s => s.Sevkiyatlar) // sadece sevkiyatları çekiyoruz
-                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == id);
-
-            if (e != null)
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                // Siparişe bağlı tüm sevkiyatları dolaş
-                foreach (var sev in e.Sevkiyatlar.ToList())
+                // 1) Bu siparişten oluşan cari alacak kaydını sil
+                //    Güvenli filtre: Firma + IlgiliSiparisID + IslemTuru='Sipariş' + Yonu=1
+                await _context.Database.ExecuteSqlRawAsync(@"
+DELETE FROM dbo.CariHareketler
+WHERE FirmaID = {0}
+  AND IlgiliSiparisID = {1}
+  AND IslemTuru = N'Sipariş'
+  AND Yonu = 1;",
+                    firmaId, id);
+
+                // 2) Siparişi ve ilişkili sevkiyat/sefer bağlarını sil
+                var e = await _context.Siparisler
+                    .Include(s => s.Sevkiyatlar)
+                    .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SiparisID == id);
+
+                if (e != null)
                 {
-                    // Önce bu sevkiyata bağlı SeferSevkiyat kayıtlarını sil
-                    var baglantilar = await _context.SeferSevkiyatlar
-                        .Where(x => x.SevkiyatID == sev.SevkiyatID)
-                        .ToListAsync();
+                    // SeferSevkiyat bağlantıları (toplu)
+                    var sevIds = e.Sevkiyatlar.Select(s => s.SevkiyatID).ToList();
+                    if (sevIds.Count > 0)
+                    {
+                        var baglantilar = await _context.SeferSevkiyatlar
+                            .Where(x => sevIds.Contains(x.SevkiyatID))
+                            .ToListAsync();
 
-                    if (baglantilar.Any())
-                        _context.SeferSevkiyatlar.RemoveRange(baglantilar);
+                        if (baglantilar.Count > 0)
+                            _context.SeferSevkiyatlar.RemoveRange(baglantilar);
 
-                    // Sonra sevkiyat kaydını sil
-                    _context.Sevkiyatlar.Remove(sev);
+                        // Sevkiyatları sil
+                        _context.Sevkiyatlar.RemoveRange(e.Sevkiyatlar);
+                    }
+
+                    // Siparişi sil
+                    _context.Siparisler.Remove(e);
+                    await _context.SaveChangesAsync();
+
+                    await tx.CommitAsync();
+                    TempData["StatusMessage"] = "Sipariş ve ilişkili cari kaydı silindi.";
                 }
-
-                // En son siparişi sil
-                _context.Siparisler.Remove(e);
-
-                await _context.SaveChangesAsync();
+                else
+                {
+                    // Sipariş bulunamadıysa sadece mesaj ver
+                    await tx.RollbackAsync();
+                    TempData["StatusMessage"] = "Sipariş bulunamadı.";
+                }
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                TempData["StatusMessage"] = "Silme sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
             }
 
             return RedirectToPage("./Index");
         }
+
 
     }
 }
