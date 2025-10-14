@@ -129,6 +129,7 @@
                 <th>Ülke</th>
                 <th>Yer</th>
                 <th>Notlar</th>
+                <th class="text-end">İşlemler</th> <!-- eklendi -->
             </tr>
         </thead>
         <tbody>
@@ -145,12 +146,23 @@
                         <td>@m.Ulke</td>
                         <td>@m.Yer</td>
                         <td>@m.Notlar</td>
+                        <td class="text-end">
+                            <form method="post"
+                                  asp-page-handler="MasrafSil"
+                                  asp-route-seferId="@Model.Data.SeferID"
+                                  asp-route-id="@m.SeferMasrafID"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Bu masrafı silmek istediğinize emin misiniz?');">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-danger btn-sm">Sil</button>
+                            </form>
+                        </td>
                     </tr>
                 }
             }
             else
             {
-                <tr><td colspan="8" class="text-center text-muted">Bu sefere kayıtlı masraf yok.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted">Bu sefere kayıtlı masraf yok.</td></tr>
             }
         </tbody>
     </table>

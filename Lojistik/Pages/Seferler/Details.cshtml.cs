@@ -58,6 +58,37 @@ namespace Lojistik.Pages.Seferler
             string? FaturaNo
         );
 
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostMasrafSilAsync(int seferId, int id)
+        {
+            var firmaId = User.GetFirmaId();
+
+            // Masraf gerçekten bu firmaya ve bu sefere mi ait?
+            var masraf = await _context.SeferMasraflari
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId
+                                       && x.SeferID == seferId
+                                       && x.SeferMasrafID == id);
+
+            if (masraf == null)
+            {
+                TempData["StatusMessage"] = "Masraf bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            try
+            {
+                _context.SeferMasraflari.Remove(masraf);
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Masraf silindi.";
+            }
+            catch (Exception ex)
+            {
+                TempData["StatusMessage"] = "Silme sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
+            }
+
+            return RedirectToPage(new { id = seferId });
+        }
+
         public async Task<IActionResult> OnGetAsync(int id)
         {
             var firmaId = User.GetFirmaId();

@@ -37,8 +37,21 @@ namespace Lojistik.Pages.Seferler
         {
             var firmaId = User.GetFirmaId();
 
+            // ❶ Bu sefere ait masraf var mı? Varsa silme.
+            var masrafVar = await _context.SeferMasraflari
+                .AsNoTracking()
+                .AnyAsync(m => m.FirmaID == firmaId && m.SeferID == id);
+
+            if (masrafVar)
+            {
+                TempData["StatusMessage"] = "Bu sefere ait masraf kayıtları var. Silmeden önce masrafları kaldırın.";
+                return RedirectToPage("./Details", new { id });
+            }
+
+            // ❷ Seferi çek
             var e = await _context.Seferler
                 .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == id);
+
 
             if (e != null)
             {
@@ -49,6 +62,9 @@ namespace Lojistik.Pages.Seferler
 
                 if (baglantilar.Any())
                 {
+                    // --- Bağlı siparişlerin durumunu 1 yap ---
+                    var sevIds = baglantilar.Select(b => b.SevkiyatID).ToList();
+
                     // --- Bağlı siparişlerin durumunu 1 yap ---
                     var siparisIds = await _context.Sevkiyatlar
                         .Where(sv => baglantilar.Select(b => b.SevkiyatID).Contains(sv.SevkiyatID))
