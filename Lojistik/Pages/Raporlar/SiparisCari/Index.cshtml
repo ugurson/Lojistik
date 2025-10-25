@@ -1,0 +1,134 @@
+﻿@page
+@model Lojistik.Pages.Raporlar.SiparisCari.IndexModel
+@{
+    ViewData["Title"] = "Sipariş Cari Raporu";
+}
+
+@functions {
+    string DurumMetni(byte d) => d switch
+    {
+        0 => "Taslak",
+        1 => "Yüklendi",
+        2 => "Araca Bağlandı",
+        3 => "Tamamlandı",
+        7 => "Sonlandırıldı",
+        _ => "?"
+    };
+}
+
+<h3 class="mb-3">Sipariş Cari Raporu</h3>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-2">
+        <input type="date" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-sm-2">
+        <input type="date" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-sm-3">
+        <input name="q" value="@Model.q" class="form-control" placeholder="Sip.No / müşteri / evrak no..." />
+    </div>
+    <div class="col-sm-2">
+        <select name="PB" class="form-select">
+            <option value="">(PB Hepsi)</option>
+            <option value="TRY" selected="@(Model.PB == "TRY")">TRY</option>
+            <option value="EUR" selected="@(Model.PB == "EUR")">EUR</option>
+            <option value="USD" selected="@(Model.PB == "USD")">USD</option>
+        </select>
+    </div>
+    <div class="col-sm-2">
+        <select name="CariDurum" class="form-select">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.CariDurum))">(Hepsi)</option>
+            <option value="islendi" selected="@(Model.CariDurum == "islendi")">İşlenmiş</option>
+            <option value="islenmedi" selected="@(Model.CariDurum == "islenmedi")">İşlenmemiş</option>
+        </select>
+    </div>
+    <div class="col-sm-1">
+        <button class="btn btn-primary w-100">Uygula</button>
+    </div>
+</form>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">İşlenmiş Adet</div>
+            <div class="fs-5 fw-semibold">@Model.CountIslendi</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">İşlenmemiş Adet</div>
+            <div class="fs-5 fw-semibold">@Model.CountIslenmedi</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">İşlenmiş Toplam</div>
+            <div class="fs-5 fw-semibold">@Model.SumIslendi.ToString("N2")</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">İşlenmemiş Toplam</div>
+            <div class="fs-5 fw-semibold">@Model.SumIslenmedi.ToString("N2")</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle siparis-table">
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th>SipNo</th>
+                <th>Durum</th>
+                <th class="text-end">Tutar</th>
+                <th>PB</th>
+                <th>Gönderen</th>
+                <th>Alıcı</th>
+                <th>Alıcı Ülke</th>
+                <th>Cari</th>
+                <th>Kimin Carisi</th>
+                <th>Evrak No</th>
+                <th>İşlem Tarihi</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr>
+                    <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
+                    <td>@r.SiparisID</td>
+                    <td>@DurumMetni(r.Durum)</td>
+                    <td class="text-end">@((r.Tutar ?? 0).ToString("N2"))</td>
+                    <td>@r.ParaBirimi</td>
+                    <td>@r.Gonderen</td>
+                    <td>@r.Alici</td>
+                    <td>@r.AliciUlke</td>
+                    <td>
+                        <span class="badge bg-@(r.IsCariles ? "success" : "secondary")">
+                            @(r.IsCariles ? "Carileşti" : "Carileşmedi")
+                        </span>
+                    </td>
+                    <td>@r.CariHesap</td>
+                    <td>@r.CariEvrakNo</td>
+                    <td>@(r.CariIslemTarihi?.ToString("dd.MM.yyyy"))</td>
+                    <td class="text-end">
+                        <a asp-page="/Siparisler/Details" asp-route-id="@r.SiparisID" class="btn btn-primary btn-sm">Detay</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .siparis-table td, .siparis-table th {
+        font-size: 0.9rem;
+    }
+
+    .siparis-table .badge {
+        font-size: 0.75rem;
+    }
+</style>

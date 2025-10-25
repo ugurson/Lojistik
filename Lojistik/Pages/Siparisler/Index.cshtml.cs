@@ -81,20 +81,25 @@ namespace Lojistik.Pages.Siparisler
                     s.ParaBirimi,
                     s.Durum,
                     _context.SeferSevkiyatlar
-                        .Where(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
-                        .OrderByDescending(ss => ss.SeferID)
-                        .Select(ss => ss.Sefer.Arac != null ? ss.Sefer.Arac.Plaka : null)
-                        .FirstOrDefault(),
-                    _context.SeferSevkiyatlar
-                        .Where(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
-                        .OrderByDescending(ss => ss.SeferID)
-                        .Select(ss => ss.Sefer.SurucuAdi)
-                        .FirstOrDefault(),
-                    _context.SeferSevkiyatlar
-                        .Where(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
-                        .OrderByDescending(ss => ss.SeferID)
-                        .Select(ss => ss.Sefer.SeferKodu)
-                        .FirstOrDefault()
+    .Where(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
+    .OrderByDescending(ss => ss.SeferSevkiyatID)      // yoksa: OrderByDescending(ss => ss.SeferSevkiyatID)
+    .ThenByDescending(ss => ss.SeferID)
+    .Select(ss => ss.Sefer.Arac != null ? ss.Sefer.Arac.Plaka : null)
+    .FirstOrDefault(),
+
+_context.SeferSevkiyatlar
+    .Where(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
+    .OrderByDescending(ss => ss.SeferSevkiyatID)      // yoksa: OrderByDescending(ss => ss.SeferSevkiyatID)
+    .ThenByDescending(ss => ss.SeferID)
+    .Select(ss => ss.Sefer.SurucuAdi)
+    .FirstOrDefault(),
+
+_context.SeferSevkiyatlar
+    .Where(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
+    .OrderByDescending(ss => ss.SeferSevkiyatID)      // yoksa: OrderByDescending(ss => ss.SeferSevkiyatID)
+    .ThenByDescending(ss => ss.SeferID)
+    .Select(ss => ss.Sefer.SeferKodu)
+    .FirstOrDefault()
                 ))
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

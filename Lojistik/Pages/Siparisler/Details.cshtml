@@ -66,6 +66,17 @@
     {
         <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
     }
+  
+    @if (Model.Data?.Durum != 7)
+    {
+        <form method="post" asp-page-handler="Sonlandir" asp-route-id="@Model.Data!.SiparisID" class="d-inline ms-2">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Bu siparişi sonlandırmak (Durum=7) istiyor musunuz?');">
+                Siparişi Sonlandır
+            </button>
+        </form>
+    }
 
     @* ======= CARI EK: Carileştir butonu (mevcut yapıyı bozmadan eklendi) ======= *@
     <button type="button" class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#carilestirModal">
@@ -174,6 +185,7 @@
                         <th>Planlanan</th>
                         <th>Yükleme</th>
                         <th>Varış</th>
+                        <th>CMR</th>
                         @* Durum kolonu kaldırıldı *@
                         <th class="text-end">İşlemler</th>
                     </tr>
@@ -189,19 +201,33 @@
                                 <td>@r.PlanlananYuklemeTarihi?.ToString("dd.MM.yyyy")</td>
                                 <td>@r.YuklemeTarihi?.ToString("dd.MM.yyyy")</td>
                                 <td>@r.VarisTarihi?.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(r.CmrFile))
+                                    {
+                                        <a href="~/uploads/cmr/@r.CmrFile"
+                                           target="_blank"
+                                           asp-append-version="true"
+                                           class="badge bg-success text-decoration-none">
+                                            CMR dosyası
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Yok</span>
+                                    }
+                                </td>
+
                                 <td class="text-end">
                                     <div class="d-inline-flex flex-wrap gap-1">
-                                        @if (s.Durum == 7)  // finalized
+                                        @if (finalized)
                                         {
-                                            <a class="btn btn-primary btn-sm disabled" tabindex="-1" aria-disabled="true">Aç</a>
-                                            <a class="btn btn-warning btn-sm disabled" tabindex="-1" aria-disabled="true">Düzenle</a>
+                                            <a class="btn btn-warning btn-sm disabled" aria-disabled="true">Düzenle</a>
                                             <button type="button" class="btn btn-danger btn-sm" disabled>Sil</button>
                                         }
                                         else
                                         {
-                                            <a asp-page="/Sevkiyatlar/Details" asp-route-id="@r.SevkiyatID" class="btn btn-primary btn-sm">Aç</a>
+                                            <!-- "Aç" BUTONU KALDIRILDI -->
                                             <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-warning btn-sm">Düzenle</a>
-
                                             <form method="post"
                                                   asp-page="/Sevkiyatlar/Delete"
                                                   class="d-inline"

@@ -166,5 +166,79 @@
             }
         </tbody>
     </table>
+    <hr />
+    <h4 class="mt-4 d-flex justify-content-between align-items-center">
+        <span>Sefer Gelirleri</span>
+        <a class="btn btn-success btn-sm"
+           asp-page="/SeferGelirleri/Create"
+           asp-route-seferId="@Model.Data?.SeferID">
+            + Gelir Ekle
+        </a>
+    </h4>
+
+    @if (Model.GelirToplamlari?.Count > 0)
+    {
+        <div class="alert alert-success py-2">
+            <strong>Toplam Gelir:</strong>
+            @foreach (var kv in Model.GelirToplamlari)
+            {
+                <span class="me-3">@kv.Value.ToString("N2") @kv.Key</span>
+            }
+        </div>
+    }
+
+    <table class="table table-sm table-bordered table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th class="text-end">Tutar</th>
+                <th>PB</th>
+                <th>Açıklama</th>
+                <th>Sipariş</th>
+                <th>Notlar</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Gelirler?.Count > 0)
+            {
+                foreach (var g in Model.Gelirler)
+                {
+                    <tr>
+                        <td>@g.Tarih.ToString("dd.MM.yyyy")</td>
+                        <td class="text-end">@g.Tutar.ToString("N2")</td>
+                        <td>@g.ParaBirimi</td>
+                        <td>@g.Aciklama</td>
+                        <td>
+                            @if (g.IlgiliSiparisID is null)
+                            {
+                                @:—
+                            }
+                            else
+                            {
+                                <a asp-page="/Siparisler/Details" asp-route-id="@g.IlgiliSiparisID">@g.IlgiliSiparisID</a>
+                            }
+                        </td>
+                        <td>@g.Notlar</td>
+                        <td class="text-end">
+                            <form method="post"
+                                  asp-page-handler="GelirSil"
+                                  asp-route-seferId="@Model.Data.SeferID"
+                                  asp-route-id="@g.SeferGelirID"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Bu geliri silmek istiyor musunuz?');">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-danger btn-sm">Sil</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="7" class="text-center text-muted">Bu sefere kayıtlı gelir yok.</td></tr>
+            }
+        </tbody>
+    </table>
 
 }

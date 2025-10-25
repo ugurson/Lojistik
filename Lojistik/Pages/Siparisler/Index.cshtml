@@ -72,7 +72,8 @@
         .GroupBy(x => string.IsNullOrWhiteSpace(x.SeferKodu) ? "(Sefer yok)" : x.SeferKodu);
 
     <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle">
+        <table class="table table-sm table-hover align-middle siparis-table">
+
             <thead>
                 <tr>
                     <th>Sp</th>
@@ -132,7 +133,8 @@
 else
 {
     <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle">
+        <table class="table table-sm table-hover align-middle siparis-table">
+
             <thead>
                 <tr>
                     <th>Sp</th>
@@ -207,3 +209,17 @@ else
         </li>
     </ul>
 </nav>
+
+<style>
+    /* ~%10 daha küçük */
+    .siparis-table td,
+    .siparis-table th {
+        font-size: 0.9rem;
+    }
+
+    /* İsterseniz butonları da bir tık küçültün (opsiyonel) */
+    .siparis-table .btn {
+        font-size: 0.8rem;
+        padding: .2rem .45rem;
+    }
+</style>

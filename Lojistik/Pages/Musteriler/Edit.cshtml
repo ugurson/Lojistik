@@ -77,6 +77,15 @@
         </div>
     </div>
 
+    <!-- Gümrük Kodu (yeni) -->
+    <div class="row mb-3">
+        <label class="col-sm-2 col-form-label">Gümrük Kodu</label>
+        <div class="col-sm-6">
+            <input asp-for="Musteri.GumrukKod" class="form-control" />
+            <span asp-validation-for="Musteri.GumrukKod" class="text-danger"></span>
+        </div>
+    </div>
+
     <div>
         <button type="submit" class="btn btn-primary me-1">Kaydet</button>
         <a asp-page="./Index" class="btn btn-secondary">İptal</a>

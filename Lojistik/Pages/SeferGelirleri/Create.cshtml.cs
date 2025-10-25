@@ -1,10 +1,9 @@
-// Pages/SeferGelirleri/Create.cshtml.cs
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
-using Lojistik.Extensions; // User.GetFirmaId(), GetUserId()
+using Lojistik.Extensions;                 // User.GetFirmaId(), GetUserId(), (varsa) GetSubeKodu()
 using Lojistik.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -20,34 +19,36 @@ namespace Lojistik.Pages.SeferGelirleri
 
         [BindProperty] public InputModel Input { get; set; } = new();
 
-        public SelectList? SeferSelect { get; set; }
+        public SelectList? PBSelect { get; set; }
         public SelectList? SiparisSelect { get; set; }
 
         public class InputModel
         {
             [Required] public int SeferID { get; set; }
 
-            [Required, DataType(DataType.Date)]
+            [DataType(DataType.Date)]
             public DateTime Tarih { get; set; } = DateTime.Today;
 
-            [StringLength(200)] public string? Aciklama { get; set; }
+            [StringLength(200)]
+            public string? Aciklama { get; set; } = "Navlun";
 
-            [Required, Range(0, double.MaxValue)]
+            [Required]
+            [Range(typeof(decimal), "0", "9999999999999,99", ErrorMessage = "Geçersiz tutar.")]
             public decimal Tutar { get; set; }
 
             [Required, StringLength(10)]
-            public string ParaBirimi { get; set; } = "TRY";
+            public string ParaBirimi { get; set; } = "TL";
 
             public int? IlgiliSiparisID { get; set; }
 
-            [StringLength(300)] public string? Notlar { get; set; }
+            [StringLength(300)]
+            public string? Notlar { get; set; }
         }
 
-        public async Task<IActionResult> OnGetAsync(int? seferId = null, int? siparisId = null)
+        public async Task<IActionResult> OnGetAsync(int seferId)
         {
-            await LoadSelectsAsync(seferId, siparisId);
-            if (seferId.HasValue) Input.SeferID = seferId.Value;
-            if (siparisId.HasValue) Input.IlgiliSiparisID = siparisId.Value;
+            Input.SeferID = seferId;
+            await LoadSelectsAsync(seferId, Input.ParaBirimi, null);
             return Page();
         }
 
@@ -55,57 +56,60 @@ namespace Lojistik.Pages.SeferGelirleri
         {
             var firmaId = User.GetFirmaId();
             var userId = User.GetUserId();
+            // var sube   = User.GetSubeKodu(); // varsa kullan
 
             if (!ModelState.IsValid)
             {
-                await LoadSelectsAsync(Input.SeferID, Input.IlgiliSiparisID);
+                await LoadSelectsAsync(Input.SeferID, Input.ParaBirimi, Input.IlgiliSiparisID);
                 return Page();
             }
 
-            var e = new SeferGelir
+            var entity = new SeferGelir
             {
                 FirmaID = firmaId,
+                // SubeKodu = sube,
                 KullaniciID = userId,
-                CreatedAt = DateTime.Now,
-
                 SeferID = Input.SeferID,
                 Tarih = Input.Tarih.Date,
-                Aciklama = Input.Aciklama?.Trim(),
+                Aciklama = string.IsNullOrWhiteSpace(Input.Aciklama) ? null : Input.Aciklama!.Trim(),
                 Tutar = Input.Tutar,
-                ParaBirimi = Input.ParaBirimi.Trim(),
+                ParaBirimi = Input.ParaBirimi,
                 IlgiliSiparisID = Input.IlgiliSiparisID,
-                Notlar = Input.Notlar?.Trim()
+                Notlar = string.IsNullOrWhiteSpace(Input.Notlar) ? null : Input.Notlar!.Trim(),
+                CreatedAt = DateTime.Now
             };
 
-            _context.SeferGelirleri.Add(e);
+            _context.SeferGelirleri.Add(entity);
             await _context.SaveChangesAsync();
 
-            return RedirectToPage("/Seferler/Details", new { id = e.SeferID });
+            return RedirectToPage("/Seferler/Details", new { id = Input.SeferID });
         }
 
-        private async Task LoadSelectsAsync(int? seferId, int? siparisId)
+        private async Task LoadSelectsAsync(int seferId, string? selectedPB, int? selectedSiparisId)
         {
+            PBSelect = new SelectList(new[]
+            {
+                new { Value = "TL",  Text = "TL - Türk Lirası" },
+                new { Value = "EUR", Text = "EUR - Euro" },
+                new { Value = "USD", Text = "USD - Amerikan Doları" }
+            }, "Value", "Text", selectedPB);
+
             var firmaId = User.GetFirmaId();
 
-            SeferSelect = new SelectList(
-                await _context.Seferler
-                    .AsNoTracking()
-                    .Where(s => s.FirmaID == firmaId)
-                    .OrderByDescending(s => s.SeferID)
-                    .Select(s => new { s.SeferID, Text = (s.SeferKodu ?? ("SF-" + s.SeferID)) + " | " + (s.Arac != null ? s.Arac.Plaka : "") })
-                    .ToListAsync(),
-                "SeferID", "Text", seferId
-            );
+            // Bu sefere bağlı siparişler (SeferSevkiyat → Sevkiyat → Siparis)
+            var siparisler = await _context.SeferSevkiyatlar
+                .AsNoTracking()
+                .Where(x => x.Sefer.FirmaID == firmaId && x.SeferID == seferId)
+                .Select(x => new
+                {
+                    x.Sevkiyat.SiparisID,
+                    Text = x.Sevkiyat.Siparis.SiparisID + " - " + x.Sevkiyat.Siparis.YukAciklamasi
+                })
+                .Distinct()
+                .OrderBy(x => x.SiparisID)
+                .ToListAsync();
 
-            SiparisSelect = new SelectList(
-                await _context.Siparisler
-                    .AsNoTracking()
-                    .Where(x => x.FirmaID == firmaId)
-                    .OrderByDescending(x => x.SiparisID)
-                    .Select(x => new { x.SiparisID, Text = x.SiparisID + " - " + x.YukAciklamasi })
-                    .ToListAsync(),
-                "SiparisID", "Text", siparisId
-            );
+            SiparisSelect = new SelectList(siparisler, "SiparisID", "Text", selectedSiparisId);
         }
     }
 }

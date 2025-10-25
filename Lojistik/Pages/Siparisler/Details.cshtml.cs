@@ -49,7 +49,8 @@ namespace Lojistik.Pages.Siparisler
             DateTime? PlanlananYuklemeTarihi,
             DateTime? YuklemeTarihi,
             DateTime? VarisTarihi,
-            byte Durum
+            byte Durum,
+            string? CmrFile
         );
 
         public record SeferRow(
@@ -61,7 +62,7 @@ namespace Lojistik.Pages.Siparisler
             string? SurucuAdi,
             byte Durum
         );
-        // class DetailsModel içinde (diğer record'ların altına ekle)
+
         public record CarilestirmeInfo(bool IsCarilestirildi, int? MusteriID, string? MusteriAdi, string? Taraf);
         public CarilestirmeInfo Cari { get; set; } = new(false, null, null, null);
 
@@ -79,7 +80,6 @@ namespace Lojistik.Pages.Siparisler
             if (s == null)
                 return RedirectToPage("./Index");
 
-            // Zaten 7 ise dokunma
             if (s.Durum != 7)
             {
                 s.Durum = 7;
@@ -126,7 +126,6 @@ namespace Lojistik.Pages.Siparisler
 
             if (Data == null) return RedirectToPage("./Index");
 
-            // İlişkili Sevkiyatlar
             Sevkiyatlar = await _context.Sevkiyatlar
                 .AsNoTracking()
                 .Where(x => x.FirmaID == firmaId && x.SiparisID == id)
@@ -137,13 +136,13 @@ namespace Lojistik.Pages.Siparisler
                     x.PlanlananYuklemeTarihi,
                     x.YuklemeTarihi,
                     x.VarisTarihi,
-                    x.Durum
+                    x.Durum,
+                    x.CMRNo
                 ))
                 .ToListAsync();
 
             HasSevkiyat = Sevkiyatlar.Any();
 
-            // İlişkili Seferler (SeferSevkiyatlar üzerinden)
             var seferFlat = await _context.SeferSevkiyatlar
                 .AsNoTracking()
                 .Where(x => x.FirmaID == firmaId && x.Sevkiyat.SiparisID == id)
@@ -172,7 +171,6 @@ namespace Lojistik.Pages.Siparisler
                 .OrderByDescending(r => r.SeferID)
                 .ToList();
 
-            // Siparişe bağlı cari hareket var mı? Varsa kime?
             var cariRow = await _context.CariHareketler
                 .AsNoTracking()
                 .Where(ch => ch.FirmaID == firmaId && ch.IlgiliSiparisID == id)
@@ -181,14 +179,12 @@ namespace Lojistik.Pages.Siparisler
 
             if (cariRow != null)
             {
-                // Müşteri adını çek
                 var musteriAdi = await _context.Musteriler
                     .AsNoTracking()
                     .Where(m => m.MusteriID == cariRow.MusteriID)
                     .Select(m => m.MusteriAdi)
                     .FirstOrDefaultAsync();
 
-                // Hangi taraf?
                 string taraf =
                     (cariRow.MusteriID == Data!.AliciMusteriID) ? "Alıcı" :
                     (cariRow.MusteriID == Data!.GonderenMusteriID) ? "Gönderen" :
@@ -198,11 +194,10 @@ namespace Lojistik.Pages.Siparisler
                 Cari = new(true, cariRow.MusteriID, musteriAdi, taraf);
             }
 
-
             return Page();
         }
 
-        // ======================= CARI EKLERI (MEVCUDA DOKUNMADAN) =======================
+        // ======================= CARI EKLERI =======================
 
         public class CarilestirInput
         {
@@ -218,7 +213,6 @@ namespace Lojistik.Pages.Siparisler
             var firmaId = User.GetFirmaId();
             var userId = User.GetUserId();
 
-            // Siparişten gerekli alanları çek
             var siparis = await _context.Siparisler
                 .AsNoTracking()
                 .Where(s => s.FirmaID == firmaId && s.SiparisID == input.id)
@@ -236,7 +230,6 @@ namespace Lojistik.Pages.Siparisler
                 })
                 .FirstOrDefaultAsync();
 
-
             if (siparis is null)
             {
                 TempData["StatusMessage"] = "Sipariş bulunamadı.";
@@ -248,7 +241,6 @@ namespace Lojistik.Pages.Siparisler
                 return RedirectToPage(new { id = input.id });
             }
 
-            // Daha önce carileştirilmiş mi?
             var varMi = await _context.CariHareketler
                 .AsNoTracking()
                 .AnyAsync(ch => ch.FirmaID == firmaId && ch.IlgiliSiparisID == siparis.SiparisID);
@@ -259,23 +251,16 @@ namespace Lojistik.Pages.Siparisler
                 return RedirectToPage(new { id = input.id });
             }
 
-            // Parametre hazırlıkları
             var pb = (siparis.ParaBirimi ?? "TL").Trim().ToUpperInvariant();
-            // Kur: hiçbir zaman zorunlu kılmıyoruz (NULL geçiyoruz)
             object? kurParam = null;
-
-            // SubeKodu: boş/whitespace ise NULL geç (CK_CariHareketler_SubeKodu_NotEmpty için)
             object? subeParam = string.IsNullOrWhiteSpace(siparis.SubeKodu) ? null : siparis.SubeKodu;
-
-
             object? evrakNoParam = string.IsNullOrWhiteSpace(siparis.FaturaNo) ? null : siparis.FaturaNo;
 
-            // Hangi tarafa yazılacak?
             int? hedefMusteriId = input.Hedef?.ToLowerInvariant() switch
             {
                 "gonderen" => (int?)siparis.GonderenMusteriID,
-                "ara" => siparis.AraTedarikciMusteriID,   // null olabilir -> kontrol
-                _ => (int?)siparis.AliciMusteriID     // default: Alıcı
+                "ara" => siparis.AraTedarikciMusteriID,
+                _ => (int?)siparis.AliciMusteriID
             };
 
             if (hedefMusteriId == null || hedefMusteriId <= 0)
@@ -292,7 +277,7 @@ namespace Lojistik.Pages.Siparisler
             try
             {
                 var sql =
-        $@"
+$@"
 INSERT INTO dbo.CariHareketler
 (
   FirmaID, SubeKodu, KullaniciID, MusteriID,
@@ -312,23 +297,40 @@ VALUES
 ";
 
                 var parameters = new object?[]
-{
-    firmaId,                 // 0
-    subeParam,               // 1
-    userId,                  // 2
-    hedefMusteriId,          // 3  <-- SEÇİLEN CARİ TARAFI
-    siparis.SiparisID,       // 4
-    siparis.SiparisTarihi,   // 5
-    evrakNoParam,            // 6
-    aciklama,                // 7
-    pb,                      // 8
-    siparis.Tutar!.Value,    // 9
-    kurParam,                // 10 (NULL)
-    userId                   // 11
-};
-
+                {
+                    firmaId,               // 0
+                    subeParam,             // 1
+                    userId,                // 2
+                    hedefMusteriId,        // 3
+                    siparis.SiparisID,     // 4
+                    siparis.SiparisTarihi, // 5
+                    evrakNoParam,          // 6
+                    aciklama,              // 7
+                    pb,                    // 8
+                    siparis.Tutar!.Value,  // 9
+                    kurParam,              // 10
+                    userId                 // 11
+                };
 
                 await _context.Database.ExecuteSqlRawAsync(sql, parameters);
+
+                // --- SİPARİŞİ DENORMALIZE GÜNCELLE ---
+                await _context.Database.ExecuteSqlRawAsync(@"
+UPDATE dbo.Siparisler
+SET IsCariles = 1,
+    CariIslenenMusteriID = {0},
+    CariEvrakNo = {1},
+    CariIslemTarihi = {2},
+    CarilesByKullaniciID = {3}
+WHERE FirmaID = {4} AND SiparisID = {5};",
+                    hedefMusteriId,            // {0}
+                    evrakNoParam,              // {1}
+                    siparis.SiparisTarihi,     // {2} -> CH'de kullandığın tarih
+                    userId,                    // {3}
+                    firmaId,                   // {4}
+                    siparis.SiparisID          // {5}
+                );
+
                 await tx.CommitAsync();
 
                 TempData["StatusMessage"] = "Sipariş cariye işlendi.";
@@ -336,7 +338,6 @@ VALUES
             catch (Exception ex)
             {
                 await tx.RollbackAsync();
-                // Hata sebebini görmek için mesajı gösterelim (geçici debug)
                 TempData["StatusMessage"] = "Carileştirme sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
             }
 
@@ -348,7 +349,6 @@ VALUES
         {
             var firmaId = User.GetFirmaId();
 
-            // Bu sipariş gerçekten sana mı ait?
             var siparisVarMi = await _context.Siparisler
                 .AsNoTracking()
                 .AnyAsync(s => s.FirmaID == firmaId && s.SiparisID == id);
@@ -361,8 +361,6 @@ VALUES
 
             try
             {
-                // Yalnızca bu siparişten oluşan ALACAK kaydını sil
-                // Güvenlik: Firma filtresi + IslemTuru='Sipariş' + Yonu=1
                 var etkilenen = await _context.Database.ExecuteSqlRawAsync(@"
 DELETE FROM dbo.CariHareketler
 WHERE FirmaID = {0}
@@ -370,6 +368,18 @@ WHERE FirmaID = {0}
   AND IslemTuru = N'Sipariş'
   AND Yonu = 1;",
                     firmaId, id);
+
+                if (etkilenen > 0)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+UPDATE dbo.Siparisler
+SET IsCariles = 0,
+    CariIslenenMusteriID = NULL,
+    CariEvrakNo = NULL,
+    CariIslemTarihi = NULL,
+    CarilesByKullaniciID = NULL
+WHERE FirmaID = {0} AND SiparisID = {1};", firmaId, id);
+                }
 
                 TempData["StatusMessage"] = etkilenen > 0
                     ? "Cariye işlenen kayıt kaldırıldı."
@@ -380,9 +390,7 @@ WHERE FirmaID = {0}
                 TempData["StatusMessage"] = "İşlem sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
             }
 
-            // Aynı sayfaya geri dön
             return RedirectToPage(new { id });
         }
-
     }
 }

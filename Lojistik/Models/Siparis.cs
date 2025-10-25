@@ -43,5 +43,19 @@ namespace Lojistik.Models
         [StringLength(500)] public string? Notlar { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // --- Carileştirme alanları ---
+        public bool IsCariles { get; set; }                 // DEFAULT: false
+
+        public int? CariIslenenMusteriID { get; set; }      // FK -> Musteriler.MusteriID
+        public Musteri? CariIslenenMusteri { get; set; }    // Navigation
+
+        [StringLength(60)]
+        public string? CariEvrakNo { get; set; }
+
+        public DateTime? CariIslemTarihi { get; set; }
+
+        public int? CarilesByKullaniciID { get; set; }      // (şimdilik navigation gerekmez)
+
     }
 }

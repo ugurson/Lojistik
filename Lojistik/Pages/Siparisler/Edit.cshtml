@@ -70,15 +70,12 @@
     </div>
 
     <div class="col-md-3">
-
-            <label asp-for="Input.Tutar" class="form-label">Tutar</label>
-            <input asp-for="Input.Tutar"
-                   class="form-control"
-                   type="number"
-                   inputmode="numeric"
-                   step="1"
-                   min="0" />
-
+        <label asp-for="Input.Tutar" class="form-label">Tutar</label>
+        <input asp-for="Input.Tutar"
+               class="form-control"
+               type="text"
+               inputmode="decimal"
+               autocomplete="off" />
         <span asp-validation-for="Input.Tutar" class="text-danger"></span>
     </div>
 
@@ -124,11 +121,21 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Virgül veya noktalı ondalıkları kabul et (client-side)
         if (window.jQuery && $.validator && $.validator.methods) {
-            $.validator.methods.number = function (value, element) {
-                return this.optional(element) || /^-?\d+(?:[.,]\d+)?$/.test(value);
-            };
+          // , veya . ondalık kabul et
+          $.validator.methods.number = function (value, element) {
+            return this.optional(element) || /^-?\d+(?:[.,]\d+)?$/.test(value);
+          };
+          // Range kontrolünü de TR uyumlu yap
+          $.validator.methods.range = function (value, element, param) {
+            if (this.optional(element)) return true;
+            const toNum = v => parseFloat(String(v).replace(',', '.'));
+            const val = toNum(value);
+            const min = toNum(param[0]);
+            const max = toNum(param[1]);
+            return !isNaN(val) && val >= min && val <= max;
+          };
         }
     </script>
+
 }

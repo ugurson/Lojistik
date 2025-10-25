@@ -34,4 +34,8 @@ public class Musteri
 
     public Ulke? Ulke { get; set; }
     public Sehir? Sehir { get; set; }
+
+    [StringLength(50)]
+    [Display(Name = "Gümrük Kodu")]
+    public string? GumrukKod { get; set; }
 }

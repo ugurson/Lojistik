@@ -173,9 +173,22 @@ namespace Lojistik.Data
                  .IsUnique()
                  .HasFilter("[IlgiliSiparisID] IS NOT NULL");
             });
+            modelBuilder.Entity<Siparis>(e =>
+            {
+                e.Property(x => x.IsCariles).HasDefaultValue(false);
+                e.Property(x => x.CariEvrakNo).HasMaxLength(60);
 
+                // FK: CariIslenenMusteriID -> Musteriler
+                e.HasOne(x => x.CariIslenenMusteri)
+                 .WithMany()
+                 .HasForeignKey(x => x.CariIslenenMusteriID)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                // Indeksler
+                e.HasIndex(x => x.IsCariles).HasDatabaseName("IX_Siparisler_IsCariles");
+                e.HasIndex(x => x.CariIslenenMusteriID).HasDatabaseName("IX_Siparisler_CariIslenenMusteriID");
+            });
 
         }
-        public DbSet<Lojistik.Models.Musteri> Musteri { get; set; } = default!;
     }
 }

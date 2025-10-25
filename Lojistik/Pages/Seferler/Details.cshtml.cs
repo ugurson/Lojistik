@@ -41,8 +41,19 @@ namespace Lojistik.Pages.Seferler
         string? Yer,
         string? Notlar
         );
+        public record GelirRow(
+    int SeferGelirID,
+    DateTime Tarih,
+    decimal Tutar,
+    string ParaBirimi,
+    string? Aciklama,
+    int? IlgiliSiparisID,
+    string? Notlar
+);
+        public List<GelirRow> Gelirler { get; set; } = new();
         public List<MasrafRow> Masraflar { get; set; } = new();
         public Dictionary<string, decimal> MasrafToplamlari { get; set; } = new();
+        public Dictionary<string, decimal> GelirToplamlari { get; set; } = new();
 
         // DURUM KALDIRILDI, FATURANO EKLENDİ
         public record SiparisRow(
@@ -155,6 +166,28 @@ namespace Lojistik.Pages.Seferler
                 .Select(g => new { PB = g.Key!, Sum = g.Sum(x => x.Tutar) })
                 .ToDictionaryAsync(x => x.PB, x => x.Sum);
 
+            Gelirler = await _context.SeferGelirleri
+    .AsNoTracking()
+    .Where(g => g.FirmaID == firmaId && g.SeferID == id)
+    .OrderByDescending(g => g.Tarih)
+    .Select(g => new GelirRow(
+        g.SeferGelirID,
+        g.Tarih,
+        g.Tutar,
+        g.ParaBirimi,
+        g.Aciklama,
+        g.IlgiliSiparisID,
+        g.Notlar
+    ))
+    .ToListAsync();
+
+            GelirToplamlari = await _context.SeferGelirleri
+                .AsNoTracking()
+                .Where(g => g.FirmaID == firmaId && g.SeferID == id)
+                .GroupBy(g => g.ParaBirimi)
+                .Select(g => new { PB = g.Key!, Sum = g.Sum(x => x.Tutar) })
+                .ToDictionaryAsync(x => x.PB, x => x.Sum);
+
             return Page();
         }
 
@@ -182,5 +215,34 @@ namespace Lojistik.Pages.Seferler
                 5 => "5 - İptal",
                 _ => $"{durum} - Bilinmiyor"
             };
+
+        // --- Silme handler'ı (class içine ekleyin) ---
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostGelirSilAsync(int seferId, int id)
+        {
+            var firmaId = User.GetFirmaId();
+
+            var gelir = await _context.SeferGelirleri
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SeferID == seferId && x.SeferGelirID == id);
+
+            if (gelir == null)
+            {
+                TempData["StatusMessage"] = "Gelir bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            try
+            {
+                _context.SeferGelirleri.Remove(gelir);
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Gelir silindi.";
+            }
+            catch (Exception ex)
+            {
+                TempData["StatusMessage"] = "Silme sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
+            }
+
+            return RedirectToPage(new { id = seferId });
+        }
     }
 }
