@@ -1,17 +1,31 @@
 ﻿@page
 @model Lojistik.Pages.Seferler.DetailsModel
+@using System.Globalization
 @{
     ViewData["Title"] = "Sefer Detayı";
+    var isClosed = Model.IsClosed;
+    var disClass = isClosed ? " disabled" : "";
+    var ariaDis = isClosed ? "true" : "false";
+    var tabIndex = isClosed ? "-1" : "0";
 }
 
 <h2 class="mb-3">Sefer Detayı</h2>
 
 <div class="mb-3 d-flex gap-2">
-    <a asp-page="./Edit" asp-route-id="@Model.Data?.SeferID" class="btn btn-warning">Düzenle</a>
+    <a asp-page="./Edit" asp-route-id="@Model.Data?.SeferID"
+       class="btn btn-warning btn-edit-bg@disClass"
+       aria-disabled="@ariaDis" tabindex="@tabIndex">Düzenle</a>
+
     <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
-    <a asp-page="./AddSiparis" asp-route-seferId="@Model.Data.SeferID" class="btn btn-success">
-        + Sipariş Ekle
-    </a>
+
+    <a asp-page="./AddSiparis" asp-route-seferId="@Model.Data?.SeferID"
+       class="btn btn-success btn-add-bg@disClass"
+       aria-disabled="@ariaDis" tabindex="@tabIndex">+ Sipariş Ekle</a>
+
+    <form method="post" asp-page-handler="Kapat" asp-route-id="@Model.Data?.SeferID" class="ms-auto">
+        @Html.AntiForgeryToken()
+        <button class="btn btn-outline-danger" @(isClosed ? "disabled" : null)>Seferi Kapat</button>
+    </form>
 </div>
 
 @if (Model.Data != null)
@@ -33,18 +47,44 @@
                 <dd class="col-sm-9">@Model.Data.SurucuAdi</dd>
 
                 <dt class="col-sm-3">Çıkış</dt>
-                <!-- SAAT KALDIRILDI -->
                 <dd class="col-sm-9">@Model.Data.CikisTarihi?.ToString("dd.MM.yyyy")</dd>
 
                 <dt class="col-sm-3">Dönüş</dt>
                 <dd class="col-sm-9">@Model.Data.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
 
-                @* DURUM SATIRI GİZLENDİ *@
-                @* <dt class="col-sm-3">Durum</dt>
-                <dd class="col-sm-9">@Model.Data.Durum</dd> *@
-
                 <dt class="col-sm-3">Notlar</dt>
                 <dd class="col-sm-9">@Model.Data.Notlar</dd>
+
+                <dt class="col-sm-3">Toplamlar</dt>
+                <dd class="col-sm-9">
+                    @{
+                        decimal GTL = Model.GelirToplamlari != null && Model.GelirToplamlari.TryGetValue("TL", out var _gtl) ? _gtl : 0;
+                        decimal MTL = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("TL", out var _mtl) ? _mtl : 0;
+                        decimal GEUR = Model.GelirToplamlari != null && Model.GelirToplamlari.TryGetValue("EUR", out var _ge) ? _ge : 0;
+                        decimal MEUR = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("EUR", out var _me) ? _me : 0;
+                        decimal GUSD = Model.GelirToplamlari != null && Model.GelirToplamlari.TryGetValue("USD", out var _gu) ? _gu : 0;
+                        decimal MUSD = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("USD", out var _mu) ? _mu : 0;
+
+                        string netTL = (GTL - MTL).ToString("N2");
+                        string netEUR = (GEUR - MEUR).ToString("N2");
+                        string netUSD = (GUSD - MUSD).ToString("N2");
+                    }
+                    <!-- 1. satır: GELİR -->
+                    <div class="mb-1">
+                        <span class="badge bg-success">
+                            Gelir: @GTL.ToString("N2") TL / @GEUR.ToString("N2") EUR / @GUSD.ToString("N2") USD
+                        </span>
+                    </div>
+                    <!-- 2. satır: GİDER + NET (fark giderin yanında) -->
+                    <div>
+                        <span class="badge bg-danger me-2">
+                            Gider: @MTL.ToString("N2") TL / @MEUR.ToString("N2") EUR / @MUSD.ToString("N2") USD
+                        </span>
+                        <span class="badge bg-primary">
+                            Net: @netTL TL / @netEUR EUR / @netUSD USD
+                        </span>
+                    </div>
+                </dd>
             </dl>
         </div>
     </div>
@@ -53,7 +93,6 @@
     <table class="table table-sm table-bordered table-hover align-middle">
         <thead>
             <tr>
-                <!-- ID KOLONU GİZLENDİ -->
                 <th class="d-none">ID</th>
                 <th>Tarih</th>
                 <th>Yük Açıklaması</th>
@@ -63,7 +102,6 @@
                 <th>Şehir</th>
                 <th class="text-end">Tutar</th>
                 <th>PB</th>
-                <!-- DURUM KALDIRILDI, YERİNE FATURA NO EKLENDİ -->
                 <th>Fatura No</th>
                 <th>İşlemler</th>
             </tr>
@@ -73,8 +111,8 @@
             {
                 foreach (var s in Model.Siparisler)
                 {
+                    var amountStr = (s.Tutar ?? 0m).ToString(CultureInfo.InvariantCulture);
                     <tr>
-                        <!-- ID GİZLİ HÜCRE -->
                         <td class="d-none">@s.SiparisID</td>
                         <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                         <td>@s.YukAciklamasi</td>
@@ -86,7 +124,19 @@
                         <td>@s.ParaBirimi</td>
                         <td>@(string.IsNullOrWhiteSpace(s.FaturaNo) ? "—" : s.FaturaNo)</td>
                         <td>
-                            <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID" class="btn btn-sm btn-outline-primary">Aç</a>
+                            <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID"
+                               class="btn btn-sm btn-outline-primary me-1">Aç</a>
+
+                            <form method="post"
+                                  asp-page-handler="GelireKaydet"
+                                  asp-route-seferId="@Model.Data!.SeferID"
+                                  asp-route-siparisId="@s.SiparisID"
+                                  class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-success" @(isClosed ? "disabled" : null)>
+                                    Gelire Kaydet
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 }
@@ -97,14 +147,15 @@
             }
         </tbody>
     </table>
+
     <hr />
+
     <h4 class="mt-4 d-flex justify-content-between align-items-center">
         <span>Sefer Masrafları</span>
-        <a class="btn btn-success btn-sm"
+        <a class="btn btn-success btn-sm@disClass"
            asp-page="/SeferMasraflari/Create"
-           asp-route-seferId="@Model.Data?.SeferID">
-            + Masraf Ekle
-        </a>
+           asp-route-seferId="@Model.Data?.SeferID"
+           aria-disabled="@ariaDis" tabindex="@tabIndex">+ Masraf Ekle</a>
     </h4>
 
     @if (Model.MasrafToplamlari?.Count > 0)
@@ -129,7 +180,7 @@
                 <th>Ülke</th>
                 <th>Yer</th>
                 <th>Notlar</th>
-                <th class="text-end">İşlemler</th> <!-- eklendi -->
+                <th class="text-end">İşlemler</th>
             </tr>
         </thead>
         <tbody>
@@ -149,12 +200,12 @@
                         <td class="text-end">
                             <form method="post"
                                   asp-page-handler="MasrafSil"
-                                  asp-route-seferId="@Model.Data.SeferID"
+                                  asp-route-seferId="@Model.Data!.SeferID"
                                   asp-route-id="@m.SeferMasrafID"
                                   class="d-inline"
                                   onsubmit="return confirm('Bu masrafı silmek istediğinize emin misiniz?');">
                                 @Html.AntiForgeryToken()
-                                <button class="btn btn-danger btn-sm">Sil</button>
+                                <button class="btn btn-danger btn-sm" @(isClosed ? "disabled" : null)>Sil</button>
                             </form>
                         </td>
                     </tr>
@@ -166,14 +217,15 @@
             }
         </tbody>
     </table>
+
     <hr />
+
     <h4 class="mt-4 d-flex justify-content-between align-items-center">
         <span>Sefer Gelirleri</span>
-        <a class="btn btn-success btn-sm"
+        <a class="btn btn-success btn-sm@disClass"
            asp-page="/SeferGelirleri/Create"
-           asp-route-seferId="@Model.Data?.SeferID">
-            + Gelir Ekle
-        </a>
+           asp-route-seferId="@Model.Data?.SeferID"
+           aria-disabled="@ariaDis" tabindex="@tabIndex">+ Gelir Ekle</a>
     </h4>
 
     @if (Model.GelirToplamlari?.Count > 0)
@@ -212,7 +264,7 @@
                         <td>
                             @if (g.IlgiliSiparisID is null)
                             {
-                                @:—
+                                <text>—</text>
                             }
                             else
                             {
@@ -223,12 +275,12 @@
                         <td class="text-end">
                             <form method="post"
                                   asp-page-handler="GelirSil"
-                                  asp-route-seferId="@Model.Data.SeferID"
+                                  asp-route-seferId="@Model.Data!.SeferID"
                                   asp-route-id="@g.SeferGelirID"
                                   class="d-inline"
                                   onsubmit="return confirm('Bu geliri silmek istiyor musunuz?');">
                                 @Html.AntiForgeryToken()
-                                <button class="btn btn-danger btn-sm">Sil</button>
+                                <button class="btn btn-danger btn-sm" @(isClosed ? "disabled" : null)>Sil</button>
                             </form>
                         </td>
                     </tr>
@@ -240,5 +292,4 @@
             }
         </tbody>
     </table>
-
 }

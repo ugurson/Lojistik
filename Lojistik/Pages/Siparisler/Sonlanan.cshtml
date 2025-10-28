@@ -42,6 +42,10 @@
                 <th>Alıcı Şehir</th>
                 <th>Tutar</th>
                 <th>PB</th>
+                <th>Dorse</th>
+                <th>Sefer Kodu</th>
+                <th>Sefer Çekici</th>
+                <th>Sürücü</th>
                 <th>Durum</th>
                 <th class="text-end">İşlemler</th>
             </tr>
@@ -57,7 +61,12 @@
                     <td>@r.AliciSehir</td>
                     <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
                     <td>@r.ParaBirimi</td>
+                    <td>@r.DorsePlaka</td>
+                    <td>@r.SeferKodu</td>
+                    <td>@r.SeferAracPlaka</td>
+                    <td>@r.SeferSurucuAdi</td>
                     <td><span class="badge bg-danger">Sonlandırıldı</span></td>
+
                     <td class="text-end">
                         <div class="btn-group btn-group-sm">
                             <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>

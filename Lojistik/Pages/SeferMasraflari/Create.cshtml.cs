@@ -40,10 +40,10 @@ namespace Lojistik.Pages.SeferMasraflari
 
             Input.SeferID = seferId;
 
-            ParaBirimleri = new SelectList(new[] { "EUR", "USD", "TRY" });
+            ParaBirimleri = new SelectList(new[] { "EUR", "USD", "TL" });
             MasrafTipleri = new SelectList(new[]
             {
-                "Yakıt","Yakıt-Kapı","Otoyol/Geçiş","Konaklama","Yemek","Bakım/Servis","Lastik",
+                "Yakıt","Yakıt-Kapı","Şöför Fiks","Masraflar","Otoyol/Geçiş","Konaklama","Yemek","Bakım/Servis","Lastik",
                 "Gümrük","Sigorta","Belge/Harç","Park","Diğer"
             });
 
@@ -58,8 +58,8 @@ namespace Lojistik.Pages.SeferMasraflari
 
             if (!ModelState.IsValid)
             {
-                ParaBirimleri = new SelectList(new[] { "EUR", "USD", "TRY" });
-                MasrafTipleri = new SelectList(new[] { "Yakıt", "Otoyol/Geçiş", "Konaklama", "Yemek", "Bakım/Servis", "Lastik", "Gümrük", "Sigorta", "Belge/Harç", "Park", "Diğer" });
+                ParaBirimleri = new SelectList(new[] { "EUR", "USD", "TL" });
+                MasrafTipleri = new SelectList(new[] { "Yakıt", "Yakıt-Kapı", "Şöför Fiks","Masraflar", "Otoyol/Geçiş", "Konaklama", "Yemek", "Bakım/Servis", "Lastik", "Gümrük", "Sigorta", "Belge/Harç", "Park", "Diğer" });
                 return Page();
             }
 

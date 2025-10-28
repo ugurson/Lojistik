@@ -41,6 +41,13 @@
     <div class="col-sm-2 text-end">
         <a asp-page="./Create" class="btn btn-success w-100">+ Yeni Sefer</a>
     </div>
+    <div class="col-sm-2 text-end">
+        <a asp-page="./Index"
+           asp-route-ShowClosed="@(Model.ShowClosed ? "false" : "true")"
+           class="btn btn-danger w-100" >
+            @(Model.ShowClosed ? "Açık seferleri göster" : "Kapalı seferleri göster")
+        </a>
+    </div>
 </form>
 
 <div class="table-responsive">
@@ -59,6 +66,7 @@
                         Çıkış
                     </a>
                 </th>
+                <th>Dönüş</th>
                 <th>Çekici</th>
                 <th>Dorse</th>
                 <th>Sürücü</th>
@@ -76,6 +84,7 @@
                     <tr>
                         <td>@(r.SeferKodu ?? ("SF-" + r.SeferID))</td>
                         <td>@r.CikisTarihi?.ToString("dd.MM.yyyy")</td>
+                        <td>@r.DonusTarihi?.ToString("dd.MM.yyyy")</td>
                         <td>@r.CekiciPlaka</td>
                         <td>@r.DorsePlaka</td>
                         <td>@r.SurucuAdi</td>

@@ -35,6 +35,7 @@ namespace Lojistik.Pages.Seferler
         [BindProperty(SupportsGet = true)] public int page { get; set; } = 1;
         [BindProperty(SupportsGet = true)] public int pageSize { get; set; } = 20;
         [BindProperty(SupportsGet = true)] public byte? durum { get; set; }
+        [BindProperty(SupportsGet = true)] public bool ShowClosed { get; set; }   // Kapalıları listele togglesı
 
         public int TotalCount { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / pageSize);
@@ -46,6 +47,11 @@ namespace Lojistik.Pages.Seferler
             var query = _context.Seferler
                 .AsNoTracking()
                 .Where(s => s.FirmaID == firmaId);
+
+            if (ShowClosed)
+                query = query.Where(s => s.Durum == 2);
+            else
+                query = query.Where(s => s.Durum != 2);
 
             if (durum.HasValue)
                 query = query.Where(s => s.Durum == durum.Value);
@@ -76,7 +82,7 @@ namespace Lojistik.Pages.Seferler
                     s.SeferID,
                     s.SeferKodu,
                     s.CikisTarihi,
-                    null, // DonusTarihi kaldırıldı
+                      s.DonusTarihi,   
                     s.Arac != null ? s.Arac.Plaka : null,
                     s.Dorse != null ? s.Dorse.Plaka : null,
                     s.SurucuAdi,

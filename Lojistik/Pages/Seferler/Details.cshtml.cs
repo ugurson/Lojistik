@@ -7,11 +7,18 @@ using Lojistik.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+// Details.cshtml.cs en üstüne
+using Lojistik.Models;
+
 
 namespace Lojistik.Pages.Seferler
 {
+    // İstersen tüm POST'lar için sınıf seviyesinde aç:
+    // [ValidateAntiForgeryToken]
     public class DetailsModel : PageModel
     {
+        public bool IsClosed { get; private set; }
+
         private readonly AppDbContext _context;
         public DetailsModel(AppDbContext context) => _context = context;
 
@@ -30,32 +37,34 @@ namespace Lojistik.Pages.Seferler
             string? Notlar,
             DateTime CreatedAt
         );
+
         public record MasrafRow(
-        int SeferMasrafID,
-        DateTime Tarih,
-        string MasrafTipi,
-        decimal Tutar,
-        string ParaBirimi,
-        string? FaturaBelgeNo,
-        string? Ulke,
-        string? Yer,
-        string? Notlar
+            int SeferMasrafID,
+            DateTime Tarih,
+            string MasrafTipi,
+            decimal Tutar,
+            string ParaBirimi,
+            string? FaturaBelgeNo,
+            string? Ulke,
+            string? Yer,
+            string? Notlar
         );
+
         public record GelirRow(
-    int SeferGelirID,
-    DateTime Tarih,
-    decimal Tutar,
-    string ParaBirimi,
-    string? Aciklama,
-    int? IlgiliSiparisID,
-    string? Notlar
-);
+            int SeferGelirID,
+            DateTime Tarih,
+            decimal Tutar,
+            string ParaBirimi,
+            string? Aciklama,
+            int? IlgiliSiparisID,
+            string? Notlar
+        );
+
         public List<GelirRow> Gelirler { get; set; } = new();
         public List<MasrafRow> Masraflar { get; set; } = new();
         public Dictionary<string, decimal> MasrafToplamlari { get; set; } = new();
         public Dictionary<string, decimal> GelirToplamlari { get; set; } = new();
 
-        // DURUM KALDIRILDI, FATURANO EKLENDİ
         public record SiparisRow(
             int SiparisID,
             DateTime SiparisTarihi,
@@ -68,37 +77,6 @@ namespace Lojistik.Pages.Seferler
             string? ParaBirimi,
             string? FaturaNo
         );
-
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> OnPostMasrafSilAsync(int seferId, int id)
-        {
-            var firmaId = User.GetFirmaId();
-
-            // Masraf gerçekten bu firmaya ve bu sefere mi ait?
-            var masraf = await _context.SeferMasraflari
-                .FirstOrDefaultAsync(x => x.FirmaID == firmaId
-                                       && x.SeferID == seferId
-                                       && x.SeferMasrafID == id);
-
-            if (masraf == null)
-            {
-                TempData["StatusMessage"] = "Masraf bulunamadı.";
-                return RedirectToPage(new { id = seferId });
-            }
-
-            try
-            {
-                _context.SeferMasraflari.Remove(masraf);
-                await _context.SaveChangesAsync();
-                TempData["StatusMessage"] = "Masraf silindi.";
-            }
-            catch (Exception ex)
-            {
-                TempData["StatusMessage"] = "Silme sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
-            }
-
-            return RedirectToPage(new { id = seferId });
-        }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -138,26 +116,26 @@ namespace Lojistik.Pages.Seferler
                         ? x.Sevkiyat.Siparis.AliciMusteri.Sehir.SehirAdi : null,
                     x.Sevkiyat.Siparis.Tutar,
                     x.Sevkiyat.Siparis.ParaBirimi,
-                    x.Sevkiyat.Siparis.FaturaNo   // <<< EKLENDİ
+                    x.Sevkiyat.Siparis.FaturaNo
                 ))
                 .ToListAsync();
 
             Masraflar = await _context.SeferMasraflari
-    .AsNoTracking()
-    .Where(m => m.FirmaID == firmaId && m.SeferID == id)
-    .OrderByDescending(m => m.Tarih)
-    .Select(m => new MasrafRow(
-        m.SeferMasrafID,
-        m.Tarih,
-        m.MasrafTipi,
-        m.Tutar,
-        m.ParaBirimi,
-        m.FaturaBelgeNo,
-        m.Ulke,
-        m.Yer,
-        m.Notlar
-    ))
-    .ToListAsync();
+                .AsNoTracking()
+                .Where(m => m.FirmaID == firmaId && m.SeferID == id)
+                .OrderByDescending(m => m.Tarih)
+                .Select(m => new MasrafRow(
+                    m.SeferMasrafID,
+                    m.Tarih,
+                    m.MasrafTipi,
+                    m.Tutar,
+                    m.ParaBirimi,
+                    m.FaturaBelgeNo,
+                    m.Ulke,
+                    m.Yer,
+                    m.Notlar
+                ))
+                .ToListAsync();
 
             MasrafToplamlari = await _context.SeferMasraflari
                 .AsNoTracking()
@@ -167,19 +145,19 @@ namespace Lojistik.Pages.Seferler
                 .ToDictionaryAsync(x => x.PB, x => x.Sum);
 
             Gelirler = await _context.SeferGelirleri
-    .AsNoTracking()
-    .Where(g => g.FirmaID == firmaId && g.SeferID == id)
-    .OrderByDescending(g => g.Tarih)
-    .Select(g => new GelirRow(
-        g.SeferGelirID,
-        g.Tarih,
-        g.Tutar,
-        g.ParaBirimi,
-        g.Aciklama,
-        g.IlgiliSiparisID,
-        g.Notlar
-    ))
-    .ToListAsync();
+                .AsNoTracking()
+                .Where(g => g.FirmaID == firmaId && g.SeferID == id)
+                .OrderByDescending(g => g.Tarih)
+                .Select(g => new GelirRow(
+                    g.SeferGelirID,
+                    g.Tarih,
+                    g.Tutar,
+                    g.ParaBirimi,
+                    g.Aciklama,
+                    g.IlgiliSiparisID,
+                    g.Notlar
+                ))
+                .ToListAsync();
 
             GelirToplamlari = await _context.SeferGelirleri
                 .AsNoTracking()
@@ -188,36 +166,41 @@ namespace Lojistik.Pages.Seferler
                 .Select(g => new { PB = g.Key!, Sum = g.Sum(x => x.Tutar) })
                 .ToDictionaryAsync(x => x.PB, x => x.Sum);
 
+            IsClosed = (Data?.Durum ?? (byte)0) == 2;
             return Page();
         }
 
-        // (Aşağıdaki yardımcılar kalsa da olur; artık kullanılmıyorlar)
-        public static string GetDurumBadgeClass(byte durum) =>
-            durum switch
-            {
-                0 => "secondary",
-                1 => "info",
-                2 => "primary",
-                3 => "warning",
-                4 => "success",
-                5 => "dark",
-                _ => "secondary"
-            };
+        // NOT: Razor Pages'ta method seviyesinde [ValidateAntiForgeryToken] gerekmez ve hata verir.
+        // Formda @Html.AntiForgeryToken() zaten var.
+        public async Task<IActionResult> OnPostMasrafSilAsync(int seferId, int id)
+        {
+            var firmaId = User.GetFirmaId();
 
-        public static string GetDurumText(byte durum) =>
-            durum switch
-            {
-                0 => "0 - Yeni",
-                1 => "1 - Onaylı",
-                2 => "2 - Hazırlanıyor",
-                3 => "3 - Sevkte",
-                4 => "4 - Tamamlandı",
-                5 => "5 - İptal",
-                _ => $"{durum} - Bilinmiyor"
-            };
+            var masraf = await _context.SeferMasraflari
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId
+                                       && x.SeferID == seferId
+                                       && x.SeferMasrafID == id);
 
-        // --- Silme handler'ı (class içine ekleyin) ---
-        [ValidateAntiForgeryToken]
+            if (masraf == null)
+            {
+                TempData["StatusMessage"] = "Masraf bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            try
+            {
+                _context.SeferMasraflari.Remove(masraf);
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Masraf silindi.";
+            }
+            catch (Exception ex)
+            {
+                TempData["StatusMessage"] = "Silme sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
+            }
+
+            return RedirectToPage(new { id = seferId });
+        }
+
         public async Task<IActionResult> OnPostGelirSilAsync(int seferId, int id)
         {
             var firmaId = User.GetFirmaId();
@@ -243,6 +226,97 @@ namespace Lojistik.Pages.Seferler
             }
 
             return RedirectToPage(new { id = seferId });
+        }
+
+        public async Task<IActionResult> OnPostGelireKaydetAsync(int seferId, int siparisId)
+        {
+            var firmaId = User.GetFirmaId();
+            var userId = User.GetUserId();
+
+            // Bu sipariş gerçekten bu sefere bağlı mı?
+            var linkVarMi = await _context.SeferSevkiyatlar
+                .AnyAsync(x => x.Sefer.FirmaID == firmaId
+                            && x.SeferID == seferId
+                            && x.Sevkiyat.SiparisID == siparisId);
+
+            if (!linkVarMi)
+            {
+                TempData["StatusMessage"] = "Sipariş bu sefere bağlı değil.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            // Sipariş bilgilerini al
+            var s = await _context.Siparisler
+                .Where(x => x.FirmaID == firmaId && x.SiparisID == siparisId)
+                .Select(x => new { x.Tutar, x.ParaBirimi, x.YukAciklamasi, x.SiparisTarihi })
+                .FirstOrDefaultAsync();
+
+            if (s == null)
+            {
+                TempData["StatusMessage"] = "Sipariş bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            var tutar = s.Tutar ?? 0m;
+            var pb = string.IsNullOrWhiteSpace(s.ParaBirimi) ? "TL" : s.ParaBirimi!;
+            var acik = $"Sipariş #{siparisId} - {s.YukAciklamasi}";
+
+            // Aynı sipariş için daha önce gelir yazıldıysa güncelle
+            var mevcut = await _context.SeferGelirleri
+                .FirstOrDefaultAsync(g => g.FirmaID == firmaId
+                                       && g.SeferID == seferId
+                                       && g.IlgiliSiparisID == siparisId);
+
+            if (mevcut is null)
+            {
+                _context.SeferGelirleri.Add(new SeferGelir
+                {
+                    FirmaID = firmaId,
+                    KullaniciID = userId,
+                    SeferID = seferId,
+                    Tarih = s.SiparisTarihi.Date,
+                    Aciklama = acik,
+                    Tutar = tutar,
+                    ParaBirimi = pb,
+                    IlgiliSiparisID = siparisId,
+                    Notlar = null,
+                    CreatedAt = DateTime.Now
+                });
+
+                TempData["StatusMessage"] = "Gelir kaydedildi.";
+            }
+            else
+            {
+                mevcut.Tarih = s.SiparisTarihi.Date;
+                mevcut.Aciklama = acik;
+                mevcut.Tutar = tutar;
+                mevcut.ParaBirimi = pb;
+                TempData["StatusMessage"] = "Gelir güncellendi.";
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToPage(new { id = seferId });
+        }
+
+        public async Task<IActionResult> OnPostKapatAsync(int id)
+        {
+            var firmaId = User.GetFirmaId();
+            var sefer = await _context.Seferler
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == id);
+            if (sefer == null) return RedirectToPage("./Index");
+            if (sefer.Durum != 2)          // zaten kapalı değilse
+            {
+                sefer.Durum = 2;           // kapat
+                sefer.DonusTarihi = DateTime.Now; // dönüş zamanı kaydı
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Sefer sonlandırıldı.";
+            }
+            else
+            {
+                TempData["StatusMessage"] = "Sefer zaten sonlandırılmış.";
+            }
+
+            return RedirectToPage(new { id });
         }
     }
 }
