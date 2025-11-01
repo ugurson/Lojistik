@@ -3,7 +3,10 @@
 @{
     ViewData["Title"] = "Sipariş Detayı";
     var s = Model.Data!;
+    bool finalized = s.Durum == 7;
+    var yetki2 = (int?)ViewData["Yetki2"] ?? 0; // (OnGet’te doldurmuştuk)
 }
+
 
 @functions {
     // Sipariş durumu (değiştirmedik)
@@ -49,12 +52,20 @@
 }
 
 <div class="mb-3 d-flex gap-2 flex-wrap">
-    <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
-    <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
+    @if (finalized)
+    {
+        <a class="btn btn-warning disabled" aria-disabled="true" tabindex="-1">Düzenle</a>
+        <a class="btn btn-danger disabled" aria-disabled="true" tabindex="-1">Sil</a>
+    }
+    else
+    {
+        <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
+        <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
+    }
     <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
 
     @* Sonlandırılmış siparişte sevkiyat oluşturma tamamen pasif *@
-    @if (s.Durum == 7)
+    @if (finalized)
     {
         <button class="btn btn-success" disabled>+ Sevkiyat Oluştur</button>
     }
@@ -67,7 +78,7 @@
         <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
     }
   
-    @if (Model.Data?.Durum != 7)
+    @if (!finalized)
     {
         <form method="post" asp-page-handler="Sonlandir" asp-route-id="@Model.Data!.SiparisID" class="d-inline ms-2">
             @Html.AntiForgeryToken()
@@ -77,11 +88,28 @@
             </button>
         </form>
     }
+    @if (finalized && yetki2 == 2)
+    {
+        <form method="post" asp-page-handler="GeriAktifEt" asp-route-id="@s.SiparisID" class="d-inline ms-2">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-primary"
+                    onclick="return confirm('Siparişi tekrar aktif (Durum=2) yapmak istiyor musunuz?');">
+                Tekrar Aktif Yap
+            </button>
+        </form>
+    }
 
     @* ======= CARI EK: Carileştir butonu (mevcut yapıyı bozmadan eklendi) ======= *@
-    <button type="button" class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#carilestirModal">
-        Cariye İşle
-    </button>
+    @if (finalized)
+    {
+        <button type="button" class="btn btn-primary ms-auto" disabled>Cariye İşle</button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#carilestirModal">
+            Cariye İşle
+        </button>
+    }
     @* İleride .cs güncellemesinden sonra "Cari Kaydı Kaldır" koşullu olarak eklenecek *@
 </div>
 
@@ -119,12 +147,31 @@
                                   asp-route-id="@s.SiparisID"
                                   class="d-inline me-2">
                                 @Html.AntiForgeryToken()
-                                <button type="submit"
-                                        class="btn btn-danger btn-sm"
-                                        style="position:relative; top:.25em;"
-                                        onclick="return confirm('Bu siparişe ait cari hareket silinsin mi?');">
-                                    Cariye İşlemeyi Kaldır
-                                </button>
+                                @if (finalized)
+                                {
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm ms-2 disabled"
+                                            aria-disabled="true"
+                                            tabindex="-1"
+                                            style="position:relative; top:.25em;">
+                                        Cariye İşlemeyi Kaldır
+                                    </button>
+                                }
+                                else
+                                {
+                                    <form method="post"
+                                          asp-page-handler="CariCikart"
+                                          asp-route-id="@s.SiparisID"
+                                          class="d-inline ms-2">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                style="position:relative; top:.25em;"
+                                                onclick="return confirm('Bu siparişe ait cari hareket silinsin mi?');">
+                                            Cariye İşlemeyi Kaldır
+                                        </button>
+                                    </form>
+                                }
                             </form>
                         }
                         else
@@ -195,7 +242,7 @@
                     {
                         foreach (var r in Model.Sevkiyatlar)
                         {
-                            var finalized = s.Durum == 7;
+                            finalized = s.Durum == 7;
                             <tr>
                                 <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
                                 <td>@r.PlanlananYuklemeTarihi?.ToString("dd.MM.yyyy")</td>

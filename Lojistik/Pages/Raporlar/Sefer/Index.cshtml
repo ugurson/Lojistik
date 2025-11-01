@@ -1,0 +1,138 @@
+﻿@page
+@model Lojistik.Pages.Raporlar.Sefer.IndexModel
+@{
+    ViewData["Title"] = "Sefer Raporu";
+}
+
+<h2 class="mb-3">Sefer Raporu</h2>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-md-2">
+        <label class="form-label">Başlangıç</label>
+        <input type="date" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Bitiş</label>
+        <input type="date" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Ara</label>
+        <input name="q" value="@Model.q" class="form-control" placeholder="Sefer kodu / plaka / sürücü..." />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Gösterim</label>
+        <div class="btn-group d-flex" role="group">
+            <a class="btn btn-outline-primary @(Model.ozmal ? "active" : "")"
+               asp-page="./Index"
+               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
+               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
+               asp-route-q="@Model.q"
+               asp-route-ozmal="true"
+               asp-route-page="1"
+               asp-route-pageSize="@Model.pageSize">
+                Özmal
+            </a>
+            <a class="btn btn-outline-primary @(!Model.ozmal ? "active" : "")"
+               asp-page="./Index"
+               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
+               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
+               asp-route-q="@Model.q"
+               asp-route-ozmal="false"
+               asp-route-page="1"
+               asp-route-pageSize="@Model.pageSize">
+                Yüklenici
+            </a>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Sayfa Boyutu</label>
+        <select name="pageSize" class="form-select" onchange="this.form.submit()">
+            @{
+                int[] sizes = new[] { 10, 20, 50, 100 };
+                foreach (var s in sizes)
+                {
+                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
+                }
+            }
+        </select>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Çıkış</th>
+                <th>Dönüş</th>
+                <th>Sefer Kodu</th>
+                <th>Çekici</th>
+                <th>Dorse</th>
+                <th>Sürücü</th>
+                <th>Tür</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr>
+                    <td>@(r.CikisTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
+                    <td>@(r.DonusTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
+                    <td>@r.SeferKodu</td>
+                    <td>@r.CekiciPlaka</td>
+                    <td>@r.DorsePlaka</td>
+                    <td>@r.SurucuAdi</td>
+                    <td>
+                        @if (r.Ozmal == true)
+                        {
+                            <span class="badge bg-success">Özmal</span>
+                        }
+                        else if (r.Ozmal == false)
+                        {
+
+                            <span class="badge bg-secondary">Yüklenici</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-light text-dark">—</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-outline-primary">Detay</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<nav class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted">
+        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+    </div>
+    <ul class="pagination mb-0">
+        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
+               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
+               asp-route-q="@Model.q"
+               asp-route-ozmal="@Model.ozmal"
+               asp-route-page="@(Model.page - 1)"
+               asp-route-pageSize="@Model.pageSize">Önceki</a>
+        </li>
+        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
+               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
+               asp-route-q="@Model.q"
+               asp-route-ozmal="@Model.ozmal"
+               asp-route-page="@(Model.page + 1)"
+               asp-route-pageSize="@Model.pageSize">Sonraki</a>
+        </li>
+    </ul>
+</nav>

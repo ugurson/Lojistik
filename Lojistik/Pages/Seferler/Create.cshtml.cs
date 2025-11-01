@@ -176,12 +176,25 @@ namespace Lojistik.Pages.Seferler
 
         private async Task<string> GenerateSeferKoduAsync()
         {
-            var today = DateTime.Now;
-            var kodTarih = today.ToString("MMyy"); // örn: 1025
+            var prefix = DateTime.Now.ToString("MMyy") + "-"; // örn: "1025-"
 
-            var countToday = await _context.Seferler.CountAsync(s => s.CreatedAt.Date == today.Date);
+            // Bu ayki (MMyy) en büyük kodu getir (001..999 sıfır dolgulu olduğu için string sıralaması çalışır)
+            var lastCode = await _context.Seferler
+                .AsNoTracking()
+                .Where(s => s.SeferKodu != null && s.SeferKodu.StartsWith(prefix))
+                .OrderByDescending(s => s.SeferKodu)
+                .Select(s => s.SeferKodu!)
+                .FirstOrDefaultAsync();
 
-            return $"{kodTarih}-{countToday + 1:D3}";
+            int next = 1;
+            if (!string.IsNullOrEmpty(lastCode))
+            {
+                var suffix = lastCode.Substring(prefix.Length); // "001"
+                if (int.TryParse(suffix, out var n)) next = n + 1;
+            }
+
+            // İstersen sınır koy: if (next > 999) throw new InvalidOperationException("Aylık sefer kodu kotası doldu.");
+            return $"{prefix}{next:D3}";
         }
     }
 }

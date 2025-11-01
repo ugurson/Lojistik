@@ -193,7 +193,11 @@ namespace Lojistik.Pages.Siparisler
 
                 Cari = new(true, cariRow.MusteriID, musteriAdi, taraf);
             }
-
+            var yetki2 = await _context.Kullanicilar
+    .Where(k => k.KullaniciID == User.GetUserId() && k.FirmaID == firmaId)
+    .Select(k => k.YetkiSeviyesi2)
+    .FirstOrDefaultAsync();
+            ViewData["Yetki2"] = yetki2;
             return Page();
         }
 
@@ -228,6 +232,19 @@ namespace Lojistik.Pages.Siparisler
                     s.FaturaNo,
                     s.SubeKodu
                 })
+                .FirstOrDefaultAsync();
+
+            var dorsePlaka = await _context.Sevkiyatlar
+    .AsNoTracking()
+    .Where(x => x.FirmaID == firmaId && x.SiparisID == siparis.SiparisID && x.DorseID != null)
+    .OrderByDescending(x => x.SevkiyatID)
+    .Select(x => x.Dorse!.Plaka)
+    .FirstOrDefaultAsync();
+
+            var aliciSehir = await _context.Musteriler
+                .AsNoTracking()
+                .Where(m => m.MusteriID == siparis.AliciMusteriID)
+                .Select(m => m.Sehir != null ? m.Sehir.SehirAdi : null)
                 .FirstOrDefaultAsync();
 
             if (siparis is null)
@@ -269,9 +286,7 @@ namespace Lojistik.Pages.Siparisler
                 return RedirectToPage(new { id = input.id });
             }
 
-            var aciklama = string.IsNullOrWhiteSpace(input.Aciklama)
-                ? "Sipariş carileştirme"
-                : input.Aciklama!.Trim();
+            var aciklama = $"{(dorsePlaka ?? "—")} - {(aliciSehir ?? "—")}";
 
             using var tx = await _context.Database.BeginTransactionAsync();
             try
@@ -392,5 +407,41 @@ WHERE FirmaID = {0} AND SiparisID = {1};", firmaId, id);
 
             return RedirectToPage(new { id });
         }
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostGeriAktifEtAsync(int id)
+        {
+            var firmaId = User.GetFirmaId();
+            var userId = User.GetUserId();
+
+            var yetki2 = await _context.Kullanicilar
+                .Where(k => k.KullaniciID == userId && k.FirmaID == firmaId)
+                .Select(k => k.YetkiSeviyesi2)
+                .FirstOrDefaultAsync();
+
+            if (yetki2 != 2)
+            {
+                TempData["StatusMessage"] = "Yetkiniz yok (YetkiSeviyesi2=2 gerekli).";
+                return RedirectToPage(new { id });
+            }
+
+            var s = await _context.Siparisler
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SiparisID == id);
+
+            if (s is null) return RedirectToPage("./Index");
+
+            if (s.Durum != 7)
+            {
+                TempData["StatusMessage"] = "Sipariş sonlandırılmış değil.";
+                return RedirectToPage(new { id });
+            }
+
+            s.Durum = 2; // sabit
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Sipariş tekrar aktif yapıldı (Durum = 2).";
+            return RedirectToPage(new { id });
+        }
+
     }
 }
