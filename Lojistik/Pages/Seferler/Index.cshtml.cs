@@ -43,6 +43,7 @@ namespace Lojistik.Pages.Seferler
         public async Task OnGetAsync()
         {
             var firmaId = User.GetFirmaId();
+            var userId = User.GetUserId();
 
             var query = _context.Seferler
                 .AsNoTracking()
@@ -101,6 +102,13 @@ namespace Lojistik.Pages.Seferler
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
+            var yetki2 = await _context.Kullanicilar
+        .Where(k => k.KullaniciID == userId && k.FirmaID == firmaId)
+        .Select(k => k.YetkiSeviyesi2)
+        .FirstOrDefaultAsync();
+
+            ViewData["Yetki2"] = yetki2;
         }
     }
 }

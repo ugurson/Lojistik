@@ -4,6 +4,10 @@
     ViewData["Title"] = "Seferler";
     string cikisSort = Model.sort == "cikis_desc" ? "cikis_asc" : "cikis_desc";
     string kodSort = Model.sort == "kod_desc" ? "kod_asc" : "kod_desc";
+
+    var yetki2 = (int?)ViewData["Yetki2"] ?? 0;      // OnGet'te doldurulacak
+    bool showClosed = Model.ShowClosed;              // Kapalı seferleri mi gösteriyoruz?
+    bool canEditDelete = !showClosed || yetki2 == 2; // Kapalı görünümde sadece Yetki2=2 düzenleyip silebilir
 }
 
 <h2 class="mb-3">Seferler</h2>
@@ -72,7 +76,7 @@
                 <th>Sürücü</th>
                 <th>Ülke</th>
                 <th>Şehir</th>
-                <th>Durum</th>
+                <!-- <th>Durum</th>-->
                 <th class="text-end">İşlemler</th>
             </tr>
         </thead>
@@ -90,18 +94,28 @@
                         <td>@r.SurucuAdi</td>
                         <td>@r.Ulke</td>
                         <td>@r.Sehir</td>
-                        <td>
+                       <!-- <td>
                             <span class="badge bg-@(r.Durum == 0 ? "secondary" : (r.Durum == 1 ? "info" : (r.Durum == 2 ? "primary" : (r.Durum == 3 ? "success" : "dark"))))">
                                 @r.Durum
                             </span>
-                        </td>
+                         </td>-->
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
                                 <a asp-page="./Details" asp-route-id="@r.SeferID" class="btn btn-outline-primary">Detay</a>
-                                <a asp-page="./Edit" asp-route-id="@r.SeferID" class="btn btn-outline-warning">Düzenle</a>
-                                <a asp-page="./Delete" asp-route-id="@r.SeferID" class="btn btn-outline-danger">Sil</a>
+
+                                @if (canEditDelete)
+                                {
+                                    <a asp-page="./Edit" asp-route-id="@r.SeferID" class="btn btn-outline-warning">Düzenle</a>
+                                    <a asp-page="./Delete" asp-route-id="@r.SeferID" class="btn btn-outline-danger">Sil</a>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-outline-warning disabled" aria-disabled="true" tabindex="-1">Düzenle</a>
+                                    <a class="btn btn-outline-danger  disabled" aria-disabled="true" tabindex="-1">Sil</a>
+                                }
                             </div>
                         </td>
+
                     </tr>
                 }
             }

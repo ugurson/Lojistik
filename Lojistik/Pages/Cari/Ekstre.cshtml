@@ -3,10 +3,35 @@
 @{
     ViewData["Title"] = "Cari Ekstre";
 }
-
+<style>
+    .ekstre-compact {
+        font-size: 0.875rem;
+    }
+        /* ~14px */
+        .ekstre-compact h2 {
+            font-size: 1.25rem;
+        }
+        /* başlık da biraz küçülsün */
+        .ekstre-compact .table {
+            font-size: 0.875rem;
+        }
+        /* tablo metinleri */
+        .ekstre-compact .badge {
+            font-size: 0.8em;
+        }
+    /* rozetler uyumlu olsun */
+</style>
+<div class="ekstre-compact">
 <h2 class="mb-3">Cari Ekstre</h2>
 
-<div class="card mb-3">
+<style>
+  .shrink-2 { font-size: 0.875rem; }                          /* ~2 kademe küçük */
+  .shrink-2 .form-label { font-size: 0.80rem; }
+  .shrink-2 .form-control,
+  .shrink-2 .btn { font-size: 0.875rem; padding: .3rem .5rem; height: auto; }
+</style>
+
+    <div class="card mb-3 shrink-2">
     <div class="card-body">
         <form method="get" class="row g-2 align-items-end">
             <input type="hidden" name="musteriId" value="@Model.musteriId" />
@@ -32,7 +57,7 @@
         </form>
     </div>
 </div>
-<div class="d-flex gap-2 mb-3">
+    <div class="d-flex gap-2 mb-3 shrink-2">
     <a asp-page-handler="ExportExcel"
        asp-route-musteriId="@Model.musteriId"
        asp-route-pb="@Model.pb"
@@ -129,4 +154,5 @@
 <div class="d-flex gap-2">
     <a asp-page="./Index" class="btn btn-outline-secondary">Geri</a>
     @* İstersen burada "Excel'e Aktar" butonunu etkinleştiririz *@
+</div>
 </div>
