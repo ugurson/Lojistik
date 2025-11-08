@@ -19,8 +19,9 @@
         <label class="form-label">Ara</label>
         <input name="q" value="@Model.q" class="form-control" placeholder="Sefer kodu / plaka / sürücü..." />
     </div>
+
     <div class="col-md-3">
-        <label class="form-label">Gösterim</label>
+        <label class="form-label d-block">Gösterim</label>
         <div class="btn-group d-flex" role="group">
             <a class="btn btn-outline-primary @(Model.ozmal ? "active" : "")"
                asp-page="./Index"
@@ -28,6 +29,8 @@
                asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
                asp-route-q="@Model.q"
                asp-route-ozmal="true"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               asp-route-pbFilter="@Model.pbFilter"
                asp-route-page="1"
                asp-route-pageSize="@Model.pageSize">
                 Özmal
@@ -38,12 +41,15 @@
                asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
                asp-route-q="@Model.q"
                asp-route-ozmal="false"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               asp-route-pbFilter="@Model.pbFilter"
                asp-route-page="1"
                asp-route-pageSize="@Model.pageSize">
                 Yüklenici
             </a>
         </div>
     </div>
+
     <div class="col-md-2">
         <label class="form-label">Sayfa Boyutu</label>
         <select name="pageSize" class="form-select" onchange="this.form.submit()">
@@ -56,7 +62,52 @@
             }
         </select>
     </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Kapalı Seferler</label>
+        <select name="showClosed" class="form-select" onchange="this.form.submit()">
+            <option value="false" selected="@(!Model.showClosed)">Açık / Kısmi</option>
+            <option value="true" selected="@(Model.showClosed)">Kapalı</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">PB Filtresi (virgülle):</label>
+        <input name="pbFilter" value="@Model.pbFilter" class="form-control" placeholder="Örn: TL,EUR,USD" />
+    </div>
+
+    <div class="col-md-2 d-grid">
+        <button class="btn btn-primary">Uygula</button>
+    </div>
 </form>
+
+@if (Model.PageGelirPB.Count > 0 || Model.PageMasrafPB.Count > 0)
+{
+    <div class="alert alert-secondary py-2">
+        <div class="mb-1">
+            <strong>Sayfa Geliri:</strong>
+            @foreach (var kv in Model.PageGelirPB)
+            {
+                <span class="badge bg-success me-2">@kv.Value.ToString("N2") @kv.Key</span>
+            }
+        </div>
+        <div class="mb-1">
+            <strong>Sayfa Gideri:</strong>
+            @foreach (var kv in Model.PageMasrafPB)
+            {
+                <span class="badge bg-danger me-2">@kv.Value.ToString("N2") @kv.Key</span>
+            }
+        </div>
+        <div>
+            <strong>Sayfa Net:</strong>
+            @foreach (var kv in Model.PageNetPB)
+            {
+                var cls = kv.Value >= 0 ? "bg-primary" : "bg-warning text-dark";
+                <span class="badge @cls me-2">@kv.Value.ToString("N2") @kv.Key</span>
+            }
+        </div>
+    </div>
+}
 
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle">
@@ -69,12 +120,17 @@
                 <th>Dorse</th>
                 <th>Sürücü</th>
                 <th>Tür</th>
+                <th>PB Toplamlar</th>
                 <th class="text-end">İşlemler</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var r in Model.Items)
             {
+                // satır PB rozetleri hazırla:
+                var gelir = Model.GelirBySeferPB.TryGetValue(r.SeferID, out var gmap) ? gmap : null;
+                var masraf = Model.MasrafBySeferPB.TryGetValue(r.SeferID, out var mmap) ? mmap : null;
+
                 <tr>
                     <td>@(r.CikisTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
                     <td>@(r.DonusTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
@@ -97,7 +153,40 @@
 
                             <span class="badge bg-light text-dark">—</span>
                         }
+                        @if (r.Durum == 2)
+                        {
+                            <span class="badge bg-dark ms-1">Kapalı</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-info ms-1">Açık</span>
+                        }
                     </td>
+
+                    <td>
+                        @if (gelir != null && gelir.Count > 0)
+                        {
+                            <div class="mb-1">
+                                <span class="me-1 text-muted">G:</span>
+                                @foreach (var kv in gelir)
+                                {
+                                    <span class="badge bg-success me-1">@kv.Value.ToString("N2") @kv.Key</span>
+                                }
+                            </div>
+                        }
+                        @if (masraf != null && masraf.Count > 0)
+                        {
+                            <div>
+                                <span class="me-1 text-muted">M:</span>
+                                @foreach (var kv in masraf)
+                                {
+                                    <span class="badge bg-danger me-1">@kv.Value.ToString("N2") @kv.Key</span>
+                                }
+                            </div>
+                        }
+                    </td>
+
                     <td class="text-end">
                         <div class="btn-group btn-group-sm">
                             <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-outline-primary">Detay</a>
@@ -121,6 +210,8 @@
                asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
                asp-route-q="@Model.q"
                asp-route-ozmal="@Model.ozmal"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               asp-route-pbFilter="@Model.pbFilter"
                asp-route-page="@(Model.page - 1)"
                asp-route-pageSize="@Model.pageSize">Önceki</a>
         </li>
@@ -131,6 +222,8 @@
                asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
                asp-route-q="@Model.q"
                asp-route-ozmal="@Model.ozmal"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               asp-route-pbFilter="@Model.pbFilter"
                asp-route-page="@(Model.page + 1)"
                asp-route-pageSize="@Model.pageSize">Sonraki</a>
         </li>

@@ -15,6 +15,9 @@ CultureInfo.DefaultThreadCurrentUICulture = culture;
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddHttpClient<ICurrencyRateService, CurrencyRateService>();
+
+
 // Cookie Authentication
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
