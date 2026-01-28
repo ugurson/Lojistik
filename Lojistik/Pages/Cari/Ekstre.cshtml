@@ -79,20 +79,23 @@
             PDF
         </a>
 
-        @{
-            var toggleText = Model.showClosed ? "Açık/Kısmi Evraklar" : "Kapanan Evraklar";
-            var toggleClass = Model.showClosed ? "btn bg-warning text-dark border-0"
-            : "btn bg-success text-white border-0";
-        }
-        <a asp-page="./Ekstre"
-           asp-route-musteriId="@Model.musteriId"
-           asp-route-pb="@Model.pb"
-           asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
-           asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
-           asp-route-showClosed="@(Model.showClosed ? "false" : "true")"
-           class="@toggleClass">
-            @toggleText
-        </a>
+@{
+    var toggleText = Model.onlyBorclar ? "Hepsi" : "Sadece Borçlar";
+    var toggleClass = Model.onlyBorclar
+        ? "btn bg-warning text-dark border-0"
+        : "btn bg-success text-white border-0";
+}
+<a asp-page="./Ekstre"
+   asp-route-musteriId="@Model.musteriId"
+   asp-route-pb="@Model.pb"
+   asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
+   asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
+   asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+   asp-route-onlyBorclar="@(Model.onlyBorclar ? "false" : "true")"
+   class="@toggleClass">
+    @toggleText
+</a>
+
 
 </div>
 <div class="mb-2">
@@ -113,6 +116,7 @@
                 <th class="text-end">Borç (@Model.pb)</th>
                 <th class="text-end">Alacak (@Model.pb)</th>
                 <th class="text-end">Bakiye (@Model.pb)</th>
+                    <th style="width:70px" class="text-end"></th>
             </tr>
         </thead>
         <tbody>
@@ -129,7 +133,17 @@
             {
                 foreach (var r in Model.Items)
                 {
-                    <tr>
+                        var siparisTahsilatli =
+                        r.IslemTuru == "Sipariş"
+                        && !string.IsNullOrWhiteSpace(r.EvrakNo)
+                        && Model.TahsilatEvrakSet.Contains(r.EvrakNo.Trim().ToUpperInvariant());
+
+                        var manuelTahsilatli =
+                        r.IslemTuru == "Manuel"
+                        && !string.IsNullOrWhiteSpace(r.EvrakNo)
+                        && Model.TahsilatEvrakSet.Contains(r.EvrakNo.Trim().ToUpperInvariant());
+
+                        <tr class="@((siparisTahsilatli || manuelTahsilatli) ? "table-success" : "")">
                         <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
                         <td>@r.IslemTuru</td>
                             <td>
@@ -152,15 +166,15 @@
                         <td>@r.Aciklama</td>
                         <td class="text-end">@r.Borc.ToString("N2")</td>
                         <td class="text-end">@r.Alacak.ToString("N2")</td>
-                        <td class="text-end fw-semibold">
-                            @r.Bakiye.ToString("N2")
+                        <td class="text-end fw-semibold">@r.Bakiye.ToString("N2")</td>
                             @* İptal butonu: sadece Tahsilat satırlarında *@
+                            <td class="text-end">
                                 @if (r.IptalEdilebilir)
                                 {
-                                    @if (yetki2 == 2)
+                                    if (yetki2 == 2)
                                     {
                                         <form method="post" asp-page-handler="Iptal"
-                                              class="d-inline ms-2"
+                                              class="d-inline"
                                               onsubmit="return confirm('Bu tahsilatı silmek istediğinize emin misiniz?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@r.CariHareketID" />
@@ -176,9 +190,9 @@
                                         <button class="btn btn-outline-danger btn-sm" disabled>Sil</button>
                                     }
                                 }
+                            </td>
 
-
-                        </td>
+                        
                     </tr>
                 }
             }

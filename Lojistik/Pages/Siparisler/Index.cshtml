@@ -9,7 +9,7 @@
     {
         0 => "Taslak",
         1 => "Yüklendi",
-        2 => "Araca Bağlandı",
+        2 => "Araçta",
         3 => "Tamamlandı",
         7 => "Sonlandırıldı",
         _ => "Bilinmiyor"
@@ -34,9 +34,45 @@
 
 <form method="get" class="row g-2 mb-3 align-items-end">
     <div class="col-sm-5">
+        <label class="form-label">Ara</label>
         <input name="q" value="@Model.q" class="form-control" placeholder="Ara (terim, müşteri, sipariş no)..." />
     </div>
+
     <div class="col-sm-3">
+        <label class="form-label">Gösterim</label>
+        <div class="btn-group d-flex" role="group">
+            <a class="btn btn-outline-primary @(Model.siparisTur is null ? "active" : "")"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-page="1"
+               asp-route-pageSize="@Model.pageSize"
+               asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="">
+                Tümü
+            </a>
+            <a class="btn btn-outline-primary @(Model.siparisTur == 1 ? "active" : "")"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-page="1"
+               asp-route-pageSize="@Model.pageSize"
+               asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="1">
+                Yurtdışı
+            </a>
+            <a class="btn btn-outline-primary @(Model.siparisTur == 2 ? "active" : "")"
+               asp-page="./Index"
+               asp-route-q="@Model.q"
+               asp-route-page="1"
+               asp-route-pageSize="@Model.pageSize"
+               asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="2">
+                Yurtiçi
+            </a>
+        </div>
+    </div>
+
+    <div class="col-sm-2">
+        <label class="form-label">Sayfa Boyutu</label>
         <select name="pageSize" class="form-select" onchange="this.form.submit()">
             @{
                 int[] sizes = new[] { 10, 20, 50, 100 };
@@ -49,21 +85,26 @@
     </div>
 
     <input type="hidden" name="page" value="1" />
+    <input type="hidden" name="groupBy" value="@Model.groupBy" />
+    <input type="hidden" name="siparisTur" value="@(Model.siparisTur?.ToString())" />
 
     <div class="col-sm-2">
+        <label class="form-label d-block">&nbsp;</label>
         <button class="btn btn-primary w-100">Ara</button>
     </div>
-
+<!---
     <div class="col-sm-2">
+        <label class="form-label d-block">&nbsp;</label>
         <a asp-page="./Index"
            asp-route-q="@Model.q"
            asp-route-pageSize="@Model.pageSize"
+           asp-route-siparisTur="@(Model.siparisTur?.ToString())"
            asp-route-groupBy="@(Model.groupBy == "sefer" ? null : "sefer")"
            class="btn btn-outline-secondary w-100">
             @(Model.groupBy == "sefer" ? "Gruplamayı Kapat" : "Sefer Grupla")
         </a>
-    </div>
-</form>
+        </div>-->
+    </form>
 
 @if (Model.groupBy == "sefer")
 {
@@ -73,7 +114,6 @@
 
     <div class="table-responsive">
         <table class="table table-sm table-hover align-middle siparis-table">
-
             <thead>
                 <tr>
                     <th>Sp</th>
@@ -118,9 +158,9 @@
                             </td>
                             <td class="text-end">
                                 <div class="d-inline-flex flex-wrap gap-1">
-                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-primary btn-sm">Detay</a>
-                                    <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-warning btn-sm">Düzenle</a>
-                                    <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-danger btn-sm">Sil</a>
+                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-primary btn-sm">+</a>
+                                    <a asp-page="./Edit" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-warning btn-sm">....</a>
+                                    <a asp-page="./Delete" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-danger btn-sm">-</a>
                                 </div>
                             </td>
                         </tr>
@@ -134,7 +174,6 @@ else
 {
     <div class="table-responsive">
         <table class="table table-sm table-hover align-middle siparis-table">
-
             <thead>
                 <tr>
                     <th>Sp</th>
@@ -160,7 +199,12 @@ else
                         <td>@r.SiparisID</td>
                         <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
                         <td>@r.Gonderen</td>
-                        <td>@r.Alici</td>
+                        <td>
+                         @{
+                            string full = r.Alici ?? "";
+                            string cut = full.Length > 15 ? full.Substring(0,15) + "…" : full;
+                            }     <span title="@full">@cut</span>
+                        </td>
                         <td>@r.AliciUlke</td>
                         <td>@r.AliciSehir</td>
                         <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
@@ -173,11 +217,16 @@ else
                             <span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span>
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex flex-wrap gap-1">
-                                <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-primary btn-sm">Detay</a>
-                                <a asp-page="./Edit" asp-route-id="@r.SiparisID" class="btn btn-warning btn-sm">Düzenle</a>
-                                <a asp-page="./Delete" asp-route-id="@r.SiparisID" class="btn btn-danger btn-sm">Sil</a>
-                            </div>
+                           <div class="d-inline-flex flex-wrap gap-1">
+  <a asp-page="./Details" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())"
+     class="btn btn-primary btn-sm" title="Detay">+</a>
+
+  <a asp-page="./Edit" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())"
+     class="btn btn-warning btn-sm" title="Düzenle">...</a>
+
+  <a asp-page="./Delete" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())"
+     class="btn btn-danger btn-sm" title="Sil">-</a>
+</div>
                         </td>
                     </tr>
                 }
@@ -197,7 +246,8 @@ else
                asp-route-q="@Model.q"
                asp-route-page="@(Model.page - 1)"
                asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy">Önceki</a>
+               asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="@(Model.siparisTur?.ToString())">Önceki</a>
         </li>
         <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
             <a class="page-link"
@@ -205,19 +255,18 @@ else
                asp-route-q="@Model.q"
                asp-route-page="@(Model.page + 1)"
                asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy">Sonraki</a>
+               asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="@(Model.siparisTur?.ToString())">Sonraki</a>
         </li>
     </ul>
 </nav>
 
 <style>
-    /* ~%10 daha küçük */
     .siparis-table td,
     .siparis-table th {
         font-size: 0.9rem;
     }
 
-    /* İsterseniz butonları da bir tık küçültün (opsiyonel) */
     .siparis-table .btn {
         font-size: 0.8rem;
         padding: .2rem .45rem;

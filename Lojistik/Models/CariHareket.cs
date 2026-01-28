@@ -30,5 +30,8 @@ namespace Lojistik.Models
 
         public int? CreatedByKullaniciID { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public int? SeferGelirID { get; set; }
+        public SeferGelir? SeferGelir { get; set; }
     }
 }

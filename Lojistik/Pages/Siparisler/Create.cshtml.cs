@@ -46,6 +46,9 @@ namespace Lojistik.Pages.Siparisler
             [StringLength(500)] public string? Notlar { get; set; }
 
             [Required] public byte Durum { get; set; } = 0;
+
+            // YENİ: 1 = Yurtdışı (default), 2 = Yurtiçi
+            public int SiparisTur { get; set; } = 1;
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -72,7 +75,6 @@ namespace Lojistik.Pages.Siparisler
                 CreatedByKullaniciID = userId,
                 CreatedAt = DateTime.Now,
 
-                // SubeKodu kullanmıyoruz
                 SiparisTarihi = Input.SiparisTarihi.Date,
                 GonderenMusteriID = Input.GonderenMusteriID,
                 AliciMusteriID = Input.AliciMusteriID,
@@ -88,7 +90,10 @@ namespace Lojistik.Pages.Siparisler
 
                 FaturaNo = Input.FaturaNo?.Trim(),
                 Notlar = Input.Notlar?.Trim(),
-                Durum = Input.Durum
+                Durum = Input.Durum,
+
+                // YENİ: Sipariş Türü
+                SiparisTur = Input.SiparisTur
             };
 
             _context.Siparisler.Add(e);

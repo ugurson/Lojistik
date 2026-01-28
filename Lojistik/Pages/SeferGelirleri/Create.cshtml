@@ -31,8 +31,7 @@
             <input asp-for="Input.Tutar"
                    class="form-control"
                    type="text" />
-            <button class="btn btn-outline-secondary" type="button" onclick="quick(500)">+500</button>
-            <button class="btn btn-outline-secondary" type="button" onclick="quick(1000)">+1.000</button>
+
         </div>
         <div class="form-text">Virgül veya nokta kullanabilirsiniz (ör. 1.900,50).</div>
         <span asp-validation-for="Input.Tutar" class="text-danger"></span>
@@ -45,7 +44,19 @@
         </select>
         <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
     </div>
+    <!-- YENİ: Çıkış / Varış İli (Siparişten bağımsız) -->
+    <div class="col-md-3">
+        <label asp-for="Input.CikisIl" class="form-label">Çıkış İli</label>
+        <input asp-for="Input.CikisIl" class="form-control" placeholder="Örn: Gaziantep" />
+        <span asp-validation-for="Input.CikisIl" class="text-danger"></span>
+    </div>
 
+    <div class="col-md-3">
+        <label asp-for="Input.VarisIl" class="form-label">Varış İli</label>
+        <input asp-for="Input.VarisIl" class="form-control" placeholder="Örn: İstanbul" />
+        <span asp-validation-for="Input.VarisIl" class="text-danger"></span>
+    </div>
+    <!-- /YENİ -->
     <div class="col-md-6">
         <label asp-for="Input.IlgiliSiparisID" class="form-label">İlgili Sipariş</label>
         <select asp-for="Input.IlgiliSiparisID" asp-items="Model.SiparisSelect" class="form-select">

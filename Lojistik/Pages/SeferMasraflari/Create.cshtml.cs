@@ -27,7 +27,7 @@ namespace Lojistik.Pages.SeferMasraflari
             [DataType(DataType.Date)] public DateTime Tarih { get; set; } = DateTime.Today;
             [Required, StringLength(50)] public string MasrafTipi { get; set; } = "Yakıt";
             [Range(0, 999999999)] public decimal Tutar { get; set; }
-            [Required, StringLength(10)] public string ParaBirimi { get; set; } = "EUR";
+            [Required, StringLength(10)] public string ParaBirimi { get; set; } = "TL";
             [StringLength(50)] public string? FaturaBelgeNo { get; set; }
             [StringLength(50)] public string? Ulke { get; set; }
             [StringLength(100)] public string? Yer { get; set; }
@@ -40,7 +40,7 @@ namespace Lojistik.Pages.SeferMasraflari
 
             Input.SeferID = seferId;
 
-            ParaBirimleri = new SelectList(new[] { "EUR", "USD", "TL" });
+            ParaBirimleri = new SelectList(new[] { "TL", "EUR", "USD"  });
             MasrafTipleri = new SelectList(new[]
             {
                 "Yakıt","Yakıt-Kapı","Şöför Fiks","Masraflar","Otoyol/Geçiş","Konaklama","Yemek","Bakım/Servis","Lastik",
@@ -58,7 +58,7 @@ namespace Lojistik.Pages.SeferMasraflari
 
             if (!ModelState.IsValid)
             {
-                ParaBirimleri = new SelectList(new[] { "EUR", "USD", "TL" });
+                ParaBirimleri = new SelectList(new[] { "TL", "EUR", "USD" });
                 MasrafTipleri = new SelectList(new[] { "Yakıt", "Yakıt-Kapı", "Şöför Fiks","Masraflar", "Otoyol/Geçiş", "Konaklama", "Yemek", "Bakım/Servis", "Lastik", "Gümrük", "Sigorta", "Belge/Harç", "Park", "Diğer" });
                 return Page();
             }

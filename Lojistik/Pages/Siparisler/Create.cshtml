@@ -3,11 +3,28 @@
 @model Lojistik.Pages.Siparisler.CreateModel
 @{
     ViewData["Title"] = "Yeni Sipariş";
+    // Varsayılan etiket (SiparisTur yoksa 1=Yurtdışı)
+    var tur = Model?.Input?.SiparisTur == 2 ? "Yurtiçi" : "Yurtdışı";
 }
-<h2 class="mb-3">Yeni Sipariş</h2>
+<h2 class="mb-3">Yeni Sipariş – <span id="sipTurLabel">@tur</span></h2>
 
 <form method="post" class="row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <!-- Sipariş Türü -->
+    <div class="col-md-4">
+        <label class="form-label">Sipariş Türü</label>
+        <div class="btn-group d-flex" role="group">
+            <input type="radio" class="btn-check" name="Input.SiparisTur" id="turYurtdisi" value="1"
+                   @(Model?.Input?.SiparisTur is 2 ? "" : "checked")>
+            <label class="btn btn-outline-primary" for="turYurtdisi">Yurtdışı</label>
+
+            <input type="radio" class="btn-check" name="Input.SiparisTur" id="turYurtici" value="2"
+                   @(Model?.Input?.SiparisTur is 2 ? "checked" : "")>
+            <label class="btn btn-outline-primary" for="turYurtici">Yurtiçi</label>
+        </div>
+        <div class="form-text">Varsayılan: Yurtdışı</div>
+    </div>
 
     <div class="col-md-3">
         <label asp-for="Input.SiparisTarihi" class="form-label">Sipariş Tarihi</label>
@@ -101,4 +118,22 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const labelEl = document.getElementById('sipTurLabel');
+            const rdDisi  = document.getElementById('turYurtdisi');
+            const rdIci   = document.getElementById('turYurtici');
+
+            function refreshTitle() {
+                if (rdIci && rdIci.checked) labelEl.textContent = 'Yurtiçi';
+                else labelEl.textContent = 'Yurtdışı';
+            }
+
+            if (rdDisi) rdDisi.addEventListener('change', refreshTitle);
+            if (rdIci)  rdIci.addEventListener('change', refreshTitle);
+
+            // sayfa yüklenince başlık doğru gelsin
+            refreshTitle();
+        })();
+    </script>
 }

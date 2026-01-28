@@ -23,4 +23,8 @@ public class SeferGelir
 
     public Sefer? Sefer { get; set; }
     public Siparis? IlgiliSiparis { get; set; }
+
+    public string? CikisIl { get; set; }
+    public string? VarisIl { get; set; }
+
 }

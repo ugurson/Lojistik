@@ -43,6 +43,11 @@ namespace Lojistik.Pages.SeferGelirleri
 
             [StringLength(300)]
             public string? Notlar { get; set; }
+            [StringLength(100)]
+            public string? CikisIl { get; set; }
+
+            [StringLength(100)]
+            public string? VarisIl { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync(int seferId)
@@ -76,6 +81,9 @@ namespace Lojistik.Pages.SeferGelirleri
                 ParaBirimi = Input.ParaBirimi,
                 IlgiliSiparisID = Input.IlgiliSiparisID,
                 Notlar = string.IsNullOrWhiteSpace(Input.Notlar) ? null : Input.Notlar!.Trim(),
+                CikisIl = string.IsNullOrWhiteSpace(Input.CikisIl) ? null : Input.CikisIl!.Trim(),
+                VarisIl = string.IsNullOrWhiteSpace(Input.VarisIl) ? null : Input.VarisIl!.Trim(),
+
                 CreatedAt = DateTime.Now
             };
 

@@ -34,7 +34,25 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
 
-                        <li class="nav-item"><a class="nav-link" asp-page="/Siparisler/Index">Siparişler</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="araclarMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Siparişler
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="araclarMenu">
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Siparisler/Index" asp-route-siparisTur="1">
+                                        Yurtdışı Siparişler
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Siparisler/Index" asp-route-siparisTur="2">
+                                        Yurtiçi Siparişler
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+
                         <li class="nav-item"><a class="nav-link" asp-page="/Seferler/Index">Seferler</a></li>
 
                         <li class="nav-item">

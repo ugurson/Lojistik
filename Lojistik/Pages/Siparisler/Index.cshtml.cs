@@ -38,6 +38,8 @@ namespace Lojistik.Pages.Siparisler
         [BindProperty(SupportsGet = true)] public int pageSize { get; set; } = 20;
         [BindProperty(SupportsGet = true)] public string? groupBy { get; set; } // "sefer" olursa gruplarız
 
+        [BindProperty(SupportsGet = true)] public int? siparisTur { get; set; }
+
         public int TotalCount { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / pageSize);
 
@@ -48,6 +50,9 @@ namespace Lojistik.Pages.Siparisler
             var query = _context.Siparisler
                 .AsNoTracking()
                 .Where(s => s.FirmaID == firmaId && s.Durum != 7);
+
+            if (siparisTur.HasValue)
+                query = query.Where(s => s.SiparisTur == siparisTur.Value);
 
             if (!string.IsNullOrWhiteSpace(q))
             {

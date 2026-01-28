@@ -156,6 +156,8 @@ namespace Lojistik.Data
                 e.Property(x => x.EvrakNo).HasMaxLength(50);
                 e.Property(x => x.Aciklama).HasMaxLength(300);
                 e.Property(x => x.ParaBirimi).HasMaxLength(10).IsRequired();
+                e.Property(x => x.SeferGelirID);
+
 
                 e.Property(x => x.Tutar).HasColumnType("decimal(18,2)");
                 e.Property(x => x.Kur).HasColumnType("decimal(18,6)");
@@ -172,6 +174,18 @@ namespace Lojistik.Data
                  .HasDatabaseName("UX_CariHareketler_Firma_Siparis")
                  .IsUnique()
                  .HasFilter("[IlgiliSiparisID] IS NOT NULL");
+                // SeferGelir ilişkisi
+                e.HasOne(x => x.SeferGelir)
+                 .WithMany()
+                 .HasForeignKey(x => x.SeferGelirID)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // SeferGelir başına tek hareket (filtered unique)
+                e.HasIndex(x => new { x.FirmaID, x.SeferGelirID })
+                 .HasDatabaseName("UX_CariHareketler_Firma_SeferGelir")
+                 .IsUnique()
+                 .HasFilter("[SeferGelirID] IS NOT NULL");
+
             });
             modelBuilder.Entity<Siparis>(e =>
             {

@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Text.RegularExpressions;
+
 
 namespace Lojistik.Pages.Cari
 {
@@ -30,6 +32,10 @@ namespace Lojistik.Pages.Cari
         [BindProperty(SupportsGet = true)] public DateTime? d2 { get; set; }   // bitiş (dahil)
 
         [BindProperty(SupportsGet = true)] public bool showClosed { get; set; } = false;
+        public HashSet<string> TahsilatEvrakSet { get; private set; } = new();
+        [BindProperty(SupportsGet = true)]
+        public bool onlyBorclar { get; set; }
+
 
         // ---- Header info ----
         public string? MusteriAdi { get; set; }
@@ -52,6 +58,11 @@ namespace Lojistik.Pages.Cari
     string.Equals(IslemTuru, "Tahsilat", StringComparison.OrdinalIgnoreCase) && Alacak == 0 && Borc > 0
     || string.Equals(IslemTuru, "Manuel", StringComparison.OrdinalIgnoreCase);  // <-- eklendi
 
+            public string Durum =>
+    Kapandi ? "Kapandı"
+    : (!string.IsNullOrWhiteSpace(EvrakNo) && Alacak > 0 && Borc > 0) ? "Kısmi"
+    : (!string.IsNullOrWhiteSpace(EvrakNo) && Alacak > 0) ? "Açık"
+    : "—";
         }
 
         public List<Row> Items { get; set; } = new();
@@ -73,6 +84,25 @@ namespace Lojistik.Pages.Cari
             public string? Aciklama { get; set; }
         }
         public Dictionary<string, List<DetayRow>> KapananDetayByEvrak { get; set; } = new();
+
+        // Köşeli parantezli etiketleri ve "Eşleşmeyen Evrak" varyasyonlarını siler
+        private static string CleanText(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return "";
+            var t = s;
+            t = Regex.Replace(t, @"\[\s*Eşleşmeyen[^\]]*\]", "", RegexOptions.IgnoreCase);
+            t = Regex.Replace(t, @"Eşleşmeyen\s*Evrak(No)?", "", RegexOptions.IgnoreCase);
+            return t.Trim();
+        }
+
+        // EvrakNo'yu normalize et (Trim + iç boşlukları sıkıştırma)
+        private static string? NormalizeDoc(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            var t = s.Trim();
+            t = Regex.Replace(t, @"\s+", " "); // birden çok boşluğu teke indir
+            return t;
+        }
 
 
         public async Task<IActionResult> OnPostIptalAsync(int id, int musteriId, string pb, DateTime? d1, DateTime? d2)
@@ -457,14 +487,11 @@ namespace Lojistik.Pages.Cari
             var firmaId = User.GetFirmaId();
             var userId = User.GetUserId();
 
-            if (musteriId <= 0 || string.IsNullOrWhiteSpace(pb))
-                return RedirectToPage("./Index");
-
+            if (musteriId <= 0 || string.IsNullOrWhiteSpace(pb)) return RedirectToPage("./Index");
             pb = pb.Trim().ToUpperInvariant();
 
-            // Tarih aralığı
             var start = d1?.Date ?? new DateTime(DateTime.Today.Year, 1, 1);
-            var end = (d2?.Date ?? DateTime.Today);
+            var end = (d2?.Date ?? DateTime.Today).Date;
             if (end < start) end = start;
 
             // Müşteri adı
@@ -475,131 +502,38 @@ namespace Lojistik.Pages.Cari
 
             // Açılış bakiye
             AcilisBakiye = await _context.CariHareketler.AsNoTracking()
-                .Where(ch => ch.FirmaID == firmaId
-                          && ch.MusteriID == musteriId
-                          && ch.ParaBirimi == pb
-                          && ch.Tarih < start)
+                .Where(ch => ch.FirmaID == firmaId && ch.MusteriID == musteriId && ch.ParaBirimi == pb && ch.Tarih < start)
                 .Select(ch => ch.Yonu == 1 ? ch.Tutar : -ch.Tutar)
                 .SumAsync();
 
-            // ---- 1b) Evrak NO'lu tahsilatların (Tahsilat/Manuel, Yonu=0) LISTESİ (modal için) ----
-            var tahsilatListByEvrak = await _context.CariHareketler
-          .AsNoTracking()
-          .Where(x => x.FirmaID == firmaId
-                   && x.MusteriID == musteriId
-                   && x.ParaBirimi == pb
-                   && x.Tarih >= start && x.Tarih <= end
-                   && x.EvrakNo != null
-                   && (
-                        (x.IslemTuru == "Tahsilat" && x.Yonu == 0) ||
-                        (x.IslemTuru == "Manuel" && x.Yonu == 0)
-                      ))
-          .OrderBy(x => x.Tarih).ThenBy(x => x.CariHareketID)
-          .Select(x => new {
-              EvrakNo = x.EvrakNo!,   // <— isim verildi, null-forgiving ifadesi burada OK
-              x.CariHareketID,
-              x.Tarih,
-              x.Tutar,
-              x.IslemTuru,
-              x.Aciklama
-          })
-          .ToListAsync();
-
-
-            var tahsilatListDict = tahsilatListByEvrak
-                .GroupBy(x => x.EvrakNo)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(z => new PayItem
-                    {
-                        CariHareketID = z.CariHareketID,
-                        Tarih = z.Tarih,
-                        Tutar = z.Tutar,
-                        Kaynak = z.IslemTuru ?? "",
-                        Aciklama = z.Aciklama
-                    }).ToList()
-                );
-
-
-            // Toplam için de sözlük (evrak bazlı borç)
-            var tahsilatByEvrak = tahsilatListDict.ToDictionary(k => k.Key, v => v.Value.Sum(p => p.Tutar));
-
-            // ---- Gösterilecek satırlar ----
-            var rows = await _context.CariHareketler
-                .AsNoTracking()
+            // TÜM hareketleri (belge ve tahsilatlar) tek tek çek
+            var rows = await _context.CariHareketler.AsNoTracking()
                 .Where(x => x.FirmaID == firmaId
                          && x.MusteriID == musteriId
                          && x.ParaBirimi == pb
                          && x.Tarih >= start && x.Tarih <= end
                          && (
-                              (x.IslemTuru == "Sipariş" && x.Yonu == 1 && x.EvrakNo != null) ||
-                              (x.IslemTuru == "Manuel" && x.Yonu == 1) ||
-                              ((x.IslemTuru == "Tahsilat" || x.IslemTuru == "Manuel") && x.Yonu == 0 && x.EvrakNo == null)
-                            ))
+     (x.IslemTuru == "Sipariş" && x.Yonu == 1) ||
+     (x.IslemTuru == "Manuel" && (x.Yonu == 1 || x.Yonu == 0)) ||
+     (x.IslemTuru == "Tahsilat" && x.Yonu == 0) ||
+     (x.IslemTuru == "Sefer Alacak" && x.Yonu == 1)
+   ))
                 .OrderBy(x => x.Tarih).ThenBy(x => x.CariHareketID)
-                .Select(x => new
-                {
-                    x.CariHareketID,
-                    x.Tarih,
-                    x.IslemTuru,
-                    x.EvrakNo,
-                    x.Aciklama,
-                    x.Yonu,
-                    x.Tutar
-                })
+                .Select(x => new { x.CariHareketID, x.Tarih, x.IslemTuru, x.EvrakNo, x.Aciklama, x.Yonu, x.Tutar })
                 .ToListAsync();
 
-            // Listeyi oluştur
-            decimal bakiye = AcilisBakiye;
+            // Satır satır bakiye
             Items.Clear();
+            decimal bakiye = AcilisBakiye;
 
             foreach (var h in rows)
             {
+
                 decimal borc = 0m, alacak = 0m;
-
-                if (h.IslemTuru == "Sipariş" && h.Yonu == 1)
-                {
+                if ((h.IslemTuru == "Sipariş" && h.Yonu == 1) || (h.IslemTuru == "Manuel" && h.Yonu == 1) || (h.IslemTuru == "Sefer Alacak" && h.Yonu == 1))
                     alacak = h.Tutar;
-                    borc = (h.EvrakNo != null && tahsilatByEvrak.TryGetValue(h.EvrakNo, out var t)) ? t : 0m;
-                }
-                else if (h.IslemTuru == "Manuel" && h.Yonu == 1)
-                {
-                    alacak = h.Tutar;
-                    if (!string.IsNullOrEmpty(h.EvrakNo) && tahsilatByEvrak.TryGetValue(h.EvrakNo!, out var t2))
-                        borc = t2;
-                }
                 else
-                {
-                    // Evraksız tahsilatlar
                     borc = h.Tutar;
-                }
-
-                // ---- 1c) Kapandı mı? Kapanış tarihi? (tahsilatlar kümülatif toplam belgeyi karşıladığı an) ----
-                DateTime? kapanisTarihi = null;
-                bool kapandi = false;
-
-                if (!string.IsNullOrEmpty(h.EvrakNo))
-                {
-                    if (tahsilatListDict.TryGetValue(h.EvrakNo!, out var pays) && pays.Count > 0)
-                    {
-                        decimal cum = 0m;
-                        foreach (var p in pays)
-                        {
-                            cum += p.Tutar;
-                            if (!kapanisTarihi.HasValue && cum >= alacak)
-                                kapanisTarihi = p.Tarih;
-                        }
-                    }
-                    kapandi = (alacak - borc) <= 0m;
-                }
-
-                // Toggle: varsayılan açık/kısmi; showClosed=true => sadece kapananlar
-                var hasEvrak = !string.IsNullOrEmpty(h.EvrakNo);
-                bool isDocRow = (h.IslemTuru == "Sipariş" && h.Yonu == 1) || (h.IslemTuru == "Manuel" && h.Yonu == 1);
-                bool isClosed = hasEvrak && isDocRow && kapandi;
-
-                if (!showClosed && isClosed) continue;
-                if (showClosed && !isClosed) continue;
 
                 bakiye += (alacak - borc);
 
@@ -608,33 +542,47 @@ namespace Lojistik.Pages.Cari
                     CariHareketID = h.CariHareketID,
                     Tarih = h.Tarih,
                     IslemTuru = h.IslemTuru,
-                    EvrakNo = h.EvrakNo,
-                    Aciklama = h.Aciklama,
+                    EvrakNo = NormalizeDoc(h.EvrakNo),
+                    Aciklama = CleanText(h.Aciklama),
                     Borc = borc,
                     Alacak = alacak,
                     Bakiye = bakiye,
-                    Kapandi = kapandi,
-                    KapanisTarihi = kapanisTarihi,
-                    Tahsilatlar = (!string.IsNullOrEmpty(h.EvrakNo) && tahsilatListDict.TryGetValue(h.EvrakNo!, out var list)) ? list : null
+                    Kapandi = false,          // artık kullanılmıyor
+                    KapanisTarihi = null,
+                    Tahsilatlar = null
                 });
+  
             }
-
+            if (onlyBorclar)
+            {
+                Items = Items
+                    .Where(x => !string.Equals(x.IslemTuru, "Tahsilat", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
             ToplamBorc = Items.Sum(x => x.Borc);
             ToplamAlacak = Items.Sum(x => x.Alacak);
             KapanisBakiye = bakiye;
 
-            d1 = start;
-            d2 = end;
+            d1 = start; d2 = end;
 
             var yetki2 = await _context.Kullanicilar
-       .Where(k => k.KullaniciID == userId && k.FirmaID == firmaId)
-       .Select(k => k.YetkiSeviyesi2)
-       .FirstOrDefaultAsync();
-
+                .Where(k => k.KullaniciID == userId && k.FirmaID == firmaId)
+                .Select(k => k.YetkiSeviyesi2)
+                .FirstOrDefaultAsync();
             ViewData["Yetki2"] = yetki2;
+
+            TahsilatEvrakSet = rows
+    .Where(x => string.Equals(x.IslemTuru, "Tahsilat", StringComparison.OrdinalIgnoreCase)
+             && !string.IsNullOrWhiteSpace(x.EvrakNo))
+    .Select(x => x.EvrakNo!.Trim().ToUpperInvariant())
+    .ToHashSet();
+
+
 
             return Page();
         }
+
+
 
 
 

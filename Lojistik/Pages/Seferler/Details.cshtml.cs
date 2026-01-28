@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 // Details.cshtml.cs en üstüne
 using Lojistik.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 
 namespace Lojistik.Pages.Seferler
@@ -24,6 +25,7 @@ namespace Lojistik.Pages.Seferler
 
         public SeferItem? Data { get; set; }
         public List<SiparisRow> Siparisler { get; set; } = new();
+        public List<SelectListItem> MusteriOptions { get; set; } = new();
 
         public record SeferItem(
             int SeferID,
@@ -57,7 +59,13 @@ namespace Lojistik.Pages.Seferler
             string ParaBirimi,
             string? Aciklama,
             int? IlgiliSiparisID,
-            string? Notlar
+            string? Notlar,
+    string? FaturaNo,
+    string? CikisIl,
+    string? VarisIl,
+    bool IsCarilestirildi,
+    string? CariMusteriAdi,
+    string? CariIslemTuru
         );
 
         public List<GelirRow> Gelirler { get; set; } = new();
@@ -75,12 +83,15 @@ namespace Lojistik.Pages.Seferler
             string? AliciSehir,
             decimal? Tutar,
             string? ParaBirimi,
-            string? FaturaNo
+            string? FaturaNo,
+            string? DorsePlaka
         );
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
             var firmaId = User.GetFirmaId();
+
+
 
             Data = await _context.Seferler
                 .AsNoTracking()
@@ -101,6 +112,17 @@ namespace Lojistik.Pages.Seferler
 
             if (Data == null) return RedirectToPage("./Index");
 
+            MusteriOptions = await _context.Musteriler
+.AsNoTracking()
+.Where(m => m.FirmaID == firmaId)
+.OrderBy(m => m.MusteriAdi)
+.Select(m => new SelectListItem
+{
+Value = m.MusteriID.ToString(),
+Text = m.MusteriAdi
+})
+.ToListAsync();
+
             Siparisler = await _context.SeferSevkiyatlar
                 .AsNoTracking()
                 .Where(x => x.Sefer.FirmaID == firmaId && x.SeferID == id)
@@ -116,7 +138,9 @@ namespace Lojistik.Pages.Seferler
                         ? x.Sevkiyat.Siparis.AliciMusteri.Sehir.SehirAdi : null,
                     x.Sevkiyat.Siparis.Tutar,
                     x.Sevkiyat.Siparis.ParaBirimi,
-                    x.Sevkiyat.Siparis.FaturaNo
+                    x.Sevkiyat.Siparis.FaturaNo,
+        x.Sevkiyat.Dorse != null ? x.Sevkiyat.Dorse.Plaka : null   // <-- EKLENDİ
+
                 ))
                 .ToListAsync();
 
@@ -149,15 +173,53 @@ namespace Lojistik.Pages.Seferler
                 .Where(g => g.FirmaID == firmaId && g.SeferID == id)
                 .OrderByDescending(g => g.Tarih)
                 .Select(g => new GelirRow(
-                    g.SeferGelirID,
-                    g.Tarih,
-                    g.Tutar,
-                    g.ParaBirimi,
-                    g.Aciklama,
-                    g.IlgiliSiparisID,
-                    g.Notlar
-                ))
-                .ToListAsync();
+        g.SeferGelirID,
+        g.Tarih,
+        g.Tutar,
+        g.ParaBirimi,
+        g.Aciklama,
+        g.IlgiliSiparisID,
+        g.Notlar,
+        _context.Siparisler
+            .Where(s => s.FirmaID == firmaId && s.SiparisID == g.IlgiliSiparisID)
+            .Select(s => s.FaturaNo)
+            .FirstOrDefault(),
+        g.CikisIl,
+        g.VarisIl,
+false,  // IsCarilestirildi
+        null,   // CariMusteriAdi
+        null 
+    ))
+    .ToListAsync();
+            var gelirIds = Gelirler.Select(x => x.SeferGelirID).ToList();
+
+            var cariList = await _context.CariHareketler
+    .AsNoTracking()
+    .Where(ch => ch.FirmaID == firmaId && ch.SeferGelirID != null && gelirIds.Contains(ch.SeferGelirID.Value))
+    .Join(
+        _context.Musteriler.AsNoTracking().Where(m => m.FirmaID == firmaId),
+        ch => new { ch.FirmaID, ch.MusteriID },
+        m => new { m.FirmaID, m.MusteriID },
+        (ch, m) => new
+        {
+            SeferGelirID = ch.SeferGelirID!.Value,
+            MusteriAdi = m.MusteriAdi,
+            Taraf = ch.IslemTuru
+        }
+    )
+    .ToListAsync();
+
+            // Eğer aynı SeferGelirID için 1’den fazla kayıt varsa (unique yoksa) ilkini alalım:
+            var cariMap = cariList
+                .GroupBy(x => x.SeferGelirID)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            // 4) In-memory birleştir
+            Gelirler = Gelirler
+                .Select(x => cariMap.TryGetValue(x.SeferGelirID, out var ci)
+                    ? x with { IsCarilestirildi = true, CariMusteriAdi = ci.MusteriAdi, CariIslemTuru = ci.Taraf }
+                    : x)
+                .ToList();
 
             GelirToplamlari = await _context.SeferGelirleri
                 .AsNoTracking()
@@ -228,6 +290,27 @@ namespace Lojistik.Pages.Seferler
             return RedirectToPage(new { id = seferId });
         }
 
+        public async Task<IActionResult> OnPostGelirCariCikartAsync(int seferId, int gelirId)
+        {
+            var firmaId = User.GetFirmaId();
+
+            var ch = await _context.CariHareketler
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SeferGelirID == gelirId);
+
+            if (ch == null)
+            {
+                TempData["StatusMessage"] = "Cari hareket bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            _context.CariHareketler.Remove(ch);
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Cariye işleme kaldırıldı.";
+            return RedirectToPage(new { id = seferId });
+        }
+
+
         public async Task<IActionResult> OnPostGelireKaydetAsync(int seferId, int siparisId)
         {
             var firmaId = User.GetFirmaId();
@@ -297,26 +380,169 @@ namespace Lojistik.Pages.Seferler
             await _context.SaveChangesAsync();
             return RedirectToPage(new { id = seferId });
         }
-
-        public async Task<IActionResult> OnPostKapatAsync(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostGelirCariyeIsleAsync(int seferId, int gelirId, int musteriId, string? aciklama)
         {
             var firmaId = User.GetFirmaId();
-            var sefer = await _context.Seferler
-                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == id);
-            if (sefer == null) return RedirectToPage("./Index");
-            if (sefer.Durum != 2)          // zaten kapalı değilse
+            var userId = User.GetUserId();
+
+            // 1) Gelir var mı ve bu sefere mi ait?
+            var gelir = await _context.SeferGelirleri
+                .AsNoTracking()
+                .Where(g => g.FirmaID == firmaId && g.SeferGelirID == gelirId && g.SeferID == seferId)
+                .Select(g => new { g.SeferGelirID, g.SeferID, g.Tutar, g.ParaBirimi, g.Tarih })
+                .FirstOrDefaultAsync();
+
+            if (gelir == null)
             {
-                sefer.Durum = 2;           // kapat
-                sefer.DonusTarihi = DateTime.Now; // dönüş zamanı kaydı
-                await _context.SaveChangesAsync();
-                TempData["StatusMessage"] = "Sefer sonlandırıldı.";
-            }
-            else
-            {
-                TempData["StatusMessage"] = "Sefer zaten sonlandırılmış.";
+                TempData["StatusMessage"] = "Gelir bulunamadı.";
+                return RedirectToPage(new { id = seferId });
             }
 
+            // 2) Bu gelir daha önce carileştirilmiş mi? (tekilleştirme)
+            var already = await _context.CariHareketler
+                .AnyAsync(ch => ch.FirmaID == firmaId && ch.SeferGelirID == gelirId);
+
+            if (already)
+            {
+                TempData["StatusMessage"] = "Bu gelir zaten carileştirilmiş.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            // 3) Müşteri gerçekten bu firmaya ait mi?
+            var musteriVar = await _context.Musteriler
+                .AnyAsync(m => m.FirmaID == firmaId && m.MusteriID == musteriId);
+
+            if (!musteriVar)
+            {
+                TempData["StatusMessage"] = "Seçilen müşteri bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            var seferInfo = await _context.Seferler
+                .AsNoTracking()
+                .Where(s => s.FirmaID == firmaId && s.SeferID == seferId)
+                .Select(s => new
+                {
+                    s.SeferKodu,
+                    CekiciPlaka = s.Arac != null ? s.Arac.Plaka : null
+                })
+                .FirstOrDefaultAsync();
+
+            var seferNoText = string.IsNullOrWhiteSpace(seferInfo?.SeferKodu) ? $"SF-{seferId}" : seferInfo!.SeferKodu!;
+            var cekiciText = string.IsNullOrWhiteSpace(seferInfo?.CekiciPlaka) ? "" : $" - Çekici: {seferInfo!.CekiciPlaka}";
+
+
+            var aciklamaFinal = $"Sefer No: {seferNoText}{cekiciText} - Sefer Geliri";
+            if (!string.IsNullOrWhiteSpace(aciklama))
+                aciklamaFinal = aciklama.Trim();
+
+
+            // 5) Cari hareket oluştur
+            var chNew = new CariHareket
+            {
+                FirmaID = firmaId,
+                KullaniciID = userId,
+                MusteriID = musteriId,
+
+                Tarih = DateTime.Now,                 // istersen gelir.Tarih yaparız
+                ParaBirimi = gelir.ParaBirimi,
+                Tutar = gelir.Tutar,
+
+                Aciklama = aciklamaFinal,
+
+                // Taraf/İşlem Türü sende "IslemTuru" alanı var
+                IslemTuru = "Sefer Alacak",
+                CreatedAt = DateTime.Now,
+                CreatedByKullaniciID = userId,
+                Yonu = 1,
+
+                // Bağlantı
+                SeferGelirID = gelirId
+            };
+
+            _context.CariHareketler.Add(chNew);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Cariye işlendi.";
+            }
+            catch (Exception ex)
+            {
+                TempData["StatusMessage"] = "Kayıt sırasında hata: " + (ex.InnerException?.Message ?? ex.Message);
+            }
+
+            return RedirectToPage(new { id = seferId });
+        }
+
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostKapatAsync(int id, DateTime? kapanisTarihi)
+        {
+            var firmaId = User.GetFirmaId();
+
+            var sefer = await _context.Seferler
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == id);
+
+            if (sefer is null)
+            {
+                TempData["StatusMessage"] = "Sefer bulunamadı.";
+                return RedirectToPage("./Index");
+            }
+
+            if (sefer.Durum == 2)
+            {
+                TempData["StatusMessage"] = "Sefer zaten kapalı.";
+                return RedirectToPage(new { id });
+            }
+
+            var ts = kapanisTarihi ?? DateTime.Now; // kullanıcı seçmediyse şimdi
+            sefer.DonusTarihi = ts;
+            sefer.Durum = 2;
+
+            await _context.SaveChangesAsync();
+            TempData["StatusMessage"] = $"Sefer kapatıldı ({ts:dd.MM.yyyy HH:mm}).";
             return RedirectToPage(new { id });
         }
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostSiparisCikarAsync(int seferId, int siparisId)
+        {
+            var firmaId = User.GetFirmaId();
+
+            // Kapalı sefer kontrolü (Durum=2 kapalı varsayımı)
+            var seferDurum = await _context.Seferler
+                .Where(s => s.FirmaID == firmaId && s.SeferID == seferId)
+                .Select(s => s.Durum)
+                .FirstOrDefaultAsync();
+
+            if (seferDurum == 2)
+            {
+                TempData["StatusMessage"] = "Kapalı seferden sipariş çıkarılamaz.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            // Bu sefer-sipariş bağlantıları
+            var links = await _context.SeferSevkiyatlar
+                .Where(ss => ss.SeferID == seferId
+                          && ss.Sevkiyat.FirmaID == firmaId
+                          && ss.Sevkiyat.SiparisID == siparisId)
+                .ToListAsync();
+
+            if (links.Count == 0)
+            {
+                TempData["StatusMessage"] = "Bu sefere bağlı böyle bir sipariş bağlantısı bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            _context.SeferSevkiyatlar.RemoveRange(links);
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = $"Sipariş #{siparisId} seferden çıkarıldı.";
+            return RedirectToPage(new { id = seferId });
+        }
+
+
     }
 }

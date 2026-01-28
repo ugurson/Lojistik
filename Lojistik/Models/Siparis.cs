@@ -41,6 +41,7 @@ namespace Lojistik.Models
 
         public byte Durum { get; set; } = 0;           // 0=Yeni,1=Planlandı,2=Tamam,3=İptal
         [StringLength(500)] public string? Notlar { get; set; }
+        public int SiparisTur { get; set; } = 1; // 1=Yurtdışı, 2=Yurtiçi
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

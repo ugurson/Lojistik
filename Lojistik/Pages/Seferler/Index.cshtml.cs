@@ -25,7 +25,9 @@ namespace Lojistik.Pages.Seferler
             string? SurucuAdi,
             byte Durum,
             string? Ulke,
-            string? Sehir
+            string? Sehir,
+            string? CikisIl,
+    string? VarisIl
         );
 
         public IList<Row> Items { get; set; } = new List<Row>();
@@ -97,7 +99,37 @@ namespace Lojistik.Pages.Seferler
                     s.SeferSevkiyatlar
                         .OrderByDescending(xx => xx.SevkiyatID)
                         .Select(xx => xx.Sevkiyat.Siparis.AliciMusteri.Sehir.SehirAdi)
-                        .FirstOrDefault()
+                        .FirstOrDefault(),
+// Çıkış İl: önce bağlı siparişten, yoksa son gelir kaydından
+(
+    s.SeferSevkiyatlar
+        .OrderByDescending(xx => xx.SevkiyatID)
+        .Select(xx => xx.Sevkiyat.Siparis.GonderenMusteri.Sehir.SehirAdi)
+        .FirstOrDefault()
+    ??
+    _context.SeferGelirleri
+        .Where(g => g.FirmaID == firmaId && g.SeferID == s.SeferID)
+        .OrderByDescending(g => g.CreatedAt)
+        .ThenByDescending(g => g.SeferGelirID)
+        .Select(g => g.CikisIl)
+        .FirstOrDefault()
+),
+
+// Varış İl: önce bağlı siparişten, yoksa son gelir kaydından
+(
+    s.SeferSevkiyatlar
+        .OrderByDescending(xx => xx.SevkiyatID)
+        .Select(xx => xx.Sevkiyat.Siparis.AliciMusteri.Sehir.SehirAdi)
+        .FirstOrDefault()
+    ??
+    _context.SeferGelirleri
+        .Where(g => g.FirmaID == firmaId && g.SeferID == s.SeferID)
+        .OrderByDescending(g => g.CreatedAt)
+        .ThenByDescending(g => g.SeferGelirID)
+        .Select(g => g.VarisIl)
+        .FirstOrDefault()
+)
+
                 ))
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -109,6 +141,49 @@ namespace Lojistik.Pages.Seferler
         .FirstOrDefaultAsync();
 
             ViewData["Yetki2"] = yetki2;
+        }
+
+
+        public async Task<IActionResult> OnPostReopenAsync(int id)
+        {
+            var firmaId = User.GetFirmaId();
+            var userId = User.GetUserId();
+
+            // YetkiSeviyesi2 kontrolü
+            var yetki2 = await _context.Kullanicilar
+                .Where(k => k.KullaniciID == userId && k.FirmaID == firmaId)
+                .Select(k => k.YetkiSeviyesi2)
+                .FirstOrDefaultAsync();
+
+            if (yetki2 != 2)
+            {
+                TempData["StatusMessage"] = "Bu işlem için yetkiniz yok.";
+                return RedirectToPage(new { ShowClosed = true });
+            }
+
+            var sefer = await _context.Seferler
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == id);
+
+            if (sefer is null)
+            {
+                TempData["StatusMessage"] = "Sefer bulunamadı.";
+                return RedirectToPage(new { ShowClosed = true });
+            }
+
+            if (sefer.Durum == 2)
+            {
+                // Kapalıyı tekrar “açık” statüye al. (İsterseniz 0 yapabilirsiniz.)
+                sefer.Durum = 1;
+                await _context.SaveChangesAsync();
+                TempData["StatusMessage"] = "Sefer yeniden aktifleştirildi.";
+            }
+            else
+            {
+                TempData["StatusMessage"] = "Sefer kapalı durumda değil.";
+            }
+
+            // Kapalı liste görünümünde kalalım
+            return RedirectToPage(new { ShowClosed = true });
         }
     }
 }
