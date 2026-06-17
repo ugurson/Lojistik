@@ -111,6 +111,12 @@ namespace Lojistik.Pages.Sevkiyatlar
                 .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SevkiyatID == Input.SevkiyatID);
             if (e == null) return RedirectToPage("./Index");
 
+            var musteriIds = new[] { Input.YuklemeMusteriID, Input.BosaltmaMusteriID }
+                .Where(id => id > 0).Distinct().ToList();
+            var musteriSayisi = await _context.Musteriler
+                .CountAsync(m => m.FirmaID == firmaId && musteriIds.Contains(m.MusteriID));
+            if (musteriSayisi != musteriIds.Count) return Forbid();
+
             // CMR dosyası
             if (Input.CMRFile is { Length: > 0 })
             {

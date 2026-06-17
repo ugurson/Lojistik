@@ -103,6 +103,12 @@ namespace Lojistik.Pages.Sevkiyatlar
                 return Page();
             }
 
+            var musteriIds = new[] { Input.YuklemeMusteriID, Input.BosaltmaMusteriID }
+                .Where(id => id > 0).Distinct().ToList();
+            var musteriSayisi = await _context.Musteriler
+                .CountAsync(m => m.FirmaID == firmaId && musteriIds.Contains(m.MusteriID));
+            if (musteriSayisi != musteriIds.Count) return Forbid();
+
             // CMR dosyasını kaydet (varsa)
             string? cmrStoredName = null;
             if (Input.CMRFile is { Length: > 0 })
