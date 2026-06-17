@@ -1,0 +1,173 @@
+@page
+@model Lojistik.Pages.Raporlar.Cari.IndexModel
+@{
+    ViewData["Title"] = "Cari Özeti";
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Cari Özeti</h2>
+        <button type="button" class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal" data-bs-target="#yardimModal"
+                title="Bu sayfa hakkında yardım">
+            ❓ Yardım
+        </button>
+    </div>
+
+    @* ── Özet kartlar ── *@
+    @if (Model.Totals.Any())
+    {
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @foreach (var t in Model.Totals)
+            {
+                var netClass  = t.NetPB > 0 ? "net-pos" : t.NetPB < 0 ? "net-neg" : "net-zero";
+                var netBorder = t.NetPB >= 0
+                    ? "border: 1px solid #198754 !important; background:rgba(25,135,84,0.07)!important;"
+                    : "border: 1px solid #dc3545 !important; background:rgba(220,53,69,0.07)!important;";
+                <div class="d-flex gap-2 align-items-stretch">
+                    <div class="lj-ozet-kart" style="@netBorder">
+                        <small>@t.ParaBirimi Net</small>
+                        <span class="val @netClass">@t.NetPB.ToString("N2")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ── Arama ── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-5">
+                    <label class="form-label">Müşteri Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Müşteri ara..." />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-pastel-blue">Ara</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* ── Tablo ── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Müşteri</th>
+                    <th>PB</th>
+                    <th class="text-end">Borç (PB)</th>
+                    <th class="text-end">Alacak (PB)</th>
+                    <th class="text-end">Net (PB)</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var groups = Model.Items
+                        .GroupBy(x => x.ParaBirimi)
+                        .OrderBy(g => g.Key);
+                }
+
+                @if (!groups.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Kayıt yok.
+                    </td></tr>
+                }
+                else
+                {
+                    foreach (var g in groups)
+                    {
+                        var subBorc    = g.Sum(x => x.BorcPB);
+                        var subAlacak  = g.Sum(x => x.AlacakPB);
+                        var subNet     = subBorc - subAlacak;
+                        var grpNetClass = subNet > 0 ? "net-pos" : subNet < 0 ? "net-neg" : "net-zero";
+
+                        <tr style="background:var(--bs-gray-100,#f8f9fa);">
+                            <td colspan="2" class="fw-semibold py-1 ps-2" style="font-size:0.82rem;color:#555;">
+                                📌 @g.Key
+                            </td>
+                            <td class="text-end text-success fw-semibold py-1" style="font-size:0.82rem;">@subBorc.ToString("N2")</td>
+                            <td class="text-end text-danger fw-semibold py-1" style="font-size:0.82rem;">@subAlacak.ToString("N2")</td>
+                            <td class="text-end fw-semibold py-1 @grpNetClass" style="font-size:0.85rem;">@subNet.ToString("N2")</td>
+                            <td></td>
+                        </tr>
+
+                        foreach (var r in g.OrderByDescending(x => x.NetPB).ThenBy(x => x.MusteriAdi))
+                        {
+                            var netClass = r.NetPB > 0 ? "net-pos" : r.NetPB < 0 ? "net-neg" : "net-zero";
+                            var detayUrl = Url.Page("./Ekstre", new { musteriId = r.MusteriID, pb = r.ParaBirimi });
+
+                            <tr class="rowlink" data-href="@detayUrl" style="cursor:pointer;">
+                                <td>@r.MusteriAdi</td>
+                                <td><span class="badge bg-light text-dark border">@r.ParaBirimi</span></td>
+                                <td class="text-end text-success">@r.BorcPB.ToString("N2")</td>
+                                <td class="text-end text-danger">@r.AlacakPB.ToString("N2")</td>
+                                <td class="text-end @netClass">@r.NetPB.ToString("N2")</td>
+                                <td class="text-end">
+                                    <a asp-page="./Ekstre"
+                                       asp-route-musteriId="@r.MusteriID"
+                                       asp-route-pb="@r.ParaBirimi"
+                                       class="btn btn-pastel-blue btn-sm">
+                                        Ekstre
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Cari Raporu — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu rapor sayfası, tüm müşterilerin para birimi bazında toplam borç, alacak ve net bakiyelerini gösterir. Tek bakışta tüm cari dengeyi görmenizi sağlar.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📈 Özet Kartlar</h6>
+                    <p class="text-muted mb-2">Sayfanın üst kısmında para birimi bazında genel toplam borç, alacak ve net bakiye görüntülenir.</p>
+                    <ul class="mb-0">
+                        <li>Net pozitif (yeşil çerçeve) — Müşteri genel olarak size borçlu.</li>
+                        <li>Net negatif (kırmızı çerçeve) — Müşteri genel olarak alacaklı (fazla ödeme yapılmış).</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo</h6>
+                    <p class="text-muted mb-2">Müşteriler para birimi grubuna göre listelenir. Her grupta toplam satırı bulunur.</p>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Ekstre</strong> — Müşterinin detaylı hareket tablosunu görüntüleyin.</li>
+                        <li>Satıra tıklayarak da ekstre sayfasına geçebilirsiniz.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+    document.addEventListener('click', function (e) {
+        const row = e.target.closest('tr.rowlink');
+        if (!row) return;
+        if (e.target.closest('a:not(.disabled), button:not([disabled]), form')) return;
+        if (row.dataset.href) window.location = row.dataset.href;
+    });
+</script>

@@ -1,0 +1,202 @@
+@page
+@model Lojistik.Pages.Raporlar.Sefer.AracKarlilikModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Araç Karlılık Raporu";
+    var trCulture = new CultureInfo("tr-TR");
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Araç Karlılık Raporu</h2>
+        <a asp-page="./Index" asp-route-ozmal="true" class="btn btn-pastel-blue btn-sm">← Sefer Raporu</a>
+    </div>
+
+    @* Filtre *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Plaka Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Plaka..." />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Seferler</label>
+                    <select name="showClosed" class="form-select" onchange="this.form.submit()">
+                        <option value="false" selected="@(!Model.showClosed)">Açık / Kısmi</option>
+                        <option value="true"  selected="@(Model.showClosed)">Kapalı</option>
+                    </select>
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue" asp-page="./AracKarlilik">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Özet kartlar *@
+    @if (Model.ToplamGelirPB.Count > 0 || Model.ToplamMasrafPB.Count > 0)
+    {
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <div class="card px-3 py-2 border-0" style="background:#e0f2fe;">
+                <div class="text-muted small">Araç Sayısı</div>
+                <div class="fw-bold fs-6">@Model.Items.Count</div>
+            </div>
+            <div class="card px-3 py-2 border-0" style="background:#e0f2fe;">
+                <div class="text-muted small">Toplam Sefer</div>
+                <div class="fw-bold fs-6">@Model.Items.Sum(x => x.SeferSayisi)</div>
+            </div>
+            <div class="card px-3 py-2 border-0" style="background:#e0f2fe;">
+                <div class="text-muted small">Toplam KM</div>
+                <div class="fw-bold fs-6">@Model.Items.Sum(x => x.ToplamKm).ToString("N0") km</div>
+            </div>
+            @foreach (var kv in Model.ToplamGelirPB)
+            {
+                <div class="card px-3 py-2 border-0" style="background:#dcfce7;">
+                    <div class="text-muted small">Gelir (@kv.Key)</div>
+                    <div class="fw-bold fs-6 text-success">@kv.Value.ToString("N2") @kv.Key</div>
+                </div>
+            }
+            @foreach (var kv in Model.ToplamMasrafPB)
+            {
+                <div class="card px-3 py-2 border-0" style="background:#fee2e2;">
+                    <div class="text-muted small">Masraf (@kv.Key)</div>
+                    <div class="fw-bold fs-6 text-danger">@kv.Value.ToString("N2") @kv.Key</div>
+                </div>
+            }
+        </div>
+    }
+
+    @* Tablo *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Plaka</th>
+                    <th>Araç</th>
+                    <th class="text-center">Sefer</th>
+                    <th class="text-center">Ort. Süre</th>
+                    <th class="text-center">Toplam KM</th>
+                    <th class="text-center">Yakıt (lt)</th>
+                    <th class="text-center">lt/100km</th>
+                    <th>Toplam Gelir</th>
+                    <th>Toplam Masraf</th>
+                    <th>Net (TL)</th>
+                    <th>Sefer Başı Net</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="12" class="text-center text-muted py-4">Kayıt bulunamadı.</td></tr>
+                }
+                @{ int sira = 0; }
+                @foreach (var r in Model.Items)
+                {
+                    sira++;
+                    var gelirTL  = r.ToplamGelirPB.TryGetValue("TL", out var gTL) ? gTL : 0m;
+                    var masrafTL = r.ToplamMasrafPB.TryGetValue("TL", out var mTL) ? mTL : 0m;
+                    var netTL    = gelirTL - masrafTL;
+                    var seferBasiNet = r.SeferSayisi > 0 ? netTL / r.SeferSayisi : 0m;
+                    string netCls = netTL >= 0 ? "text-success fw-semibold" : "text-danger fw-semibold";
+
+                    decimal verim = 0m;
+                    if (r.ToplamKm > 0 && r.ToplamYakitLitre > 0)
+                        verim = (r.ToplamYakitLitre / r.ToplamKm) * 100m;
+
+                    <tr>
+                        <td class="text-muted">@sira</td>
+                        <td class="fw-semibold">
+                            <span class="badge bg-light text-dark border">@r.Plaka</span>
+                        </td>
+                        <td class="text-muted" style="font-size:.85rem">
+                            @(string.IsNullOrWhiteSpace(r.Marka) ? "" : r.Marka)
+                            @(string.IsNullOrWhiteSpace(r.Model) ? "" : r.Model)
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary bg-opacity-75">@r.SeferSayisi</span>
+                        </td>
+                        <td class="text-center text-muted">
+                            @(r.OrtSeferSuresiGun > 0 ? $"{r.OrtSeferSuresiGun:N1} gün" : "—")
+                        </td>
+                        <td class="text-center text-muted">
+                            @(r.ToplamKm > 0 ? $"{r.ToplamKm:N0} km" : "—")
+                        </td>
+                        <td class="text-center">
+                            @(r.ToplamYakitLitre > 0 ? $"{r.ToplamYakitLitre:N1} lt" : "—")
+                        </td>
+                        <td class="text-center">
+                            @if (verim > 0)
+                            {
+                                <span class="badge bg-warning text-dark">@verim.ToString("N1")</span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @foreach (var kv in r.ToplamGelirPB)
+                            {
+                                <div><span class="badge bg-success bg-opacity-75">@kv.Value.ToString("N2") @kv.Key</span></div>
+                            }
+                            @if (!r.ToplamGelirPB.Any()) { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @foreach (var kv in r.ToplamMasrafPB)
+                            {
+                                <div><span class="badge bg-danger bg-opacity-75">@kv.Value.ToString("N2") @kv.Key</span></div>
+                            }
+                            @if (!r.ToplamMasrafPB.Any()) { <span class="text-muted">—</span> }
+                        </td>
+                        <td class="@netCls">@netTL.ToString("N2") TL</td>
+                        <td class="@(seferBasiNet >= 0 ? "text-success" : "text-danger")" style="font-size:.85rem">
+                            @seferBasiNet.ToString("N0") TL
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            @if (Model.Items.Any())
+            {
+                var topNetTL = (Model.ToplamGelirPB.TryGetValue("TL", out var tgTL) ? tgTL : 0m)
+                             - (Model.ToplamMasrafPB.TryGetValue("TL", out var tmTL) ? tmTL : 0m);
+                var topSefer = Model.Items.Sum(x => x.SeferSayisi);
+                <tfoot class="table-active fw-bold">
+                    <tr>
+                        <td colspan="3">TOPLAM</td>
+                        <td class="text-center">@topSefer</td>
+                        <td></td>
+                        <td class="text-center">@Model.Items.Sum(x => x.ToplamKm).ToString("N0") km</td>
+                        <td class="text-center">@Model.Items.Sum(x => x.ToplamYakitLitre).ToString("N1") lt</td>
+                        <td></td>
+                        <td>
+                            @foreach (var kv in Model.ToplamGelirPB)
+                            {
+                                <div>@kv.Value.ToString("N2") @kv.Key</div>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var kv in Model.ToplamMasrafPB)
+                            {
+                                <div>@kv.Value.ToString("N2") @kv.Key</div>
+                            }
+                        </td>
+                        <td class="@(topNetTL >= 0 ? "text-success" : "text-danger")">@topNetTL.ToString("N2") TL</td>
+                        <td class="@(topNetTL >= 0 ? "text-success" : "text-danger")" style="font-size:.85rem">
+                            @(topSefer > 0 ? (topNetTL / topSefer).ToString("N0") : "—") TL
+                        </td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+
+</div>

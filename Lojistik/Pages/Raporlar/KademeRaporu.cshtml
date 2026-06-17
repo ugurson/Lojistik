@@ -1,0 +1,165 @@
+@page
+@model Lojistik.Pages.Raporlar.KademeRaporuModel
+@{
+    ViewData["Title"] = "Kademe Raporu";
+}
+
+<div class="lj-page-compact">
+
+    @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3 screen-only">
+        <h2 class="mb-0">Kademe Raporu</h2>
+        <button type="button" class="btn btn-pastel-green btn-sm" onclick="window.print()">🖨 Çıktı Al</button>
+    </div>
+
+    @* ─── FİLTRE KARTI ──────────────────────────────────────────── *@
+    <div class="card lj-filter-card mb-3 screen-only">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Araç</label>
+                    <select asp-for="AracId" asp-items="Model.Araclar" class="form-select">
+                        <option value="">Hepsi</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input asp-for="Baslangic" type="date" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input asp-for="Bitis" type="date" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">İşlem İçeriği</label>
+                    <input asp-for="Q" class="form-control" placeholder="örn: yağ, lastik..." />
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">İşlem Firması</label>
+                    <input asp-for="IslemFirmasiQ" class="form-control" placeholder="örn: GNA..." />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" asp-for="SadeceOdenmeyen" id="chkOdenmeyen" />
+                        <label class="form-check-label" for="chkOdenmeyen">Sadece ödenmeyen</label>
+                    </div>
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue" asp-page="./KademeRaporu">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* ─── ÖZET TOPLAMLAR ────────────────────────────────────────── *@
+    @if (Model.Toplamlar?.Any() == true)
+    {
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @foreach (var t in Model.Toplamlar)
+            {
+                <div class="card px-3 py-2 border-0 bg-light">
+                    <div class="text-muted small">Toplam (@t.ParaBirimi)</div>
+                    <div class="fw-bold fs-6">@t.Toplam.ToString("N2") @t.ParaBirimi</div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ─── TABLO ─────────────────────────────────────────────────── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Plaka</th>
+                    <th>Yapılan İşlem</th>
+                    <th>İşlem Firması</th>
+                    <th>Ödeme</th>
+                    <th class="text-end">Tutar</th>
+                    <th>Para</th>
+                    <th>Notlar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows?.Any() == true)
+                {
+                    foreach (var r in Model.Rows)
+                    {
+                        <tr class="@(r.Odeme == 0 ? "table-warning" : "")">
+                            <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
+                            <td><span class="badge bg-light text-dark border">@r.Plaka</span></td>
+                            <td>@r.YapilanIslem</td>
+                            <td class="text-muted">@r.IslemFirmasi</td>
+                            <td>
+                                @if (r.Odeme == 1)
+                                {
+                                    <span class="badge bg-success bg-opacity-75">Ödendi</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Ödenmedi</span>
+                                }
+                            </td>
+                            <td class="text-end fw-semibold">@r.Tutar.ToString("N2")</td>
+                            <td>@r.ParaBirimi</td>
+                            <td class="text-truncate" style="max-width:300px" title="@r.Notlar">@r.Notlar</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Kayıt bulunamadı.
+                    </td></tr>
+                }
+            </tbody>
+            @if (Model.Toplamlar?.Any() == true)
+            {
+                <tfoot>
+                    @foreach (var t in Model.Toplamlar)
+                    {
+                        <tr class="fw-bold table-light">
+                            <td colspan="5" class="text-end">Toplam</td>
+                            <td class="text-end">@t.Toplam.ToString("N2")</td>
+                            <td>@t.ParaBirimi</td>
+                            <td></td>
+                        </tr>
+                    }
+                </tfoot>
+            }
+        </table>
+    </div>
+
+    @* ─── YAZDIR BİLGİSİ ────────────────────────────────────────── *@
+    <div class="print-only text-muted mt-3 small">
+        Kademe Raporu — Yazdırma tarihi: <strong>@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</strong>
+    </div>
+
+</div>
+
+<style>
+    .print-only { display: none; }
+
+    @@media print {
+        @@page { size: auto; margin: 5mm; }
+
+        header, nav, .navbar, footer, .footer,
+        .screen-only { display: none !important; }
+
+        .print-only { display: block !important; }
+
+        .container, .container-fluid {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        html, body { margin: 0 !important; padding: 0 !important; }
+
+        .lj-table-wrap { max-height: none !important; overflow: visible !important; }
+
+        a[href]:after { content: "" !important; }
+    }
+</style>

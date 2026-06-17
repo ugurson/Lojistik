@@ -1,0 +1,218 @@
+@page
+@model Lojistik.Pages.Raporlar.Sefer.SurucuPerformansModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Sürücü Performans Raporu";
+    var trCulture = new CultureInfo("tr-TR");
+
+    Dictionary<string, string?> BaseParams() => new() {
+        ["Start"]      = Model.Start?.ToString("yyyy-MM-dd"),
+        ["End"]        = Model.End?.ToString("yyyy-MM-dd"),
+        ["q"]          = Model.q,
+        ["showClosed"] = Model.showClosed ? "true" : "false",
+    };
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sürücü Performans Raporu</h2>
+        <a asp-page="./Index" asp-route-ozmal="true" class="btn btn-pastel-blue btn-sm">← Sefer Raporu</a>
+    </div>
+
+    @* Filtre *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Sürücü Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Sürücü adı..." />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Seferler</label>
+                    <select name="showClosed" class="form-select" onchange="this.form.submit()">
+                        <option value="false" selected="@(!Model.showClosed)">Açık / Kısmi</option>
+                        <option value="true"  selected="@(Model.showClosed)">Kapalı</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">
+                        EUR/TL
+                        @if (Model.EurKurOtomatik) { <span class="badge bg-info text-dark ms-1" style="font-size:.7rem;">TCMB</span> }
+                    </label>
+                    <input type="text" inputmode="decimal" name="EurKurStr"
+                           value="@(Model.EurKur > 0 ? Model.EurKur.ToString("F4", CultureInfo.InvariantCulture) : "")"
+                           class="form-control" placeholder="Otomatik" autocomplete="off" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">
+                        USD/TL
+                        @if (Model.UsdKurOtomatik) { <span class="badge bg-info text-dark ms-1" style="font-size:.7rem;">TCMB</span> }
+                    </label>
+                    <input type="text" inputmode="decimal" name="UsdKurStr"
+                           value="@(Model.UsdKur > 0 ? Model.UsdKur.ToString("F4", CultureInfo.InvariantCulture) : "")"
+                           class="form-control" placeholder="Otomatik" autocomplete="off" />
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue" asp-page="./SurucuPerformans">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Özet kartlar *@
+    @if (Model.ToplamGelirPB.Count > 0 || Model.ToplamMasrafPB.Count > 0)
+    {
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <div class="card px-3 py-2 border-0" style="background:#e0f2fe;">
+                <div class="text-muted small">Sürücü Sayısı</div>
+                <div class="fw-bold fs-6">@Model.Items.Count</div>
+            </div>
+            <div class="card px-3 py-2 border-0" style="background:#e0f2fe;">
+                <div class="text-muted small">Toplam Sefer</div>
+                <div class="fw-bold fs-6">@Model.Items.Sum(x => x.SeferSayisi)</div>
+            </div>
+            @foreach (var kv in Model.ToplamGelirPB)
+            {
+                <div class="card px-3 py-2 border-0" style="background:#dcfce7;">
+                    <div class="text-muted small">Gelir (@kv.Key)</div>
+                    <div class="fw-bold fs-6 text-success">@kv.Value.ToString("N2") @kv.Key</div>
+                </div>
+            }
+            @foreach (var kv in Model.ToplamMasrafPB)
+            {
+                <div class="card px-3 py-2 border-0" style="background:#fee2e2;">
+                    <div class="text-muted small">Masraf (@kv.Key)</div>
+                    <div class="fw-bold fs-6 text-danger">@kv.Value.ToString("N2") @kv.Key</div>
+                </div>
+            }
+        </div>
+    }
+
+    @* Tablo *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Sürücü</th>
+                    <th class="text-center">Sefer Sayısı</th>
+                    <th class="text-center">Ort. Süre</th>
+                    <th class="text-center">Toplam KM</th>
+                    <th class="text-center">Yakıt (lt)</th>
+                    <th class="text-center">lt/100km</th>
+                    <th>Toplam Gelir</th>
+                    <th>Toplam Masraf</th>
+                    <th>Net (TL)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="10" class="text-center text-muted py-4">Kayıt bulunamadı.</td></tr>
+                }
+                @{ int sira = 0; }
+                @foreach (var r in Model.Items)
+                {
+                    sira++;
+                    var netTL = Model.HesaplaNetTL(r.ToplamGelirPB, r.ToplamMasrafPB);
+                    string netCls = netTL >= 0 ? "text-success fw-semibold" : "text-danger fw-semibold";
+
+                    decimal verim = 0m;
+                    if (r.ToplamKm.HasValue && r.ToplamKm.Value > 0 && r.ToplamYakitLitre > 0)
+                        verim = (r.ToplamYakitLitre / r.ToplamKm.Value) * 100m;
+
+                    <tr>
+                        <td class="text-muted">@sira</td>
+                        <td class="fw-semibold">@r.SurucuAdi</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary bg-opacity-75">@r.SeferSayisi</span>
+                        </td>
+                        <td class="text-center text-muted">
+                            @(r.OrtSeferSuresiGun > 0 ? $"{r.OrtSeferSuresiGun:N1} gün" : "—")
+                        </td>
+                        <td class="text-center text-muted">
+                            @(r.ToplamKm.HasValue && r.ToplamKm.Value > 0 ? $"{r.ToplamKm.Value:N0} km" : "—")
+                        </td>
+                        <td class="text-center">
+                            @(r.ToplamYakitLitre > 0 ? $"{r.ToplamYakitLitre:N1} lt" : "—")
+                        </td>
+                        <td class="text-center">
+                            @if (verim > 0)
+                            {
+                                <span class="badge bg-warning text-dark">@verim.ToString("N1")</span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @foreach (var kv in r.ToplamGelirPB)
+                            {
+                                <div><span class="badge bg-success bg-opacity-75">@kv.Value.ToString("N2") @kv.Key</span></div>
+                            }
+                            @if (!r.ToplamGelirPB.Any()) { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @foreach (var kv in r.ToplamMasrafPB)
+                            {
+                                <div><span class="badge bg-danger bg-opacity-75">@kv.Value.ToString("N2") @kv.Key</span></div>
+                            }
+                            @if (!r.ToplamMasrafPB.Any()) { <span class="text-muted">—</span> }
+                        </td>
+                        <td class="@netCls">
+                            @netTL.ToString("N2") TL
+                            @{
+                                var hasEur = r.ToplamGelirPB.ContainsKey("EUR") || r.ToplamMasrafPB.ContainsKey("EUR");
+                                var hasUsd = r.ToplamGelirPB.ContainsKey("USD") || r.ToplamMasrafPB.ContainsKey("USD");
+                            }
+                            @if (hasEur || hasUsd)
+                            {
+                                <div style="font-size:.7rem;" class="text-muted">
+                                    @if (hasEur) { <span>EUR×@Model.EurKur.ToString("N2")</span> }
+                                    @if (hasUsd) { <span class="ms-1">USD×@Model.UsdKur.ToString("N2")</span> }
+                                    <span class="ms-1">dahil</span>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            @if (Model.Items.Any())
+            {
+                var topNetTL = Model.HesaplaNetTL(Model.ToplamGelirPB, Model.ToplamMasrafPB);
+                <tfoot class="table-active fw-bold">
+                    <tr>
+                        <td colspan="2">TOPLAM</td>
+                        <td class="text-center">@Model.Items.Sum(x => x.SeferSayisi)</td>
+                        <td></td>
+                        <td class="text-center">@(Model.Items.Any(x => x.ToplamKm.HasValue) ? $"{Model.Items.Sum(x => x.ToplamKm ?? 0):N0} km" : "—")</td>
+                        <td class="text-center">@Model.Items.Sum(x => x.ToplamYakitLitre).ToString("N1") lt</td>
+                        <td></td>
+                        <td>
+                            @foreach (var kv in Model.ToplamGelirPB)
+                            {
+                                <div>@kv.Value.ToString("N2") @kv.Key</div>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var kv in Model.ToplamMasrafPB)
+                            {
+                                <div>@kv.Value.ToString("N2") @kv.Key</div>
+                            }
+                        </td>
+                        <td class="@(topNetTL >= 0 ? "text-success" : "text-danger")">@topNetTL.ToString("N2") TL</td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+
+</div>

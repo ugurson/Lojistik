@@ -1,0 +1,272 @@
+@page
+@model Lojistik.Pages.Raporlar.Sefer.SeferRaporDetayModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Sefer Rapor Detay";
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sefer Rapor Detay</h2>
+        <a onclick="history.back()" class="btn btn-pastel-blue btn-sm" style="cursor:pointer">← Geri</a>
+    </div>
+
+    @if (Model.Data == null)
+    {
+        <div class="alert alert-warning">Kayıt bulunamadı.</div>
+    }
+    else
+    {
+        @* ─── GENEL BİLGİLER ────────────────────────────────────── *@
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">Genel Bilgiler</div>
+            <div class="card-body py-3">
+                <div class="row g-3">
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Sefer Kodu</div>
+                        <div class="fw-semibold">
+                            <span class="badge bg-light text-dark border fs-6">@Model.Data.SeferKodu</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Durum</div>
+                        <div>
+                            @if (Model.Data.Durum == 2)
+                            { <span class="badge bg-dark">Kapalı</span> }
+                            else
+                            { <span class="badge bg-info text-dark">Açık</span> }
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Çekici</div>
+                        <div class="fw-semibold">
+                            <span class="badge bg-light text-dark border">@Model.Data.AracPlaka</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Dorse</div>
+                        <div>@(string.IsNullOrWhiteSpace(Model.Data.DorsePlaka) ? "—" : Model.Data.DorsePlaka)</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Sürücü</div>
+                        <div>@Model.Data.SurucuAdi</div>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <div class="text-muted small">Çıkış</div>
+                        <div>@Model.Data.CikisTarihi?.ToString("dd.MM.yyyy")</div>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <div class="text-muted small">Dönüş</div>
+                        <div>@(Model.Data.DonusTarihi?.ToString("dd.MM.yyyy") ?? "—")</div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Data.Notlar))
+                    {
+                        <div class="col-12">
+                            <div class="text-muted small">Notlar</div>
+                            <div>@Model.Data.Notlar</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ─── MALİ ÖZET KARTLAR ──────────────────────────────────── *@
+        decimal GTL  = Model.GelirToplamlari?.GetValueOrDefault("TL")  ?? 0;
+        decimal MTL  = Model.MasrafToplamlari?.GetValueOrDefault("TL") ?? 0;
+        decimal GEUR = Model.GelirToplamlari?.GetValueOrDefault("EUR") ?? 0;
+        decimal MEUR = Model.MasrafToplamlari?.GetValueOrDefault("EUR") ?? 0;
+        decimal GUSD = Model.GelirToplamlari?.GetValueOrDefault("USD") ?? 0;
+        decimal MUSD = Model.MasrafToplamlari?.GetValueOrDefault("USD") ?? 0;
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            @foreach (var kv in Model.GelirToplamlari ?? new())
+            {
+                <div class="lj-ozet-kart">
+                    <small>Gelir (@kv.Key)</small>
+                    <span class="val text-success">@kv.Value.ToString("N2") @kv.Key</span>
+                </div>
+            }
+            @foreach (var kv in Model.MasrafToplamlari ?? new())
+            {
+                <div class="lj-ozet-kart">
+                    <small>Gider (@kv.Key)</small>
+                    <span class="val text-danger">@kv.Value.ToString("N2") @kv.Key</span>
+                </div>
+            }
+            @foreach (var kv in Model.GelirToplamlari ?? new())
+            {
+                var masrafVal = Model.MasrafToplamlari?.GetValueOrDefault(kv.Key) ?? 0;
+                var net       = kv.Value - masrafVal;
+                var netCls    = net >= 0 ? "net-pos" : "net-neg";
+                <div class="lj-ozet-kart">
+                    <small>Net (@kv.Key)</small>
+                    <span class="val @netCls">@net.ToString("N2") @kv.Key</span>
+                </div>
+            }
+        </div>
+
+        @* ─── BAĞLI SİPARİŞLER ──────────────────────────────────── *@
+        <h5 class="mb-2">Bağlı Siparişler</h5>
+        <div class="lj-table-wrap mb-4">
+            <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Yük Açıklaması</th>
+                        <th>Gönderen</th>
+                        <th>Alıcı</th>
+                        <th>Ülke</th>
+                        <th>Şehir</th>
+                        <th>Dorse</th>
+                        <th class="text-end">Tutar</th>
+                        <th>PB</th>
+                        <th>Fatura No</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Siparisler.Count > 0)
+                    {
+                        foreach (var s in Model.Siparisler)
+                        {
+                            bool ekli     = Model.Gelirler?.Any(g => g.IlgiliSiparisID == s.SiparisID) == true;
+                            string rowCls = ekli ? "" : "table-warning";
+                            <tr class="@rowCls">
+                                <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                                <td>@s.YukAciklamasi</td>
+                                <td>@s.Gonderen</td>
+                                <td>@s.Alici</td>
+                                <td>@s.AliciUlke</td>
+                                <td>@s.AliciSehir</td>
+                                <td>@(string.IsNullOrWhiteSpace(s.DorsePlaka) ? "—" : s.DorsePlaka)</td>
+                                <td class="text-end fw-semibold">@s.Tutar?.ToString("N2")</td>
+                                <td>@s.ParaBirimi</td>
+                                <td>@(string.IsNullOrWhiteSpace(s.FaturaNo) ? "—" : s.FaturaNo)</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="10" class="text-center text-muted py-3">Bağlı sipariş yok.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* ─── MASRAFLAR ──────────────────────────────────────────── *@
+        <h5 class="mb-2">Sefer Masrafları</h5>
+        <div class="lj-table-wrap mb-4">
+            <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Masraf Tipi</th>
+                        <th class="text-end">Tutar</th>
+                        <th>PB</th>
+                        <th>Fatura/Belge No</th>
+                        <th>Ülke</th>
+                        <th>Yer</th>
+                        <th>Notlar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Masraflar?.Count > 0)
+                    {
+                        foreach (var m in Model.Masraflar)
+                        {
+                            <tr>
+                                <td>@m.Tarih.ToString("dd.MM.yyyy")</td>
+                                <td class="fw-semibold">@m.MasrafTipi</td>
+                                <td class="text-end fw-semibold">@m.Tutar.ToString("N2")</td>
+                                <td>@m.ParaBirimi</td>
+                                <td>@(string.IsNullOrWhiteSpace(m.FaturaBelgeNo) ? "—" : m.FaturaBelgeNo)</td>
+                                <td>@m.Ulke</td>
+                                <td>@m.Yer</td>
+                                <td class="text-muted">@m.Notlar</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="8" class="text-center text-muted py-3">Bu sefere kayıtlı masraf yok.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* ─── GELİRLER ───────────────────────────────────────────── *@
+        <h5 class="mb-2">Sefer Gelirleri</h5>
+        <div class="lj-table-wrap">
+            <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th class="text-end">Tutar</th>
+                        <th>PB</th>
+                        <th>Açıklama</th>
+                        <th>Sipariş</th>
+                        <th>Çıkış İli</th>
+                        <th>Varış İli</th>
+                        <th>Fatura No</th>
+                        <th>Notlar</th>
+                        <th>Cari</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Gelirler?.Count > 0)
+                    {
+                        foreach (var g in Model.Gelirler)
+                        {
+                            string? cikisIl = g.CikisIl;
+                            string? varisIl = g.VarisIl;
+
+                            if (g.IlgiliSiparisID is not null)
+                            {
+                                var sip = Model.Siparisler?.FirstOrDefault(x => x.SiparisID == g.IlgiliSiparisID);
+                                cikisIl = sip?.GetType().GetProperty("CikisIl")?.GetValue(sip)?.ToString()
+                                    ?? sip?.GetType().GetProperty("YuklemeIl")?.GetValue(sip)?.ToString()
+                                    ?? sip?.GetType().GetProperty("GonderenIl")?.GetValue(sip)?.ToString()
+                                    ?? sip?.GetType().GetProperty("GonderenSehir")?.GetValue(sip)?.ToString()
+                                    ?? cikisIl;
+                                varisIl = sip?.GetType().GetProperty("VarisIl")?.GetValue(sip)?.ToString()
+                                    ?? sip?.GetType().GetProperty("BosaltmaIl")?.GetValue(sip)?.ToString()
+                                    ?? sip?.GetType().GetProperty("AliciIl")?.GetValue(sip)?.ToString()
+                                    ?? sip?.AliciSehir
+                                    ?? varisIl;
+                            }
+                            <tr>
+                                <td>@g.Tarih.ToString("dd.MM.yyyy")</td>
+                                <td class="text-end fw-semibold">@g.Tutar.ToString("N2")</td>
+                                <td>@g.ParaBirimi</td>
+                                <td>@g.Aciklama</td>
+                                <td>
+                                    @if (g.IlgiliSiparisID is null)
+                                    { <text>—</text> }
+                                    else
+                                    { <a asp-page="/Siparisler/Details" asp-route-id="@g.IlgiliSiparisID" class="text-decoration-none">@g.IlgiliSiparisID</a> }
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(cikisIl) ? "—" : cikisIl)</td>
+                                <td>@(string.IsNullOrWhiteSpace(varisIl) ? "—" : varisIl)</td>
+                                <td>@(string.IsNullOrWhiteSpace(g.FaturaNo) ? "—" : g.FaturaNo)</td>
+                                <td class="text-muted">@g.Notlar</td>
+                                <td>
+                                    @if (g.IsCarilestirildi)
+                                    {
+                                        <span class="badge bg-success bg-opacity-75">Carileştirildi</span>
+                                        <div class="small text-muted">@(g.CariMusteriAdi ?? "—") (@(g.CariIslemTuru ?? "—"))</div>
+                                    }
+                                    else
+                                    { <span class="badge bg-secondary">—</span> }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="10" class="text-center text-muted py-3">Bu sefere kayıtlı gelir yok.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>

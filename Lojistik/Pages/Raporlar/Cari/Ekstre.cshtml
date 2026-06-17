@@ -1,0 +1,268 @@
+@page
+@model Lojistik.Pages.Raporlar.Cari.EkstreModel
+@{
+    ViewData["Title"] = "Cari Ekstre";
+}
+<div class="lj-page-compact">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Cari Ekstre — @Model.MusteriAdi</h2>
+        <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">← Cari Özeti</a>
+    </div>
+
+    <div class="card mb-3 lj-filter-card">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <input type="hidden" name="musteriId" value="@Model.musteriId" />
+
+                <div class="col-md-4">
+                    <label class="form-label">Müşteri</label>
+                    <input class="form-control" value="@Model.MusteriAdi" readonly />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Para Birimi</label>
+                    <input class="form-control" name="pb" value="@Model.pb" readonly />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input class="form-control" type="date" name="d1" value="@(Model.d1?.ToString("yyyy-MM-dd"))" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input class="form-control" type="date" name="d2" value="@(Model.d2?.ToString("yyyy-MM-dd"))" />
+                </div>
+
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-pastel-blue">Uygula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-3 lj-filter-card">
+        <a asp-page-handler="ExportExcel"
+               asp-route-musteriId="@Model.musteriId"
+               asp-route-pb="@Model.pb"
+               asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
+               asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               class="btn btn-pastel-blue">
+            Excel (CSV)
+        </a>
+
+        <a asp-page-handler="ExportPdf"
+               asp-route-musteriId="@Model.musteriId"
+               asp-route-pb="@Model.pb"
+               asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
+               asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               class="btn btn-pastel-red">
+            PDF
+        </a>
+
+        @{
+            var toggleText = Model.onlyBorclar ? "Hepsi" : "Sadece Borçlar";
+            var toggleClass = Model.onlyBorclar
+                ? "btn btn-pastel-amber"
+                : "btn btn-pastel-green";
+        }
+
+        <a asp-page="./Ekstre"
+               asp-route-musteriId="@Model.musteriId"
+               asp-route-pb="@Model.pb"
+               asp-route-d1="@(Model.d1?.ToString("yyyy-MM-dd"))"
+               asp-route-d2="@(Model.d2?.ToString("yyyy-MM-dd"))"
+               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
+               asp-route-onlyBorclar="@(Model.onlyBorclar ? "false" : "true")"
+               class="@toggleClass">
+            @toggleText
+        </a>
+    </div>
+
+    @{
+        var acilisClass   = Model.AcilisBakiye  >= 0 ? "bky-pos" : "bky-neg";
+        var kapanis2Class = Model.KapanisBakiye >= 0 ? "bky-pos" : "bky-neg";
+        var kapanisCardBorder = Model.KapanisBakiye >= 0
+            ? "border: 1px solid #198754 !important; background:rgba(25,135,84,0.07)!important;"
+            : "border: 1px solid #dc3545 !important; background:rgba(220,53,69,0.07)!important;";
+    }
+    <div class="d-flex flex-wrap gap-2 mb-3 lj-filter-card">
+        <div class="lj-ozet-kart" style="@kapanisCardBorder">
+            <small>Net Bakiye</small>
+            <span class="val @kapanis2Class">@Model.KapanisBakiye.ToString("N2") <span style="font-size:0.8em;font-weight:400;">@Model.pb</span></span>
+        </div>
+    </div>
+
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle lj-table">
+            <thead>
+                <tr>
+                    <th style="width:105px;">Tarih</th>
+                    <th style="width:120px;">İşlem</th>
+                    <th style="width:130px;">Evrak No</th>
+                    <th>Açıklama</th>
+                    <th class="text-end" style="width:110px;">Borç (@Model.pb)</th>
+                    <th class="text-end" style="width:110px;">Alacak (@Model.pb)</th>
+                    <th class="text-end" style="width:115px;">Bakiye (@Model.pb)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="tr-acilis">
+                    <td colspan="6" class="text-end fw-semibold" style="color:#6610f2;">
+                        <small>▶</small> Açılış Bakiyesi
+                    </td>
+                    <td class="text-end fw-bold @acilisClass">@Model.AcilisBakiye.ToString("N2")</td>
+                </tr>
+
+                @if (Model.Items.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted">Seçili aralıkta hareket yok.</td></tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Items)
+                    {
+                        var siparisTahsilatli =
+                            r.IslemTuru == "Sipariş"
+                            && !string.IsNullOrWhiteSpace(r.EvrakNo)
+                            && Model.TahsilatEvrakSet.Contains(r.EvrakNo.Trim().ToUpperInvariant());
+
+                        var manuelTahsilatli =
+                            r.IslemTuru == "Manuel"
+                            && !string.IsNullOrWhiteSpace(r.EvrakNo)
+                            && Model.TahsilatEvrakSet.Contains(r.EvrakNo.Trim().ToUpperInvariant());
+
+                        var isDevirBakiye  = r.IslemTuru == "DevirBakiye";
+                        var isTahsilatSatir = r.IslemTuru == "Tahsilat" && r.Alacak > 0;
+                        var isBorcSatir    = !isDevirBakiye && !isTahsilatSatir
+                            && !(siparisTahsilatli || manuelTahsilatli)
+                            && r.Borc > 0;
+
+                        var rowCss = isDevirBakiye                        ? "tr-devir"
+                                   : (siparisTahsilatli || manuelTahsilatli) ? "tr-kapali"
+                                   : isTahsilatSatir                      ? "tr-tahsilat"
+                                   : isBorcSatir                          ? "tr-borc"
+                                   : "";
+
+                        var bkyClass = r.Bakiye > 0 ? "bky-pos" : r.Bakiye < 0 ? "bky-neg" : "bky-zero";
+
+                        <tr class="@rowCss">
+                            <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                @if (isDevirBakiye)
+                                {
+                                    <span class="badge bg-primary bg-opacity-75" style="font-size:0.78em;">📦 Devir Bakiyesi</span>
+                                }
+                                else if (isTahsilatSatir)
+                                {
+                                    <span class="text-success fw-semibold">✔ @r.IslemTuru</span>
+                                }
+                                else
+                                {
+                                    @r.IslemTuru
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(r.EvrakNo))
+                                {
+                                    <span>@r.EvrakNo</span>
+
+                                    @if (r.Tahsilatlar?.Any() == true)
+                                    {
+                                        <button type="button" class="btn btn-link btn-sm ms-1 p-0"
+                                                data-bs-toggle="modal" data-bs-target="#evrakModal-@r.CariHareketID">
+                                            Detay
+                                        </button>
+                                    }
+
+                                    @if (r.Kapandi && r.KapanisTarihi.HasValue)
+                                    {
+                                        <span class="badge bg-success ms-1">Kapandı: @r.KapanisTarihi.Value.ToString("dd.MM.yyyy")</span>
+                                    }
+
+                                    @if (siparisTahsilatli || manuelTahsilatli)
+                                    {
+                                        <span class="badge bg-success bg-opacity-75 ms-1" style="font-size:0.72em;">✔ Tahsil</span>
+                                    }
+                                }
+                            </td>
+                            <td>@r.Aciklama</td>
+                            <td class="text-end @(r.Borc > 0 ? "text-danger" : "text-muted")">
+                                @(r.Borc > 0 ? r.Borc.ToString("N2") : "–")
+                            </td>
+                            <td class="text-end @(r.Alacak > 0 ? "text-success" : "text-muted")">
+                                @(r.Alacak > 0 ? r.Alacak.ToString("N2") : "–")
+                            </td>
+                            <td class="text-end @bkyClass">@r.Bakiye.ToString("N2")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+
+            <tfoot>
+                <tr class="table-light fw-semibold">
+                    <td colspan="4" class="text-end">Dönem Toplamı</td>
+                    <td class="text-end text-danger">@Model.ToplamBorc.ToString("N2")</td>
+                    <td class="text-end text-success">@Model.ToplamAlacak.ToString("N2")</td>
+                    <td class="text-end @kapanis2Class">@Model.KapanisBakiye.ToString("N2")</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    @foreach (var r in Model.Items.Where(x => !string.IsNullOrWhiteSpace(x.EvrakNo) && x.Tahsilatlar?.Any() == true))
+    {
+        <div class="modal fade" id="evrakModal-@r.CariHareketID" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Evrak Detayı – @r.EvrakNo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <span class="badge bg-secondary me-2">Belge: @r.Borc.ToString("N2") @Model.pb</span>
+                            <span class="badge bg-info me-2">Tahsilat Toplamı: @r.Alacak.ToString("N2")</span>
+                            @if (r.Kapandi && r.KapanisTarihi.HasValue)
+                            {
+                                <span class="badge bg-success">Kapanış: @r.KapanisTarihi.Value.ToString("dd.MM.yyyy")</span>
+                            }
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width:110px;">Tarih</th>
+                                        <th>Tutar (@Model.pb)</th>
+                                        <th>Kaynak</th>
+                                        <th>Açıklama</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in r.Tahsilatlar!)
+                                    {
+                                        <tr>
+                                            <td>@p.Tarih.ToString("dd.MM.yyyy")</td>
+                                            <td class="text-end">@p.Tutar.ToString("N2")</td>
+                                            <td>@p.Kaynak</td>
+                                            <td>@p.Aciklama</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="d-flex gap-2 mt-3">
+        <a asp-page="./Index" class="btn btn-pastel-blue">← Cari Özeti</a>
+    </div>
+</div>
