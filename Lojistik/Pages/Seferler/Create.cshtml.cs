@@ -21,15 +21,16 @@ namespace Lojistik.Pages.Seferler
 
         public SelectList? CekicilerSelect { get; set; }
         public SelectList? DorselerSelect { get; set; }
-        public SelectList? SoforlerSelect { get; set; } // ✅ yeni
+        public SelectList? SoforlerSelect { get; set; }
+
+        // AracID -> son BitisKm (JS otomatik doldurma için JSON olarak sayfaya gömülür)
+        public Dictionary<int, int> AracSonKmMap { get; set; } = new();
 
         public class InputModel
         {
             [StringLength(30)] public string? SeferKodu { get; set; }
             [Required] public int AracID { get; set; }
             public int? DorseID { get; set; }
-
-            // ✅ yeni: kayıtlı şoförden seçim
             public int? SoforID { get; set; }
 
             [StringLength(100)] public string? SurucuAdi { get; set; }
@@ -39,17 +40,29 @@ namespace Lojistik.Pages.Seferler
 
             [Required] public byte Durum { get; set; } = 0;
             [StringLength(500)] public string? Notlar { get; set; }
+            public int? BaslangicKm { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync()
         {
             var firmaId = User.GetFirmaId();
 
-            // Sefer kodu
             Input.SeferKodu = await GenerateSeferKoduAsync();
-
-            // Çıkış tarihi bugüne set
             Input.CikisTarihi = DateTime.Today;
+
+            // Son BitisKm'yi araç başına yükle
+            var sonKmler = await _context.Seferler
+                .AsNoTracking()
+                .Where(s => s.FirmaID == firmaId && s.BitisKm.HasValue)
+                .GroupBy(s => s.AracID)
+                .Select(g => new
+                {
+                    AracID = g.Key,
+                    BitisKm = g.OrderByDescending(x => x.SeferID).Select(x => x.BitisKm).First()
+                })
+                .ToListAsync();
+
+            AracSonKmMap = sonKmler.ToDictionary(x => x.AracID, x => x.BitisKm!.Value);
 
             await LoadSelectsAsync(firmaId, null, null, null);
             return Page();
@@ -68,8 +81,26 @@ namespace Lojistik.Pages.Seferler
 
             if (!ModelState.IsValid)
             {
+                AracSonKmMap = (await _context.Seferler.AsNoTracking()
+                    .Where(s => s.FirmaID == firmaId && s.BitisKm.HasValue)
+                    .GroupBy(s => s.AracID)
+                    .Select(g => new { AracID = g.Key, BitisKm = g.OrderByDescending(x => x.SeferID).Select(x => x.BitisKm).First() })
+                    .ToListAsync()).ToDictionary(x => x.AracID, x => x.BitisKm!.Value);
                 await LoadSelectsAsync(firmaId, Input.AracID, Input.DorseID, Input.SoforID);
                 return Page();
+            }
+
+            // AracID zorunlu FK — firma kontrolü
+            var aracAit = await _context.Araclar
+                .AnyAsync(a => a.FirmaID == firmaId && a.AracID == Input.AracID);
+            if (!aracAit) return Forbid();
+
+            // DorseID opsiyonel FK — null değilse firma kontrolü
+            if (Input.DorseID is > 0)
+            {
+                var dorseAit = await _context.Araclar
+                    .AnyAsync(a => a.FirmaID == firmaId && a.AracID == Input.DorseID.Value);
+                if (!dorseAit) return Forbid();
             }
 
             // Sürücü adını belirle (öncelik elle girilende)
@@ -95,7 +126,9 @@ namespace Lojistik.Pages.Seferler
                 CikisTarihi = Input.CikisTarihi ?? DateTime.Today,
                 DonusTarihi = Input.DonusTarihi?.Date,
                 Durum = Input.Durum,
-                Notlar = Input.Notlar?.Trim()
+                SubeKodu = User.GetAltSubeKodu(),
+                Notlar = Input.Notlar?.Trim(),
+                BaslangicKm = Input.BaslangicKm
             };
 
             _context.Seferler.Add(e);

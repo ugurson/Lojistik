@@ -38,6 +38,9 @@ namespace Lojistik.Pages.Seferler
 
             [Required] public byte Durum { get; set; } = 0;
             [StringLength(500)] public string? Notlar { get; set; }
+            public int? BaslangicKm { get; set; }
+            public int? BitisKm { get; set; }
+            public int? KmMesafe { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync(int id)
@@ -61,7 +64,10 @@ namespace Lojistik.Pages.Seferler
                 CikisTarihi = s.CikisTarihi,
                 DonusTarihi = s.DonusTarihi,
                 Durum = s.Durum,
-                Notlar = s.Notlar
+                Notlar = s.Notlar,
+                BaslangicKm = s.BaslangicKm,
+                BitisKm = s.BitisKm,
+                KmMesafe = s.KmMesafe
             };
 
             await LoadSelectsAsync(Input.AracID, Input.DorseID);
@@ -83,6 +89,19 @@ namespace Lojistik.Pages.Seferler
 
             if (s == null) return RedirectToPage("./Index");
 
+            // AracID zorunlu FK — firma kontrolü
+            var aracAit = await _context.Araclar
+                .AnyAsync(a => a.FirmaID == firmaId && a.AracID == Input.AracID);
+            if (!aracAit) return Forbid();
+
+            // DorseID opsiyonel FK — null değilse firma kontrolü
+            if (Input.DorseID is > 0)
+            {
+                var dorseAit = await _context.Araclar
+                    .AnyAsync(a => a.FirmaID == firmaId && a.AracID == Input.DorseID.Value);
+                if (!dorseAit) return Forbid();
+            }
+
             s.SeferKodu = Input.SeferKodu?.Trim();
             s.AracID = Input.AracID;
             s.DorseID = Input.DorseID;
@@ -92,6 +111,12 @@ namespace Lojistik.Pages.Seferler
             s.DonusTarihi = Input.DonusTarihi;
             s.Durum = Input.Durum;
             s.Notlar = Input.Notlar?.Trim();
+            s.BaslangicKm = Input.BaslangicKm;
+            s.BitisKm = Input.BitisKm;
+            // KmMesafe: BitisKm - BaslangicKm otomatik, yoksa manuel değer
+            s.KmMesafe = (Input.BitisKm.HasValue && Input.BaslangicKm.HasValue && Input.BitisKm > Input.BaslangicKm)
+                ? Input.BitisKm.Value - Input.BaslangicKm.Value
+                : Input.KmMesafe;
 
             await _context.SaveChangesAsync();
             return RedirectToPage("./Details", new { id = s.SeferID });
