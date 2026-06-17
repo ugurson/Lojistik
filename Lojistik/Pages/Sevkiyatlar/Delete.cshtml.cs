@@ -63,25 +63,33 @@ namespace Lojistik.Pages.Sevkiyatlar
                 siparisId = spForm;
             if (!id.HasValue) return RedirectToPage("./Index");
 
-            // Eğer siparisId formdan gelmediyse DB’den çekelim (redirect için)
+            var firmaId = User.GetFirmaId();
+
+            // Kaydın bu firmaya ait olduğunu doğrula — ait değilse işlem yapma
+            var sevkiyat = await _context.Sevkiyatlar
+                .AsNoTracking()
+                .Where(s => s.SevkiyatID == id.Value && s.FirmaID == firmaId)
+                .Select(s => new { s.SiparisID })
+                .FirstOrDefaultAsync();
+
+            if (sevkiyat == null) return NotFound();
+
+            // siparisId formdan gelmemişse doğrulanmış DB kaydından al
             if (!siparisId.HasValue)
-            {
-                siparisId = await _context.Sevkiyatlar
-                    .Where(s => s.SevkiyatID == id.Value)
-                    .Select(s => (int?)s.SiparisID)
-                    .FirstOrDefaultAsync();
-            }
+                siparisId = sevkiyat.SiparisID;
 
             await using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1) Önce SeferSevkiyatlar
+                // 1) Önce SeferSevkiyatlar — FirmaID join ile kısıtla
                 await _context.Database.ExecuteSqlRawAsync(
-                    "DELETE FROM [dbo].[SeferSevkiyatlar] WHERE [SevkiyatID] = {0}", id.Value);
+                    "DELETE ss FROM [dbo].[SeferSevkiyatlar] ss" +
+                    " INNER JOIN [dbo].[Sevkiyatlar] s ON s.SevkiyatID = ss.SevkiyatID" +
+                    " WHERE ss.SevkiyatID = {0} AND s.FirmaID = {1}", id.Value, firmaId);
 
-                // 2) Sonra Sevkiyat
+                // 2) Sonra Sevkiyat — FirmaID şartı ile
                 var delSev = await _context.Database.ExecuteSqlRawAsync(
-                    "DELETE FROM [dbo].[Sevkiyatlar] WHERE [SevkiyatID] = {0}", id.Value);
+                    "DELETE FROM [dbo].[Sevkiyatlar] WHERE [SevkiyatID] = {0} AND [FirmaID] = {1}", id.Value, firmaId);
 
                 await tx.CommitAsync();
 
