@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Lojistik.Data;
+using Lojistik.Extensions;
 using Lojistik.Models;
 
 namespace Lojistik.Pages.Araclar
@@ -27,8 +28,9 @@ namespace Lojistik.Pages.Araclar
             {
                 return NotFound();
             }
+            var firmaId = User.GetFirmaId();
             var arac = await _context.Araclar.AsNoTracking()
-                        .FirstOrDefaultAsync(m => m.AracID == id.Value);
+                        .FirstOrDefaultAsync(m => m.AracID == id.Value && m.FirmaID == firmaId);
 
 
 
@@ -36,8 +38,10 @@ namespace Lojistik.Pages.Araclar
 
             Arac = arac;
 
+            // AracID zaten FirmaID ile doğrulandı; join ile defense-in-depth
             Belgeler = await _context.AracBelgeleri.AsNoTracking()
-                          .Where(b => b.AracID == Arac.AracID)
+                          .Where(b => b.AracID == Arac.AracID
+                                   && _context.Araclar.Any(a => a.AracID == b.AracID && a.FirmaID == firmaId))
                           .OrderByDescending(b => b.BaslangicTarihi)
                           .ToListAsync();
 
