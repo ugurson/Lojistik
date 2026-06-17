@@ -107,6 +107,21 @@ namespace Lojistik.Pages.Siparisler
 
             if (s == null) return RedirectToPage("./Index");
 
+            // GonderenMusteriID ve AliciMusteriID zorunlu FK — firma kontrolü
+            var zorunluIds = new[] { Input.GonderenMusteriID, Input.AliciMusteriID }
+                .Distinct().ToList();
+            var zorunluSayisi = await _context.Musteriler
+                .CountAsync(m => m.FirmaID == firmaId && zorunluIds.Contains(m.MusteriID));
+            if (zorunluSayisi != zorunluIds.Count) return Forbid();
+
+            // AraTedarikciMusteriID opsiyonel
+            if (Input.AraTedarikciMusteriID is > 0)
+            {
+                var araAit = await _context.Musteriler
+                    .AnyAsync(m => m.FirmaID == firmaId && m.MusteriID == Input.AraTedarikciMusteriID.Value);
+                if (!araAit) return Forbid();
+            }
+
             s.SiparisTarihi = Input.SiparisTarihi.Date;
             s.GonderenMusteriID = Input.GonderenMusteriID;
             s.AliciMusteriID = Input.AliciMusteriID;

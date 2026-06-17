@@ -68,6 +68,21 @@ namespace Lojistik.Pages.Siparisler
                 return Page();
             }
 
+            // GonderenMusteriID ve AliciMusteriID zorunlu FK — firma kontrolü
+            var zorunluIds = new[] { Input.GonderenMusteriID, Input.AliciMusteriID }
+                .Distinct().ToList();
+            var zorunluSayisi = await _context.Musteriler
+                .CountAsync(m => m.FirmaID == firmaId && zorunluIds.Contains(m.MusteriID));
+            if (zorunluSayisi != zorunluIds.Count) return Forbid();
+
+            // AraTedarikciMusteriID opsiyonel
+            if (Input.AraTedarikciMusteriID is > 0)
+            {
+                var araAit = await _context.Musteriler
+                    .AnyAsync(m => m.FirmaID == firmaId && m.MusteriID == Input.AraTedarikciMusteriID.Value);
+                if (!araAit) return Forbid();
+            }
+
             var e = new Siparis
             {
                 FirmaID = firmaId,
@@ -99,6 +114,75 @@ namespace Lojistik.Pages.Siparisler
             _context.Siparisler.Add(e);
             await _context.SaveChangesAsync();
             return RedirectToPage("./Details", new { id = e.SiparisID });
+        }
+
+        // AJAX: ?handler=Ulkeler
+        public async Task<JsonResult> OnGetUlkelerAsync()
+        {
+            var list = await _context.Ulkeler
+                .AsNoTracking()
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.UlkeAdi)
+                .Select(u => new { u.UlkeID, u.UlkeAdi })
+                .ToListAsync();
+            return new JsonResult(list);
+        }
+
+        // AJAX: ?handler=Sehirler&ulkeId=#
+        public async Task<JsonResult> OnGetSehirlerAsync(int ulkeId)
+        {
+            var list = await _context.Sehirler
+                .AsNoTracking()
+                .Where(s => s.UlkeID == ulkeId && s.IsActive)
+                .OrderBy(s => s.SehirAdi)
+                .Select(s => new { s.SehirID, s.SehirAdi })
+                .ToListAsync();
+            return new JsonResult(list);
+        }
+
+        // AJAX POST: ?handler=QuickMusteri
+        public async Task<JsonResult> OnPostQuickMusteriAsync(
+            [FromBody] QuickMusteriInput input)
+        {
+            if (string.IsNullOrWhiteSpace(input?.MusteriAdi))
+                return new JsonResult(new { ok = false, hata = "Müşteri adı zorunludur." });
+
+            var firmaId = User.GetFirmaId();
+
+            var mevcut = await _context.Musteriler
+                .AsNoTracking()
+                .AnyAsync(m => m.FirmaID == firmaId && m.MusteriAdi == input.MusteriAdi.Trim());
+            if (mevcut)
+                return new JsonResult(new { ok = false, hata = "Bu isimde bir müşteri zaten kayıtlı." });
+
+            if (input.UlkeID <= 0)
+                return new JsonResult(new { ok = false, hata = "Ülke seçimi zorunludur." });
+            if (input.SehirID <= 0)
+                return new JsonResult(new { ok = false, hata = "Şehir seçimi zorunludur." });
+
+            var musteri = new Musteri
+            {
+                FirmaID  = firmaId,
+                MusteriAdi = input.MusteriAdi.Trim(),
+                Kategori = input.Kategori,
+                UlkeID   = input.UlkeID,
+                SehirID  = input.SehirID,
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Musteriler.Add(musteri);
+            await _context.SaveChangesAsync();
+
+            return new JsonResult(new { ok = true, id = musteri.MusteriID, ad = musteri.MusteriAdi });
+        }
+
+        public class QuickMusteriInput
+        {
+            public string? MusteriAdi { get; set; }
+            public byte    Kategori   { get; set; } = 0;
+            public int     UlkeID     { get; set; }
+            public int     SehirID    { get; set; }
         }
 
         private async Task LoadSelectsAsync()
