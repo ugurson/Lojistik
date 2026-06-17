@@ -29,14 +29,13 @@ namespace Lojistik.Pages.Cari
             public string ParaBirimi { get; set; } = "TL";
             public DateTime Tarih { get; set; } = DateTime.Today;
 
-            // İmzalı tutar: + alacak, - borç/kesinti
+            // İmzalı tutar: + alacak (müşteri ödemesi/iskonto), - borç/kesinti (müşteriye ek borç)
             public decimal TutarSigned { get; set; }
 
             public decimal? Kur { get; set; }              // opsiyonel
             public string? Kategori { get; set; }          // örn: Kesinti, İade, Düzeltme, Manuel
             public string? EvrakNo { get; set; }           // opsiyonel
             public string? Aciklama { get; set; }          // opsiyonel
-            public string? SubeKodu { get; set; }          // opsiyonel
         }
 
         public async Task<IActionResult> OnGetAsync(int? musteriId, string? pb)
@@ -89,17 +88,23 @@ namespace Lojistik.Pages.Cari
 
             if (!ModelState.IsValid)
             {
-                // dropdown’ı yeniden doldur
                 await OnGetAsync(Input.MusteriID, Input.ParaBirimi);
                 return Page();
             }
 
+            // MusteriID’nin bu firmaya ait olduğunu doğrula
+            var musteriAit = await _context.Musteriler
+                .AnyAsync(m => m.FirmaID == firmaId && m.MusteriID == Input.MusteriID);
+            if (!musteriAit) return Forbid();
+
             var pb = Input.ParaBirimi.Trim().ToUpperInvariant();
-            var yon = Input.TutarSigned > 0 ? 1 : 0;
+            // Yonu: 1 = Borç (müşteri bize borçlu), 0 = Alacak (müşterinin ödemesi)
+            // TutarSigned > 0 → alacak niyeti → Yonu=0; TutarSigned < 0 → borç/kesinti niyeti → Yonu=1
+            var yon = Input.TutarSigned > 0 ? 0 : 1;
             var tutarAbs = Math.Abs(Input.TutarSigned);
 
-            // SubeKodu & EvrakNo boşsa NULL, Kur opsiyonel (NULL olabilir)
-            object? subeParam = string.IsNullOrWhiteSpace(Input.SubeKodu) ? null : Input.SubeKodu;
+            // EvrakNo boşsa NULL, Kur opsiyonel (NULL olabilir)
+            object? subeParam = null; // SubeKodu artık kullanılmıyor
             object? evrakParam = string.IsNullOrWhiteSpace(Input.EvrakNo) ? null : Input.EvrakNo;
             object? kurParam = Input.Kur;
 
@@ -138,7 +143,7 @@ VALUES
                     evrakParam,            // 5
                     aciklama,              // 6
                     pb,                    // 7
-                    yon,                   // 8  (1=Alacak, 0=Borç)
+                    yon,                   // 8  (1=Borç, 0=Alacak)
                     tutarAbs,              // 9
                     kurParam,              // 10 (NULL olabilir)
                     userId                 // 11
