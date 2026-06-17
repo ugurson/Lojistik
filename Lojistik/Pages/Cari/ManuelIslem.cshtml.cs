@@ -50,7 +50,13 @@ namespace Lojistik.Pages.Cari
                 .ToListAsync();
 
             if (musteriId.HasValue && musteriId.Value > 0)
+            {
+                // musteriId'nin bu firmaya ait olduğunu doğrula
+                var musteriAit = await _context.Musteriler
+                    .AnyAsync(m => m.FirmaID == firmaId && m.MusteriID == musteriId.Value);
+                if (!musteriAit) return Forbid();
                 Input.MusteriID = musteriId.Value;
+            }
 
             if (!string.IsNullOrWhiteSpace(pb))
                 Input.ParaBirimi = pb.Trim().ToUpperInvariant();
