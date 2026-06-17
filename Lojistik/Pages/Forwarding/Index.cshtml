@@ -1,0 +1,177 @@
+@page
+@model Lojistik.Pages.Forwarding.IndexModel
+@using Lojistik.Models
+@{
+    ViewData["Title"] = "Forwarding İşleri";
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Forwarding İşleri</h2>
+        <div class="d-flex gap-2">
+            <a asp-page="./Create" class="btn btn-pastel-green btn-sm">+ Yeni İş</a>
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
+        </div>
+    </div>
+
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Firma, dosya no, güzergah..." />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Durum</label>
+                    <select name="durumFiltre" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="0" selected="@(Model.durumFiltre == 0)">Taslak</option>
+                        <option value="1" selected="@(Model.durumFiltre == 1)">Aktif</option>
+                        <option value="2" selected="@(Model.durumFiltre == 2)">Yüklendi</option>
+                        <option value="3" selected="@(Model.durumFiltre == 3)">Teslim Edildi</option>
+                        <option value="4" selected="@(Model.durumFiltre == 4)">İptal</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Yükleme Başlangıç</label>
+                    <input type="date" name="d1" value="@(Model.d1?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Yükleme Bitiş</label>
+                    <input type="date" name="d2" value="@(Model.d2?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue" asp-page="./Index">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Dosya No</th>
+                    <th>Yükü Veren</th>
+                    <th>Yükü Alan</th>
+                    <th>Taşıyıcı</th>
+                    <th>Güzergah</th>
+                    <th class="text-center">Yükleme</th>
+                    <th class="text-center">Teslim</th>
+                    <th class="text-center">Durum</th>
+                    <th class="text-end">Satış</th>
+                    <th class="text-end">Alış</th>
+                    <th class="text-end">Kâr/Zarar</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="12" class="text-center text-muted py-4">Kayıt bulunamadı.</td></tr>
+                }
+                @foreach (var r in Model.Items)
+                {
+                    var kar    = r.ToplamSatis - r.ToplamAlis;
+                    var karCls = kar > 0 ? "text-success fw-semibold" : kar < 0 ? "text-danger fw-semibold" : "text-muted";
+                    var karStr = kar > 0 ? "+" + kar.ToString("N2") : kar.ToString("N2");
+                    var pb     = r.SatisPB ?? r.AlisPB ?? "—";
+                    <tr class="rowlink" data-href="@Url.Page("./Details", new { id = r.ForwardingID })" style="cursor:pointer;">
+                        <td class="fw-semibold">@(r.DosyaNo ?? $"#{r.ForwardingID}")</td>
+                        <td>@(r.YukuVerenAdi ?? "—")</td>
+                        <td class="text-muted">@(r.YukuAlanAdi ?? "—")</td>
+                        <td class="text-muted" style="font-size:0.82rem;">@(r.TasiyiciGorunum ?? "—")</td>
+                        <td>
+                            <span class="text-muted" style="font-size:0.82rem;">
+                                @(r.YuklemeyeriAdi ?? "?") → @(r.VarisYeriAdi ?? "?")
+                            </span>
+                            @if (r.KalemOzet != null)
+                            {
+                                <div style="font-size:0.77rem;color:#6f7bba;margin-top:1px;">📦 @r.KalemOzet</div>
+                            }
+                        </td>
+                        <td class="text-center text-muted" style="font-size:0.82rem;">
+                            @(r.YuklemeTarihi?.ToString("dd.MM.yyyy") ?? "—")
+                        </td>
+                        <td class="text-center text-muted" style="font-size:0.82rem;">
+                            @(r.GercekTeslimTarihi?.ToString("dd.MM.yyyy") ?? r.TeslimTarihi?.ToString("dd.MM.yyyy") ?? "—")
+                        </td>
+                        <td class="text-center">
+                            <span class="badge @ForwardingIs.DurumBadgeCss(r.Durum)" style="font-size:0.75rem;">
+                                @ForwardingIs.DurumAdi(r.Durum)
+                            </span>
+                        </td>
+                        <td class="text-end text-success">
+                            @if (r.ToplamSatis > 0) { <span>@r.ToplamSatis.ToString("N2") @r.SatisPB</span> } else { <span class="text-muted">—</span> }
+                        </td>
+                        <td class="text-end text-danger">
+                            @if (r.ToplamAlis > 0) { <span>@r.ToplamAlis.ToString("N2") @r.AlisPB</span> } else { <span class="text-muted">—</span> }
+                        </td>
+                        <td class="text-end @karCls">
+                            @if (r.ToplamSatis > 0 || r.ToplamAlis > 0) { @($"{karStr} {pb}") } else { <span class="text-muted">—</span> }
+                        </td>
+                        <td class="text-end">
+                            <a asp-page="./Details" asp-route-id="@r.ForwardingID" class="btn btn-pastel-blue btn-sm">Detay</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-muted small mt-2">@Model.ToplamKayit kayıt</div>
+</div>
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Forwarding İşleri — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, acente (forwarding) operasyonlarını listeler. Yükü veren, yükü alan, taşıyıcı firma ve güzergah bilgileri ile satış/alış tutarlarını ve kar/zarar durumunu gösterir.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo Sütunları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Dosya No</strong> — Forwarding iş dosyası numarası.</li>
+                        <li><strong>Yükü Veren / Alan</strong> — Gönderi ile alıcı taraflar.</li>
+                        <li><strong>Taşıyıcı</strong> — Nakliyeyi üstlenen firma.</li>
+                        <li><strong>Güzergah</strong> — Yükleme yeri → Varış yeri.</li>
+                        <li><strong>Satış / Alış</strong> — Müşteriye kesilen tutar ve taşıyıcıya ödenen tutar.</li>
+                        <li><strong>Kâr/Zarar</strong> — Satış - Alış farkı. Yeşil: kâr · Kırmızı: zarar.</li>
+                        <li><strong>Durum</strong> — Taslak · Aktif · Yüklendi · Teslim Edildi · İptal.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>+ Yeni İş</strong> — Yeni forwarding dosyası oluşturun.</li>
+                        <li>Satıra tıklayarak iş dosyası detayına ulaşabilirsiniz.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('click', function (e) {
+        const row = e.target.closest('tr.rowlink');
+        if (!row) return;
+        if (e.target.closest('a, button, form')) return;
+        if (row.dataset.href) window.location = row.dataset.href;
+    });
+</script>

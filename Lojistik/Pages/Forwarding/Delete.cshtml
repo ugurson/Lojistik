@@ -1,0 +1,52 @@
+@page "{id:int}"
+@model Lojistik.Pages.Forwarding.DeleteModel
+@using Lojistik.Models
+@{
+    ViewData["Title"] = "Forwarding Sil";
+}
+
+<div class="lj-page-compact">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0 text-danger">Forwarding İşi Sil</h2>
+        <a asp-page="./Details" asp-route-id="@Model.Is.ForwardingID" class="btn btn-pastel-blue btn-sm">← Geri</a>
+    </div>
+
+    <div class="alert alert-danger">
+        Bu forwarding işini <strong>kalıcı olarak silmek</strong> istediğinizden emin misiniz?
+        Fiyat kalemleri de birlikte silinecektir.
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <dl class="row mb-0" style="font-size:0.92rem;">
+                <dt class="col-sm-3 text-muted">Dosya No</dt>
+                <dd class="col-sm-9 fw-semibold">@(Model.Is.DosyaNo ?? $"#{Model.Is.ForwardingID}")</dd>
+
+                <dt class="col-sm-3 text-muted">Müşteri</dt>
+                <dd class="col-sm-9">@(Model.Is.Musteri?.MusteriAdi ?? "—")</dd>
+
+                <dt class="col-sm-3 text-muted">Taşıyıcı</dt>
+                <dd class="col-sm-9">@(Model.Is.TasiyiciAdi ?? "—")</dd>
+
+                <dt class="col-sm-3 text-muted">Güzergah</dt>
+                <dd class="col-sm-9">@(Model.Is.YuklemeyeriAdi ?? "?") → @(Model.Is.VarisYeriAdi ?? "?")</dd>
+
+                <dt class="col-sm-3 text-muted">Durum</dt>
+                <dd class="col-sm-9">
+                    <span class="badge @ForwardingIs.DurumBadgeCss(Model.Is.Durum)">@ForwardingIs.DurumAdi(Model.Is.Durum)</span>
+                </dd>
+
+                <dt class="col-sm-3 text-muted">Yükleme Tarihi</dt>
+                <dd class="col-sm-9">@(Model.Is.YuklemeTarihi?.ToString("dd.MM.yyyy") ?? "—")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="d-flex gap-2">
+            <button class="btn btn-danger" type="submit">Evet, Sil</button>
+            <a asp-page="./Details" asp-route-id="@Model.Is.ForwardingID" class="btn btn-pastel-blue">İptal</a>
+        </div>
+    </form>
+</div>
