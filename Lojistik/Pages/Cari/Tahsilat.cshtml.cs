@@ -63,6 +63,10 @@ namespace Lojistik.Pages.Cari
                 return Page();
             }
 
+            var musteriAit = await _context.Musteriler
+                .AnyAsync(m => m.FirmaID == firmaId && m.MusteriID == Input.MusteriID);
+            if (!musteriAit) return Forbid();
+
             // SubeKodu: tahsilatta boş/NULL geçebilir (constraint için boşluk gönderme!)
             object? subeParam = null;
 
