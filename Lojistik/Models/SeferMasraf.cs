@@ -33,5 +33,6 @@ namespace Lojistik.Models
         public Kullanici? Kullanici { get; set; }
         [ForeignKey(nameof(CreatedByKullaniciID))] public Kullanici? CreatedByKullanici { get; set; }
         public Sefer? Sefer { get; set; }
+        public decimal? YakitLitre { get; set; }
     }
 }

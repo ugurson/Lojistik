@@ -23,6 +23,9 @@ namespace Lojistik.Models
 
         public DateTime? CikisTarihi { get; set; } // datetime2(0)
         public DateTime? DonusTarihi { get; set; } // datetime2(0)
+        public int? BaslangicKm { get; set; }
+        public int? BitisKm { get; set; }
+        public int? KmMesafe { get; set; }
 
         [Required] public byte Durum { get; set; }
         [StringLength(500)] public string? Notlar { get; set; }

@@ -32,6 +32,10 @@ namespace Lojistik.Models
 
         [Display(Name = "Notlar")]
         public string? Notlar { get; set; }
+        public string? IslemFirmasi { get; set; }
+        public int Odeme { get; set; } = 0; // 0=ödenmedi, 1=ödendi
+
+
 
         [Display(Name = "Oluşturma")]
         public DateTime CreatedAt { get; set; } // DB default GETDATE() alacak

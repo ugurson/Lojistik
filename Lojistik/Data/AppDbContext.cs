@@ -20,18 +20,48 @@ namespace Lojistik.Data
         public DbSet<SeferMasraf> SeferMasraflari { get; set; } = default!;
         public DbSet<SeferGelir> SeferGelirleri { get; set; } = default!;
         public DbSet<Lojistik.Models.CariHareket> CariHareketler { get; set; } = default!;
+        public DbSet<KademeFirma> KademeFirmalari { get; set; } = default!;
+
+        public DbSet<ProgramAltSube>   ProgramAltSubeler   { get; set; } = null!;
+        public DbSet<ProgramFirma>     ProgramFirmalar     { get; set; } = null!;
+        public DbSet<ProgramModul>     ProgramModulleri    { get; set; } = null!;
+        public DbSet<ProgramFirmaModul> ProgramFirmaModulleri { get; set; } = null!;
 
         public DbSet<Sofor> Soforler { get; set; } = default!;
+        public DbSet<ForwardingIs> ForwardingIsler { get; set; } = default!;
+        public DbSet<ForwardingFiyat> ForwardingFiyatlar { get; set; } = default!;
+        public DbSet<ForwardingKalem> ForwardingKalemler { get; set; } = default!;
+        public DbSet<GuncellemeNotu> GuncellemeNotlari { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // ── Modül ilişkileri ─────────────────────────────────────────────
+            modelBuilder.Entity<ProgramFirmaModul>(e =>
+            {
+                e.HasIndex(x => new { x.FirmaID, x.ModulID })
+                    .IsUnique()
+                    .HasDatabaseName("UX_ProgramFirmaModulleri_Firma_Modul");
+
+                e.HasOne(x => x.Firma)
+                    .WithMany()
+                    .HasForeignKey(x => x.FirmaID)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_ProgramFirmaModulleri_ProgramFirmalar");
+
+                e.HasOne(x => x.Modul)
+                    .WithMany()
+                    .HasForeignKey(x => x.ModulID)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_ProgramFirmaModulleri_Moduller");
+            });
+
             modelBuilder.Entity<Ulke>().ToTable("Ulkeler");
             modelBuilder.Entity<Sehir>().ToTable("Sehirler");
             modelBuilder.Entity<Musteri>().ToTable("Musteriler");
 
-            // İlişkiler (SQL’de FK var; EF tarafı da bilsin)
+           
 
 
             modelBuilder.Entity<Sehir>()
@@ -50,12 +80,19 @@ namespace Lojistik.Data
               .HasForeignKey(m => m.SehirID);
 
             modelBuilder.Entity<Firma>()
+    .ToTable(tb => tb.HasTrigger("trg_Firmalar_SetUpdatedAt"));
+
+            modelBuilder.Entity<Firma>()
                 .HasIndex(x => x.FirmaKodu)
                 .IsUnique();
 
             modelBuilder.Entity<Kullanici>()
                 .HasIndex(x => x.Username)
                 .IsUnique();
+
+            // Kullanicilar tablosunda trigger var; EF Core OUTPUT clause ile çakışıyor
+            modelBuilder.Entity<Kullanici>()
+                .ToTable(t => t.UseSqlOutputClause(false));
 
             modelBuilder.Entity<Kullanici>()
                 .HasOne(x => x.Firma)
@@ -119,7 +156,13 @@ namespace Lojistik.Data
                  .IsUnique()
                  .HasFilter("[BitisTarihi] IS NULL");
             });
-
+            modelBuilder.Entity<ProgramAltSube>(e =>
+            {
+                e.ToTable("ProgramAltSubeler");
+                e.HasKey(x => x.AltSubeID);
+                e.Property(x => x.AltSubeKodu).HasMaxLength(20);
+                e.Property(x => x.AltSubeAdi).HasMaxLength(200);
+            });
             modelBuilder.Entity<Sofor>(e =>
             {
                 e.ToTable("Soforler");
@@ -145,8 +188,35 @@ namespace Lojistik.Data
                     .IsUnique()
                     .HasFilter("[PasaportNo] IS NOT NULL");
 
-                e.HasCheckConstraint("CK_Soforler_Durum", "[Durum] IN (0,1)");
+                e.ToTable(t => t.HasCheckConstraint("CK_Soforler_Durum", "[Durum] IN (0,1)"));
             });
+            modelBuilder.Entity<ForwardingIs>(e =>
+            {
+                e.HasOne(x => x.Musteri).WithMany().HasForeignKey(x => x.MusteriID).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+                e.HasOne(x => x.YukuVeren).WithMany().HasForeignKey(x => x.YukuVerenID).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+                e.HasOne(x => x.YukuAlan).WithMany().HasForeignKey(x => x.YukuAlanID).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+                e.HasOne(x => x.TasiyiciMusteri).WithMany().HasForeignKey(x => x.TasiyiciMusteriID).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+                e.HasOne(x => x.CreatedByKullanici).WithMany().HasForeignKey(x => x.CreatedByKullaniciID).OnDelete(DeleteBehavior.SetNull);
+                e.HasMany(x => x.Fiyatlar).WithOne(f => f.ForwardingIs).HasForeignKey(f => f.ForwardingID).OnDelete(DeleteBehavior.Cascade);
+                e.Property(x => x.BrutKg).HasColumnType("decimal(10,2)");
+                e.Property(x => x.CbmHacim).HasColumnType("decimal(10,3)");
+            });
+
+            modelBuilder.Entity<ForwardingFiyat>(e =>
+            {
+                e.Property(x => x.Tutar).HasColumnType("decimal(18,2)");
+                e.Property(x => x.FiyatTuru).HasMaxLength(10).IsRequired();
+                e.Property(x => x.ParaBirimi).HasMaxLength(10).IsRequired();
+            });
+
+            modelBuilder.Entity<ForwardingKalem>(e =>
+            {
+                e.Property(x => x.Adet).HasColumnType("decimal(10,3)");
+                e.Property(x => x.Nevi).HasMaxLength(50).IsRequired();
+                e.HasOne(x => x.ForwardingIs).WithMany(f => f.Kalemler)
+                 .HasForeignKey(x => x.ForwardingID).OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<CariHareket>(e =>
             {
                 e.ToTable("CariHareketler");
@@ -157,6 +227,9 @@ namespace Lojistik.Data
                 e.Property(x => x.Aciklama).HasMaxLength(300);
                 e.Property(x => x.ParaBirimi).HasMaxLength(10).IsRequired();
                 e.Property(x => x.SeferGelirID);
+                e.Property(x => x.IsArsiv).HasDefaultValue(false);
+                e.Property(x => x.DevirKapanmaTarihi).HasColumnType("date");
+                e.Property(x => x.DevirNo).IsRequired(false);
 
 
                 e.Property(x => x.Tutar).HasColumnType("decimal(18,2)");

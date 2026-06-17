@@ -11,6 +11,21 @@ public class Kullanici
     public string? AltSubeKodu { get; set; }
     public int? YetkiSeviyesi1 { get; set; }
     public int? YetkiSeviyesi2 { get; set; }
+    public byte AracYetkisi { get; set; } = 0;
+
+    public byte SiparisYetkisi { get; set; } = 0;
+    public byte SeferYetkisi { get; set; } = 0;
+    public byte MusteriYetkisi { get; set; } = 0;
+    public byte CariYetkisi { get; set; } = 0;
+    public byte RaporYetkisi { get; set; } = 0;
+    public byte ForwardingYetkisi { get; set; } = 0;
+
+    public bool IsActive      { get; set; } = true;
+    public bool IsFirmaAdmin  { get; set; } = false;
+    public bool IsSistemAdmin { get; set; } = false;
+
+    public DateTime  CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? UpdatedAt { get; set; }
 
     public Firma? Firma { get; set; }
 }

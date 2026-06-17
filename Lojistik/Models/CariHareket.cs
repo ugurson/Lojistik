@@ -33,5 +33,10 @@ namespace Lojistik.Models
 
         public int? SeferGelirID { get; set; }
         public SeferGelir? SeferGelir { get; set; }
+
+        // Dönemsel Devir
+        public bool IsArsiv { get; set; } = false;
+        public DateTime? DevirKapanmaTarihi { get; set; }
+        public int? DevirNo { get; set; }   // hangi devir operasyonuna ait (1,2,3...)
     }
 }
