@@ -77,6 +77,10 @@ namespace Lojistik.Pages.SeferMasraflari
 
             if (e == null) return RedirectToPage("./Index");
 
+            var seferAit = await _context.Seferler
+                .AnyAsync(s => s.FirmaID == firmaId && s.SeferID == Input.SeferID);
+            if (!seferAit) return Forbid();
+
             e.SeferID = Input.SeferID;
             e.Tarih = Input.Tarih.Date;
             e.MasrafTipi = Input.MasrafTipi.Trim();

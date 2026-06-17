@@ -6,6 +6,7 @@ using Lojistik.Data;
 using Lojistik.Extensions;
 using Lojistik.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -32,6 +33,8 @@ namespace Lojistik.Pages.SeferMasraflari
             [StringLength(50)] public string? Ulke { get; set; }
             [StringLength(100)] public string? Yer { get; set; }
             [StringLength(300)] public string? Notlar { get; set; }
+            [Range(0, 999999)] public decimal? YakitLitre { get; set; }
+
         }
 
         public IActionResult OnGet(int seferId)
@@ -56,12 +59,24 @@ namespace Lojistik.Pages.SeferMasraflari
             var subeKodu = User.GetSubeKodu();
             var userId = User.GetUserId();
 
+            var tip = (Input.MasrafTipi ?? "").Trim();
+
+            if (tip == "Yakıt" && (Input.YakitLitre is null || Input.YakitLitre <= 0))
+            {
+                ModelState.AddModelError("Input.YakitLitre", "Yakıt masrafında litre zorunludur.");
+            }
+
+
             if (!ModelState.IsValid)
             {
                 ParaBirimleri = new SelectList(new[] { "TL", "EUR", "USD" });
                 MasrafTipleri = new SelectList(new[] { "Yakıt", "Yakıt-Kapı", "Şöför Fiks","Masraflar", "Otoyol/Geçiş", "Konaklama", "Yemek", "Bakım/Servis", "Lastik", "Gümrük", "Sigorta", "Belge/Harç", "Park", "Diğer" });
                 return Page();
             }
+
+            var seferAit = await _context.Seferler
+                .AnyAsync(s => s.FirmaID == firmaId && s.SeferID == Input.SeferID);
+            if (!seferAit) return Forbid();
 
             var entity = new SeferMasraf
             {
@@ -73,6 +88,7 @@ namespace Lojistik.Pages.SeferMasraflari
                 MasrafTipi = Input.MasrafTipi.Trim(),
                 Tutar = Input.Tutar,
                 ParaBirimi = Input.ParaBirimi.Trim(),
+                YakitLitre = (tip == "Yakıt") ? Input.YakitLitre : null,
                 FaturaBelgeNo = string.IsNullOrWhiteSpace(Input.FaturaBelgeNo) ? null : Input.FaturaBelgeNo.Trim(),
                 Ulke = string.IsNullOrWhiteSpace(Input.Ulke) ? null : Input.Ulke.Trim(),
                 Yer = string.IsNullOrWhiteSpace(Input.Yer) ? null : Input.Yer.Trim(),
