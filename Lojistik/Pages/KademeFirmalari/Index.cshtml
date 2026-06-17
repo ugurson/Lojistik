@@ -1,0 +1,217 @@
+@page
+@model Lojistik.Pages.KademeFirmalari.IndexModel
+@{
+    ViewData["Title"] = "Kademe Firmaları";
+}
+
+<div class="lj-page-compact">
+
+    @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Kademe Firmaları <small class="text-muted fs-6 ms-1">· Tedarikçiler</small></h2>
+        <div class="d-flex gap-2">
+            <partial name="_DownloadActions"
+                     view-data='@(new ViewDataDictionary(ViewData) {
+                         ["FileBase"] = "kademe_firmalari",
+                         ["TableSelector"] = ".lj-table"
+                     })' />
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
+        </div>
+    </div>
+
+    @* ─── EKLEME KARTI ──────────────────────────────────────────── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-header fw-semibold">Yeni Tedarikçi Ekle</div>
+        <div class="card-body py-2">
+            <form method="post" asp-page-handler="Add" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Ünvan <span class="text-danger">*</span></label>
+                    <input class="form-control form-control-sm" asp-for="NewItem.MusteriAdi" />
+                    <span class="text-danger small" asp-validation-for="NewItem.MusteriAdi"></span>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Yetkili İsim</label>
+                    <input class="form-control form-control-sm" asp-for="NewItem.YetkiliIsim" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Vergi Dairesi</label>
+                    <input class="form-control form-control-sm" asp-for="NewItem.VergiDairesi" />
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <label class="form-label">Vergi No</label>
+                    <input class="form-control form-control-sm" asp-for="NewItem.VergiNo" />
+                </div>
+                <div class="col-sm-4 col-md-2">
+                    <label class="form-label">Telefon</label>
+                    <input class="form-control form-control-sm" asp-for="NewItem.Telefon" />
+                </div>
+                <div class="col-sm-2 col-md-auto">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" asp-for="NewItem.IsActive" />
+                        <label class="form-check-label">Aktif</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-pastel-green btn-sm">+ Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* ─── ÖZET BAR ──────────────────────────────────────────────── *@
+    <div class="mb-2">
+        <small class="text-muted">Toplam <strong>@Model.List.Count</strong> tedarikçi</small>
+    </div>
+
+    @* ─── TABLO ─────────────────────────────────────────────────── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Ünvan</th>
+                    <th>Yetkili İsim</th>
+                    <th>Vergi Dairesi</th>
+                    <th>Vergi No</th>
+                    <th>Telefon</th>
+                    <th>Durum</th>
+                    <th class="text-end" style="width:230px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.List.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Tedarikçi bulunamadı.
+                    </td></tr>
+                }
+                @foreach (var x in Model.List)
+                {
+                    var isEdit = Model.EditId == x.MusteriID;
+
+                    @if (!isEdit)
+                    {
+                        <tr class="@(x.IsActive ? "" : "table-light text-muted")">
+                            <td class="fw-semibold">@x.MusteriAdi</td>
+                            <td>@x.YetkiliIsim</td>
+                            <td>@x.VergiDairesi</td>
+                            <td>@x.VergiNo</td>
+                            <td>@x.Telefon</td>
+                            <td>
+                                @if (x.IsActive)
+                                { <span class="badge bg-success bg-opacity-75">Aktif</span> }
+                                else
+                                { <span class="badge bg-secondary">Pasif</span> }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <div class="btn-group btn-group-sm">
+
+                                    <a class="btn btn-pastel-amber"
+                                       asp-page="./Index"
+                                       asp-route-EditId="@x.MusteriID">Düzenle</a>
+
+                                    <form method="post" asp-page-handler="Toggle" class="d-inline">
+                                        <input type="hidden" name="id" value="@x.MusteriID" />
+                                        <button type="submit" class="btn btn-pastel-blue">
+                                            @(x.IsActive ? "Pasif Yap" : "Aktif Yap")
+                                        </button>
+                                    </form>
+
+                                    <form method="post" asp-page-handler="Delete" class="d-inline"
+                                          onsubmit="return confirm('Bu tedarikçiyi silmek istiyor musun?');">
+                                        <input type="hidden" name="id" value="@x.MusteriID" />
+                                        <button type="submit" class="btn btn-pastel-red">Sil</button>
+                                    </form>
+
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr class="table-warning">
+                            <form method="post" asp-page-handler="Edit">
+                                <input type="hidden" asp-for="EditItem.MusteriID" value="@x.MusteriID" />
+                                <td>
+                                    <input class="form-control form-control-sm" asp-for="EditItem.MusteriAdi" />
+                                    <span class="text-danger small" asp-validation-for="EditItem.MusteriAdi"></span>
+                                </td>
+                                <td>
+                                    <input class="form-control form-control-sm" asp-for="EditItem.YetkiliIsim" placeholder="Yetkili İsim" />
+                                </td>
+                                <td>
+                                    <input class="form-control form-control-sm" asp-for="EditItem.VergiDairesi" placeholder="Vergi Dairesi" />
+                                </td>
+                                <td>
+                                    <input class="form-control form-control-sm" asp-for="EditItem.VergiNo" placeholder="Vergi No" />
+                                </td>
+                                <td>
+                                    <input class="form-control form-control-sm" asp-for="EditItem.Telefon" />
+                                </td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" asp-for="EditItem.IsActive" />
+                                        <label class="form-check-label">Aktif</label>
+                                    </div>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="submit" class="btn btn-pastel-green">Kaydet</button>
+                                        <a class="btn btn-pastel-blue" asp-page="./Index">Vazgeç</a>
+                                    </div>
+                                </td>
+                            </form>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Kademe Firmaları — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, yakıt istasyonları ve diğer araç hizmeti tedarikçilerini (kademe firmaları) listeler ve yönetmenizi sağlar.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">➕ Yeni Tedarikçi Ekleme</h6>
+                    <p class="text-muted mb-2">Sayfanın üst kısmındaki formu kullanarak yeni kademe firması ekleyebilirsiniz.</p>
+                    <ul class="mb-0">
+                        <li><strong>Ünvan</strong> — Firma adı (zorunlu).</li>
+                        <li><strong>Yetkili İsim</strong> — İletişim kişisi.</li>
+                        <li><strong>Vergi Dairesi / No</strong> — Vergi bilgileri.</li>
+                        <li><strong>Telefon</strong> — İletişim numarası.</li>
+                        <li><strong>Aktif</strong> — Firma aktif olarak kullanılabilir olsun mu?</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Düzenle</strong> — Firma bilgilerini güncelleyin (satır içi düzenleme).</li>
+                        <li><strong>Aktif/Pasif Yap</strong> — Firmanın kullanım durumunu değiştirin.</li>
+                        <li><strong>Sil</strong> — Firmayı sistemden kaldırın.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

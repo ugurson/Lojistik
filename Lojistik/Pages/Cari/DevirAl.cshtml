@@ -1,0 +1,145 @@
+@page
+@model Lojistik.Pages.Cari.DevirAlModel
+@{
+    ViewData["Title"] = "Devir Al";
+}
+
+<div class="lj-page-compact" style="max-width:720px;">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Devir Al</h2>
+        <a asp-page="./Ekstre"
+           asp-route-musteriId="@Model.musteriId"
+           asp-route-pb="@Model.pb"
+           class="btn btn-pastel-blue btn-sm">← Ekstre</a>
+    </div>
+
+    @if (TempData["StatusMessage"] != null)
+    {
+        <div class="alert alert-info">@TempData["StatusMessage"]</div>
+    }
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header fw-semibold">Müşteri</div>
+        <div class="card-body">
+            <p class="mb-0 fs-5">@Model.MusteriAdi</p>
+        </div>
+    </div>
+
+    @* ─── Önizleme formu ─── *@
+    <form method="get" class="card mb-4 shadow-sm">
+        <div class="card-header fw-semibold">Devir Tarihi Seç (Önizleme)</div>
+        <div class="card-body">
+            <input type="hidden" name="musteriId" value="@Model.musteriId" />
+            <input type="hidden" name="pb" value="@Model.pb" />
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label">Tarihe Kadar Devret</label>
+                    <input class="form-control" type="date" name="DevirTarihi"
+                           value="@Model.DevirTarihi.ToString("yyyy-MM-dd")"
+                           max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
+                    <div class="form-text">Bu tarihe kadar olan tüm hareketler arşivlenir.</div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-pastel-blue w-100">Önizle</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @* ─── Önizleme tablosu ─── *@
+    @if (Model.OnizlemeSatirlar.Any())
+    {
+        <div class="card mb-4 shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark fw-semibold">
+                Önizleme — @Model.DevirTarihi.ToString("dd.MM.yyyy") tarihine kadar olan hareketler
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Para Birimi</th>
+                            <th class="text-end">Toplam Borç</th>
+                            <th class="text-end">Toplam Alacak</th>
+                            <th class="text-end fw-bold">Net Bakiye</th>
+                            <th class="text-center">Kayıt Sayısı</th>
+                            <th>Oluşacak Devir Kaydı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.OnizlemeSatirlar)
+                        {
+                            <tr>
+                                <td><strong>@s.ParaBirimi</strong></td>
+                                <td class="text-end text-danger">@s.ToplamBorc.ToString("N2")</td>
+                                <td class="text-end text-success">@s.ToplamAlacak.ToString("N2")</td>
+                                <td class="text-end fw-bold">@Math.Abs(s.NetBakiye).ToString("N2")</td>
+                                <td class="text-center">@s.KayitSayisi</td>
+                                <td>
+                                    @if (s.NetBakiye == 0)
+                                    {
+                                        <span class="badge bg-secondary">Sıfır — devir kaydı oluşmaz</span>
+                                    }
+                                    else if (s.NetBakiye > 0)
+                                    {
+                                        <span class="badge bg-danger">@s.NetBakiye.ToString("N2") @s.ParaBirimi Borç devri</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@Math.Abs(s.NetBakiye).ToString("N2") @s.ParaBirimi Alacak devri</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer text-muted small">
+                <strong>Ne olacak?</strong> Seçilen tarihe kadar olan @Model.OnizlemeSatirlar.Sum(x => x.KayitSayisi) kayıt arşivlenir.
+                Her para birimi için yukarıdaki "Oluşacak Devir Kaydı" sütunundaki tek satır,
+                <strong>@Model.DevirTarihi.AddDays(1).ToString("dd.MM.yyyy")</strong> tarihiyle eklenir.
+                Bu tarihten sonraki hareketler hiç etkilenmez.
+            </div>
+        </div>
+
+        @* ─── Onay formu ─── *@
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="musteriId" value="@Model.musteriId" />
+            <input type="hidden" name="pb" value="@Model.pb" />
+            <input type="hidden" name="DevirTarihi" value="@Model.DevirTarihi.ToString("yyyy-MM-dd")" />
+
+            <div class="alert alert-danger d-flex align-items-start gap-2">
+                <span class="fs-4">⚠️</span>
+                <div>
+                    <strong>Bu işlem geri alınamaz.</strong>
+                    @Model.DevirTarihi.ToString("dd.MM.yyyy") tarihine kadar olan
+                    <strong>@Model.OnizlemeSatirlar.Sum(x => x.KayitSayisi) kayıt</strong>
+                    arşivlenecek ve normal görünümden kaldırılacaktır.
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-pastel-red"
+                        onclick="return confirm('Devir işlemini onaylıyor musunuz? Bu işlem geri alınamaz.')">
+                    Deviri Onayla ve Uygula
+                </button>
+                <a asp-page="./Ekstre"
+                   asp-route-musteriId="@Model.musteriId"
+                   asp-route-pb="@Model.pb"
+                   class="btn btn-pastel-blue">İptal</a>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Seçilen tarihe kadar devredilecek aktif hareket bulunamadı.
+        </div>
+        <a asp-page="./Ekstre"
+           asp-route-musteriId="@Model.musteriId"
+           asp-route-pb="@Model.pb"
+           class="btn btn-pastel-blue">← Ekstre</a>
+    }
+
+</div>

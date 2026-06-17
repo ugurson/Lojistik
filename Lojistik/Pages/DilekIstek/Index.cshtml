@@ -1,0 +1,58 @@
+@page
+@model Lojistik.Pages.DilekIstek.IndexModel
+@{
+    ViewData["Title"] = "Dilek & İstek";
+}
+
+<div class="lj-page-compact">
+    <div class="mb-4">
+        <h1 class="h3" style="color: #1e293b; font-weight: 700;">Dilek & İstek</h1>
+        <p class="text-muted">Sisteme ilişkin önerileriniz, dilek ve istekleriniz için bu formu kullanabilirsiniz.</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+        </div>
+    }
+
+    <form method="post" class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <label for="Mesaj" class="form-label fw-semibold">Mesajınız</label>
+                <textarea class="form-control" id="Mesaj" name="Mesaj" rows="8"
+                          placeholder="Lütfen sisteme ilişkin dilek, istek veya önerilerinizi yazınız..."
+                          required
+                          style="resize: vertical; min-height: 150px;">@Model.Mesaj</textarea>
+                <small class="text-muted d-block mt-2">Minimum 10 karakter, maksimum 2000 karakter girebilirsiniz.</small>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-2"></i>Gönder
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Geri Dön
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <div class="alert alert-info mt-4" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Bilgilendirme:</strong> Gönderdiğiniz mesaj sistem yöneticisine ulaştırılacaktır.
+        Kişisel bilgileriniz korunmaktadır.
+    </div>
+</div>

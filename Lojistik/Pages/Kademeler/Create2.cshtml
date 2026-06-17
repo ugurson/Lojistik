@@ -1,0 +1,91 @@
+@page
+@model Lojistik.Pages.Kademeler.Create2Model
+@{
+    ViewData["Title"] = "Yeni Kademe";
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Yeni Kademe</h2>
+        <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">← Liste</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6 col-md-4">
+                        <label class="form-label">Araç</label>
+                        <select asp-for="Input.AracID" asp-items="Model.Araclar" class="form-select" required>
+                            <option value="">Seçiniz...</option>
+                        </select>
+                        <span asp-validation-for="Input.AracID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label">Tarih</label>
+                        <input asp-for="Input.Tarih" type="date" class="form-control" />
+                        <span asp-validation-for="Input.Tarih" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-12 col-md-6">
+                        <label class="form-label">Yapılan İşlem</label>
+                        <input asp-for="Input.YapilanIslem" class="form-control" />
+                        <span asp-validation-for="Input.YapilanIslem" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <label class="form-label">Yapılan Firma</label>
+                        <select asp-for="SeciliFirma" asp-items="Model.KademeFirmalari" class="form-select" id="firmaSelect"></select>
+                    </div>
+                    <div class="col-sm-6 col-md-3" id="firmaElleWrap" style="display:none;">
+                        <label class="form-label">Firma Adı (Elle)</label>
+                        <input asp-for="FirmaElle" class="form-control" />
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label">Tutar</label>
+                        <input asp-for="Input.Tutar" class="form-control" />
+                        <span asp-validation-for="Input.Tutar" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label">Para Birimi</label>
+                        <select asp-for="Input.ParaBirimi" class="form-select">
+                            <option>TRY</option>
+                            <option>EUR</option>
+                            <option>USD</option>
+                        </select>
+                        <span asp-validation-for="Input.ParaBirimi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notlar</label>
+                        <textarea asp-for="Input.Notlar" rows="2" class="form-control"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-pastel-green">Kaydet</button>
+                    <a asp-page="./Index" class="btn btn-pastel-blue">İptal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    (function () {
+        var sel = document.getElementById("firmaSelect");
+        var wrap = document.getElementById("firmaElleWrap");
+        function toggle() {
+            wrap.style.display = (sel && sel.value === "__ELLE__") ? "" : "none";
+        }
+        if (sel) {
+            sel.addEventListener("change", toggle);
+            toggle();
+        }
+    })();
+</script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Tam veritabani dump'lari (repoya dahil edilmez; sema referansi icin CreateTable script'leri kullanilir)
+/LojistikDB.sql
+/LojistikDB2.sql
