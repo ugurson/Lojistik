@@ -1,50 +1,46 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model Lojistik.Pages.Siparisler.DeleteModel
 @{
     ViewData["Title"] = "Sipariş Sil";
     var s = Model.Data!;
+    string DurumMetni(byte d) => d switch { 0 => "Taslak", 1 => "Yüklendi", 2 => "Araçta", 3 => "Tamamlandı", 7 => "Sonlandırıldı", _ => "—" };
+    string DurumBadge(byte d) => d switch { 0 => "secondary", 1 => "info", 2 => "primary", 3 => "success", 7 => "danger", _ => "dark" };
 }
 
-<h2 class="mb-3 text-danger">Sipariş Sil</h2>
+<div class="lj-page-compact">
 
-<div class="alert alert-warning">
-    <strong>Bu siparişi silmek istediğinize emin misiniz?</strong>
-</div>
+    <h2 class="mb-3 text-danger">Sipariş Sil</h2>
 
-<div class="card mb-3">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">ID</dt>
-            <dd class="col-sm-9">@s.SiparisID</dd>
-
-            <dt class="col-sm-3">Tarih</dt>
-            <dd class="col-sm-9">@s.SiparisTarihi.ToString("dd.MM.yyyy")</dd>
-
-            <dt class="col-sm-3">Yük Açıklaması</dt>
-            <dd class="col-sm-9 text-prewrap">@s.YukAciklamasi</dd>
-
-            <dt class="col-sm-3">Gönderen</dt>
-            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.Gonderen) ? s.Gonderen : "—")</dd>
-
-            <dt class="col-sm-3">Alıcı</dt>
-            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.Alici) ? s.Alici : "—")</dd>
-
-            <dt class="col-sm-3">Tutar</dt>
-            <dd class="col-sm-9">
-                @((s.Tutar?.ToString("N2")) ?? "—") @(string.IsNullOrWhiteSpace(s.ParaBirimi) ? "" : s.ParaBirimi)
-            </dd>
-
-            <dt class="col-sm-3">Durum</dt>
-            <dd class="col-sm-9">
-                <span class="badge bg-@(s.Durum == 0 ? "secondary" : (s.Durum == 1 ? "info" : (s.Durum == 2 ? "primary" : (s.Durum == 3 ? "success" : "dark"))))">
-                    @s.Durum
-                </span>
-            </dd>
-        </dl>
+    <div class="alert alert-danger">
+        <strong>Bu siparişi silmek istediğinize emin misiniz?</strong>
+        Bu işlem geri alınamaz.
     </div>
-</div>
 
-<form method="post" class="d-flex gap-2">
-    <button type="submit" class="btn btn-danger">Evet, Sil</button>
-    <a asp-page="./Details" asp-route-id="@s.SiparisID" class="btn btn-outline-secondary">Vazgeç</a>
-</form>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header fw-semibold">Sipariş Özeti</div>
+        <div class="card-body">
+            <div class="row g-2" style="font-size:0.875rem;">
+                <div class="col-sm-3 text-muted">Tarih</div>
+                <div class="col-sm-9">@s.SiparisTarihi.ToString("dd.MM.yyyy")</div>
+                <div class="col-sm-3 text-muted">Yük Açıklaması</div>
+                <div class="col-sm-9">@s.YukAciklamasi</div>
+                <div class="col-sm-3 text-muted">Gönderen</div>
+                <div class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.Gonderen) ? s.Gonderen : "—")</div>
+                <div class="col-sm-3 text-muted">Alıcı</div>
+                <div class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.Alici) ? s.Alici : "—")</div>
+                <div class="col-sm-3 text-muted">Tutar</div>
+                <div class="col-sm-9">@((s.Tutar?.ToString("N2")) ?? "—") @(string.IsNullOrWhiteSpace(s.ParaBirimi) ? "" : s.ParaBirimi)</div>
+                <div class="col-sm-3 text-muted">Durum</div>
+                <div class="col-sm-9">
+                    <span class="badge bg-@DurumBadge(s.Durum)">@DurumMetni(s.Durum)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+        <a asp-page="./Details" asp-route-id="@s.SiparisID" class="btn btn-pastel-blue">Vazgeç</a>
+    </form>
+
+</div>

@@ -1,61 +1,73 @@
-﻿@page
+@page
 @model Lojistik.Pages.Kademeler.DetailsModel
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Kademe Detay";
+    var k = Model.AracKademe;
 }
 
-<h1>Details</h1>
+<div class="lj-page-compact">
 
-<div>
-    <h4>AracKademe</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Tarih)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Tarih)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.YapilanIslem)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.YapilanIslem)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Tutar)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Tutar)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.ParaBirimi)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.ParaBirimi)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Notlar)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Notlar)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.CreatedAt)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.CreatedAt)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Arac)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Arac.Plaka)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-page="./Edit" asp-route-id="@Model.AracKademe.KademeID">Edit</a> |
-    <a asp-page="./Index">Back to List</a>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Kademe Detay</h2>
+        <div class="btn-group btn-group-sm">
+            <a asp-page="./Edit"   asp-route-id="@k.KademeID" class="btn btn-pastel-amber">Düzenle</a>
+            <a asp-page="./Delete" asp-route-id="@k.KademeID" class="btn btn-pastel-red">Sil</a>
+            <a asp-page="./Index"  class="btn btn-pastel-blue">← Liste</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Araç</div>
+                    <div class="fw-semibold">
+                        <span class="badge bg-light text-dark border">@k.Arac?.Plaka</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Tarih</div>
+                    <div class="fw-semibold">@k.Tarih.ToString("dd.MM.yyyy")</div>
+                </div>
+                <div class="col-6 col-md-1">
+                    <div class="text-muted small">Ödeme</div>
+                    <div>
+                        @if (k.Odeme == 1)
+                        {
+                            <span class="badge bg-success bg-opacity-75">Ödendi</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Ödenmedi</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="text-muted small">Yapılan İşlem</div>
+                    <div class="fw-semibold">@k.YapilanIslem</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">İşlem Firması</div>
+                    <div>@k.IslemFirmasi</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Tutar</div>
+                    <div class="fw-semibold">@k.Tutar.ToString("N2") @k.ParaBirimi</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(k.Notlar))
+                {
+                    <div class="col-12">
+                        <div class="text-muted small">Notlar</div>
+                        <div>@k.Notlar</div>
+                    </div>
+                }
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Kayıt Tarihi</div>
+                    <div class="text-muted">@k.CreatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>

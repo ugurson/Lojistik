@@ -1,75 +1,77 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model Lojistik.Pages.Belgeler.DeleteModel
 @{
     ViewData["Title"] = "Belge Sil";
+    var b = Model.AracBelgesi;
 }
 
-<h2 class="mb-3 text-danger">Belge Sil</h2>
+<div class="lj-page-compact">
 
-@if (Model.AracBelgesi is null)
-{
-    <div class="alert alert-warning">Kayıt bulunamadı.</div>
-}
-else
-{
-    <div class="alert alert-warning">
-        <strong>Dikkat!</strong> Bu belgeyi silmek üzeresiniz. Devam etmek istediğinize emin misiniz?
-    </div>
+    @if (b is null)
+    {
+        <div class="alert alert-warning">Kayıt bulunamadı.</div>
+    }
+    else
+    {
+        @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="mb-0 text-danger">Belge Sil</h2>
+            <a class="btn btn-pastel-blue btn-sm"
+               asp-page="/Araclar/Details" asp-route-id="@b.AracID">← Araç</a>
+        </div>
 
-    <div class="container px-0">
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Belge Tipi</div>
-            <div class="col-sm-6">@Model.AracBelgesi.BelgeTipi</div>
+        <div class="alert alert-danger py-2 mb-3">
+            Bu belgeyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
         </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Belge No</div>
-            <div class="col-sm-6">@Model.AracBelgesi.BelgeNo</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Firma</div>
-            <div class="col-sm-6">@Model.AracBelgesi.Firma</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Başlangıç Tarihi</div>
-            <div class="col-sm-6">@Model.AracBelgesi.BaslangicTarihi.ToString("dd-MM-yyyy")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Bitiş Tarihi</div>
-            <div class="col-sm-6">@(Model.AracBelgesi.BitisTarihi?.ToString("dd-MM-yyyy") ?? "-")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Tutar</div>
-            <div class="col-sm-6">@(Model.AracBelgesi.Tutar?.ToString("N2") ?? "-")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Para Birimi</div>
-            <div class="col-sm-6">@Model.AracBelgesi.ParaBirimi</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Dosya Yolu</div>
-            <div class="col-sm-6">@Model.AracBelgesi.DosyaYolu</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Notlar</div>
-            <div class="col-sm-6">@Model.AracBelgesi.Notlar</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Araç</div>
-            <div class="col-sm-6">@Model.AracBelgesi.Arac?.Plaka</div>
-        </div>
-    </div>
 
-    <form method="post" class="mt-3">
-        <input type="hidden" asp-for="AracBelgesi.BelgeID" />
+        @* ─── BELGE ÖZETİ ────────────────────────────────────────── *@
+        <div class="card mb-3">
+            <div class="card-body py-3">
+                <div class="row g-3">
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Araç</div>
+                        <div class="fw-semibold">@b.Arac?.Plaka</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Belge Tipi</div>
+                        <div class="fw-semibold">@b.BelgeTipi</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Belge No</div>
+                        <div>@b.BelgeNo</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Firma</div>
+                        <div>@b.Firma</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Bitiş Tarihi</div>
+                        <div>@(b.BitisTarihi?.ToString("dd.MM.yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Tutar</div>
+                        <div>@(b.Tutar?.ToString("N2") ?? "—") @b.ParaBirimi</div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(b.Notlar))
+                    {
+                        <div class="col-12">
+                            <div class="text-muted small">Notlar</div>
+                            <div>@b.Notlar</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
 
-         <input type="hidden" name="aracId" value="@Model.AracBelgesi.AracID" />
-        <button type="submit" class="btn btn-danger me-2">Sil</button>
+        <form method="post">
+            <input type="hidden" asp-for="AracBelgesi.BelgeID" />
+            <input type="hidden" name="aracId" value="@b.AracID" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+                <a class="btn btn-pastel-blue"
+                   asp-page="/Araclar/Details" asp-route-id="@b.AracID">İptal</a>
+            </div>
+        </form>
+    }
 
-        <!-- İptal/Listeye Dön: doğrudan araç detayına -->
-        <a class="btn btn-secondary"
-           asp-page="/Araclar/Details"
-           asp-route-id="@Model.AracBelgesi.AracID">
-            Araca Dön
-        </a>
-    </form>
-}
+</div>

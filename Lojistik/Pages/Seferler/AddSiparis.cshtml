@@ -1,19 +1,32 @@
-﻿@page
+@page
 @model Lojistik.Pages.Seferler.AddSiparisModel
 @{
     ViewData["Title"] = "Sefer Sipariş Ekle";
 }
 
-<h2>Sefer Sipariş Ekle</h2>
+<div class="lj-page-compact">
 
-<form method="post">
-    <input type="hidden" asp-for="SeferID" />
-
-    <div class="mb-3">
-        <label class="form-label">Sipariş (Dorse - Alıcı - Ülke)</label>
-        <select asp-for="SiparisID" asp-items="Model.SiparislerSelect" class="form-select"></select>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sipariş Ekle</h2>
+        <a asp-page="./Details" asp-route-id="@Model.SeferID" class="btn btn-pastel-blue btn-sm">← Sefer Detayı</a>
     </div>
 
-    <button type="submit" class="btn btn-success">Ekle</button>
-    <a asp-page="./Details" asp-route-id="@Model.SeferID" class="btn btn-secondary">İptal</a>
-</form>
+    <div class="card shadow-sm" style="max-width:480px;">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" asp-for="SeferID" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Sipariş (Dorse – Alıcı – Ülke)</label>
+                    <select asp-for="SiparisID" asp-items="Model.SiparislerSelect" class="form-select"></select>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-pastel-green">Ekle</button>
+                    <a asp-page="./Details" asp-route-id="@Model.SeferID" class="btn btn-pastel-blue">İptal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>

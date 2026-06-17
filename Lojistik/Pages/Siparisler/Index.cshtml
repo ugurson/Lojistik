@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model Lojistik.Pages.Siparisler.IndexModel
 @{
     ViewData["Title"] = "Siparişler";
@@ -23,88 +23,164 @@
         7 => "danger",
         _ => "dark"
     };
+
+    string SortIcon(string col)
+    {
+        bool isCurrent = string.Equals(Model.sortBy, col, StringComparison.OrdinalIgnoreCase)
+                      || (string.IsNullOrEmpty(Model.sortBy) && col == "tarih");
+        if (!isCurrent) return "↕";
+        return string.Equals(Model.sortDir, "asc", StringComparison.OrdinalIgnoreCase) ? " ↑" : " ↓";
+    }
+
+    string NextDir(string col)
+    {
+        bool isCurrent = string.Equals(Model.sortBy, col, StringComparison.OrdinalIgnoreCase)
+                      || (string.IsNullOrEmpty(Model.sortBy) && col == "tarih");
+        if (!isCurrent) return col == "tarih" ? "asc" : "desc";
+        return string.Equals(Model.sortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+    }
+
+    string Truncate(string? s, int max = 16)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return "";
+        return s.Length > max ? s.Substring(0, max) + "…" : s;
+    }
 }
 
-<h2 class="mb-3">Siparişler</h2>
+<div class="lj-page-compact">
 
-<div class="d-flex justify-content-start gap-3 mb-3">
-    <a asp-page="./Create" class="btn btn-success">+ Yeni Sipariş</a>
-    <a asp-page="./Sonlanan" class="btn btn-outline-danger">Sonlandırılan Siparişler</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Siparişler</h2>
+    <div class="d-flex gap-2">
+        <partial name="_DownloadActions"
+                 view-data='@(new ViewDataDictionary(ViewData) {
+                     ["FileBase"] = "siparisler",
+                     ["TableSelector"] = ".lj-table"
+                 })' />
+        <a asp-page="./Create" class="btn btn-pastel-green btn-sm">+ Yeni Sipariş</a>
+        <a asp-page="./Sonlanan" class="btn btn-pastel-red btn-sm">Sonlandırılan</a>
+        <button type="button" class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal" data-bs-target="#yardimModal"
+                title="Bu sayfa hakkında yardım">
+            ❓ Yardım
+        </button>
+    </div>
 </div>
 
-<form method="get" class="row g-2 mb-3 align-items-end">
-    <div class="col-sm-5">
-        <label class="form-label">Ara</label>
-        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (terim, müşteri, sipariş no)..." />
+@* ── Özet kartlar ─────────────────────────────────────────────── *@
+@{
+    int toplam   = Model.TotalCount;
+    int taslak   = Model.DurumSayilari.GetValueOrDefault((byte)0);
+    int yuklendi = Model.DurumSayilari.GetValueOrDefault((byte)1);
+    int aracta   = Model.DurumSayilari.GetValueOrDefault((byte)2);
+    int tamam    = Model.DurumSayilari.GetValueOrDefault((byte)3);
+}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="lj-ozet-kart">
+        <small>Toplam</small>
+        <span class="val">@toplam</span>
     </div>
-
-    <div class="col-sm-3">
-        <label class="form-label">Gösterim</label>
-        <div class="btn-group d-flex" role="group">
-            <a class="btn btn-outline-primary @(Model.siparisTur is null ? "active" : "")"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-page="1"
-               asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy"
-               asp-route-siparisTur="">
-                Tümü
-            </a>
-            <a class="btn btn-outline-primary @(Model.siparisTur == 1 ? "active" : "")"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-page="1"
-               asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy"
-               asp-route-siparisTur="1">
-                Yurtdışı
-            </a>
-            <a class="btn btn-outline-primary @(Model.siparisTur == 2 ? "active" : "")"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-page="1"
-               asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy"
-               asp-route-siparisTur="2">
-                Yurtiçi
-            </a>
+    @if (taslak > 0)
+    {
+        <div class="lj-ozet-kart">
+            <small>Taslak</small>
+            <span class="val text-secondary">@taslak</span>
         </div>
-    </div>
+    }
+    @if (yuklendi > 0)
+    {
+        <div class="lj-ozet-kart">
+            <small>Yüklendi</small>
+            <span class="val text-info">@yuklendi</span>
+        </div>
+    }
+    @if (aracta > 0)
+    {
+        <div class="lj-ozet-kart" style="border-color:#0d6efd44;">
+            <small>Araçta</small>
+            <span class="val text-primary">@aracta</span>
+        </div>
+    }
+    @if (tamam > 0)
+    {
+        <div class="lj-ozet-kart" style="border-color:#19875444;">
+            <small>Tamamlandı</small>
+            <span class="val text-success">@tamam</span>
+        </div>
+    }
+</div>
 
-    <div class="col-sm-2">
-        <label class="form-label">Sayfa Boyutu</label>
-        <select name="pageSize" class="form-select" onchange="this.form.submit()">
-            @{
-                int[] sizes = new[] { 10, 20, 50, 100 };
-                foreach (var s in sizes)
-                {
-                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
-                }
-            }
-        </select>
-    </div>
+@* ── Filtre formu ─────────────────────────────────────────────── *@
+<div class="card mb-3 lj-filter-card">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-5">
+                <label class="form-label">Ara</label>
+                <input name="q" value="@Model.q" class="form-control" placeholder="Terim, müşteri, sipariş no..." />
+            </div>
 
-    <input type="hidden" name="page" value="1" />
-    <input type="hidden" name="groupBy" value="@Model.groupBy" />
-    <input type="hidden" name="siparisTur" value="@(Model.siparisTur?.ToString())" />
+            <div class="col-sm-3">
+                <label class="form-label">Tür</label>
+                <div class="btn-group d-flex" role="group">
+                    <a class="btn @(Model.siparisTur is null ? "btn-pastel-amber" : "btn-pastel-blue")"
+                       asp-page="./Index" asp-route-q="@Model.q" asp-route-page="1"
+                       asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy"
+                       asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir"
+                       asp-route-siparisTur="">Tümü</a>
+                    <a class="btn @(Model.siparisTur == 1 ? "btn-pastel-amber" : "btn-pastel-blue")"
+                       asp-page="./Index" asp-route-q="@Model.q" asp-route-page="1"
+                       asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy"
+                       asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir"
+                       asp-route-siparisTur="1">Yurtdışı</a>
+                    <a class="btn @(Model.siparisTur == 2 ? "btn-pastel-amber" : "btn-pastel-blue")"
+                       asp-page="./Index" asp-route-q="@Model.q" asp-route-page="1"
+                       asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy"
+                       asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir"
+                       asp-route-siparisTur="2">Yurtiçi</a>
+                </div>
+            </div>
 
-    <div class="col-sm-2">
-        <label class="form-label d-block">&nbsp;</label>
-        <button class="btn btn-primary w-100">Ara</button>
+            <div class="col-sm-2">
+                <label class="form-label">Sayfa Boyutu</label>
+                <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                    @{ int[] sizes = new[] { 10, 20, 50, 100 };
+                       foreach (var s in sizes)
+                       { <option value="@s" selected="@(Model.pageSize == s)">@s</option> } }
+                </select>
+            </div>
+
+            <input type="hidden" name="page"       value="1" />
+            <input type="hidden" name="groupBy"    value="@Model.groupBy" />
+            <input type="hidden" name="siparisTur" value="@(Model.siparisTur?.ToString())" />
+            <input type="hidden" name="sortBy"     value="@Model.sortBy" />
+            <input type="hidden" name="sortDir"    value="@Model.sortDir" />
+
+            <div class="col-sm-2">
+                <label class="form-label d-block">&nbsp;</label>
+                <button class="btn btn-pastel-blue w-100">Ara</button>
+            </div>
+        </form>
     </div>
-<!---
-    <div class="col-sm-2">
-        <label class="form-label d-block">&nbsp;</label>
-        <a asp-page="./Index"
-           asp-route-q="@Model.q"
-           asp-route-pageSize="@Model.pageSize"
-           asp-route-siparisTur="@(Model.siparisTur?.ToString())"
-           asp-route-groupBy="@(Model.groupBy == "sefer" ? null : "sefer")"
-           class="btn btn-outline-secondary w-100">
-            @(Model.groupBy == "sefer" ? "Gruplamayı Kapat" : "Sefer Grupla")
-        </a>
-        </div>-->
-    </form>
+</div>
+
+@{
+    Func<string, string> SortUrl = col => Url.Page("./Index", new {
+        q = Model.q, page = 1, pageSize = Model.pageSize, groupBy = Model.groupBy,
+        siparisTur = Model.siparisTur?.ToString(), sortBy = col, sortDir = NextDir(col)
+    })!;
+
+    bool isTarihActive = string.IsNullOrEmpty(Model.sortBy) || Model.sortBy == "tarih";
+    bool isTutarActive = Model.sortBy == "tutar";
+    bool isDurumActive = Model.sortBy == "durum";
+
+    string RowHref(int id) => Url.Page("./Details", new { id, siparisTur = Model.siparisTur?.ToString() })!;
+}
+
+@* ── Tablo ────────────────────────────────────────────────────── *@
+@{
+    // Ortak thead — her iki branch kullanır
+    var theadHtml = "";
+}
 
 @if (Model.groupBy == "sefer")
 {
@@ -112,55 +188,60 @@
         .OrderByDescending(x => x.SiparisTarihi)
         .GroupBy(x => string.IsNullOrWhiteSpace(x.SeferKodu) ? "(Sefer yok)" : x.SeferKodu);
 
-    <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle siparis-table">
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle lj-table lj-table-compact">
             <thead>
                 <tr>
-                    <th>Sp</th>
-                    <th>Tarih</th>
+                    <th>Sp#</th>
+                    <th class="sortable @(isTarihActive ? "active" : "")"><a href="@SortUrl("tarih")">Tarih <span class="sort-icon">@SortIcon("tarih")</span></a></th>
                     <th>Gönderen</th>
                     <th>Alıcı</th>
-                    <th>Alıcı Ülke</th>
-                    <th>Alıcı Şehir</th>
+                    <th>Ülke</th>
+                    <th>Şehir</th>
                     <th>Dorse</th>
-                    <th>Sefer Kodu</th>
-                    <th>Sefer Çekici</th>
+                    <th>Sefer</th>
+                    <th>Çekici</th>
                     <th>Sürücü</th>
-                    <th>Tutar</th>
+                    <th class="sortable @(isTutarActive ? "active" : "")"><a href="@SortUrl("tutar")">Tutar <span class="sort-icon">@SortIcon("tutar")</span></a></th>
                     <th>PB</th>
-                    <th>Durum</th>
+                    <th class="sortable @(isDurumActive ? "active" : "")"><a href="@SortUrl("durum")">Durum <span class="sort-icon">@SortIcon("durum")</span></a></th>
                     <th class="text-end">İşlemler</th>
                 </tr>
             </thead>
             <tbody>
+                @if (!groups.Any())
+                {
+                    <tr><td colspan="14" class="text-center text-muted py-3">Kayıt bulunamadı.</td></tr>
+                }
                 @foreach (var g in groups)
                 {
-                    <tr class="table-light">
-                        <td colspan="14" class="fw-semibold">@g.Key</td>
+                    <tr class="table-active">
+                        <td colspan="14" class="fw-semibold py-1">
+                            <small class="text-muted me-1">📁</small>@g.Key
+                            <span class="badge bg-secondary ms-1" style="font-size:0.7em;">@g.Count()</span>
+                        </td>
                     </tr>
                     @foreach (var r in g)
                     {
-                        <tr>
-                            <td>@r.SiparisID</td>
+                        <tr class="rowlink tr-durum-@r.Durum" data-href="@RowHref(r.SiparisID)">
+                            <td class="text-muted" style="font-size:0.8em;">@r.SiparisID</td>
                             <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
-                            <td>@r.Gonderen</td>
-                            <td>@r.Alici</td>
+                            <td><span title="@r.Gonderen">@Truncate(r.Gonderen)</span></td>
+                            <td><span title="@r.Alici">@Truncate(r.Alici)</span></td>
                             <td>@r.AliciUlke</td>
                             <td>@r.AliciSehir</td>
-                            <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
-                            <td>@(string.IsNullOrWhiteSpace(r.SeferKodu) ? "—" : r.SeferKodu)</td>
-                            <td>@(string.IsNullOrWhiteSpace(r.SeferAracPlaka) ? "—" : r.SeferAracPlaka)</td>
-                            <td>@(string.IsNullOrWhiteSpace(r.SeferSurucuAdi) ? "—" : r.SeferSurucuAdi)</td>
-                            <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka)    ? "—" : r.DorsePlaka)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.SeferKodu)     ? "—" : r.SeferKodu)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.SeferAracPlaka)? "—" : r.SeferAracPlaka)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.SeferSurucuAdi)? "—" : r.SeferSurucuAdi)</td>
+                            <td class="@(r.Tutar.HasValue ? "net-pos" : "text-muted")">@(r.Tutar?.ToString("N2") ?? "—")</td>
                             <td>@r.ParaBirimi</td>
-                            <td>
-                                <span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span>
-                            </td>
+                            <td><span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span></td>
                             <td class="text-end">
-                                <div class="d-inline-flex flex-wrap gap-1">
-                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-primary btn-sm">+</a>
-                                    <a asp-page="./Edit" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-warning btn-sm">....</a>
-                                    <a asp-page="./Delete" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-danger btn-sm">-</a>
+                                <div class="d-inline-flex gap-1">
+                                    <a asp-page="./Details" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-pastel-blue btn-sm">Detay</a>
+                                    <a asp-page="./Edit"    asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-pastel-amber btn-sm">Düzenle</a>
+                                    <a asp-page="./Delete"  asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-pastel-red btn-sm">Sil</a>
                                 </div>
                             </td>
                         </tr>
@@ -172,61 +253,53 @@
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle siparis-table">
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle lj-table lj-table-compact">
             <thead>
                 <tr>
-                    <th>Sp</th>
-                    <th>Tarih</th>
+                    <th>Sp#</th>
+                    <th class="sortable @(isTarihActive ? "active" : "")"><a href="@SortUrl("tarih")">Tarih <span class="sort-icon">@SortIcon("tarih")</span></a></th>
                     <th>Gönderen</th>
                     <th>Alıcı</th>
-                    <th>Alıcı Ülke</th>
-                    <th>Alıcı Şehir</th>
+                    <th>Ülke</th>
+                    <th>Şehir</th>
                     <th>Dorse</th>
-                    <th>Sefer Kodu</th>
-                    <th>Sefer Çekici</th>
+                    <th>Sefer</th>
+                    <th>Çekici</th>
                     <th>Sürücü</th>
-                    <th>Tutar</th>
+                    <th class="sortable @(isTutarActive ? "active" : "")"><a href="@SortUrl("tutar")">Tutar <span class="sort-icon">@SortIcon("tutar")</span></a></th>
                     <th>PB</th>
-                    <th>Durum</th>
+                    <th class="sortable @(isDurumActive ? "active" : "")"><a href="@SortUrl("durum")">Durum <span class="sort-icon">@SortIcon("durum")</span></a></th>
                     <th class="text-end">İşlemler</th>
                 </tr>
             </thead>
             <tbody>
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="14" class="text-center text-muted py-3">Kayıt bulunamadı.</td></tr>
+                }
                 @foreach (var r in Model.Items)
                 {
-                    <tr>
-                        <td>@r.SiparisID</td>
+                    <tr class="rowlink tr-durum-@r.Durum" data-href="@RowHref(r.SiparisID)">
+                        <td class="text-muted" style="font-size:0.8em;">@r.SiparisID</td>
                         <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
-                        <td>@r.Gonderen</td>
-                        <td>
-                         @{
-                            string full = r.Alici ?? "";
-                            string cut = full.Length > 15 ? full.Substring(0,15) + "…" : full;
-                            }     <span title="@full">@cut</span>
-                        </td>
+                        <td><span title="@r.Gonderen">@Truncate(r.Gonderen)</span></td>
+                        <td><span title="@r.Alici">@Truncate(r.Alici)</span></td>
                         <td>@r.AliciUlke</td>
                         <td>@r.AliciSehir</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "—" : r.DorsePlaka)</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.SeferKodu) ? "—" : r.SeferKodu)</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.SeferAracPlaka) ? "—" : r.SeferAracPlaka)</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.SeferSurucuAdi) ? "—" : r.SeferSurucuAdi)</td>
-                        <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.DorsePlaka)    ? "—" : r.DorsePlaka)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SeferKodu)     ? "—" : r.SeferKodu)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SeferAracPlaka)? "—" : r.SeferAracPlaka)</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SeferSurucuAdi)? "—" : r.SeferSurucuAdi)</td>
+                        <td class="@(r.Tutar.HasValue ? "net-pos" : "text-muted")">@(r.Tutar?.ToString("N2") ?? "—")</td>
                         <td>@r.ParaBirimi</td>
-                        <td>
-                            <span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span>
-                        </td>
+                        <td><span class="badge bg-@DurumBadge(r.Durum)">@DurumMetni(r.Durum)</span></td>
                         <td class="text-end">
-                           <div class="d-inline-flex flex-wrap gap-1">
-  <a asp-page="./Details" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())"
-     class="btn btn-primary btn-sm" title="Detay">+</a>
-
-  <a asp-page="./Edit" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())"
-     class="btn btn-warning btn-sm" title="Düzenle">...</a>
-
-  <a asp-page="./Delete" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())"
-     class="btn btn-danger btn-sm" title="Sil">-</a>
-</div>
+                            <div class="d-inline-flex gap-1">
+                                <a asp-page="./Details" asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-pastel-blue btn-sm">Detay</a>
+                                <a asp-page="./Edit"    asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-pastel-amber btn-sm">Düzenle</a>
+                                <a asp-page="./Delete"  asp-route-id="@r.SiparisID" asp-route-siparisTur="@(Model.siparisTur?.ToString())" class="btn btn-pastel-red btn-sm">Sil</a>
+                            </div>
                         </td>
                     </tr>
                 }
@@ -235,40 +308,149 @@ else
     </div>
 }
 
+@* ── Pagination ───────────────────────────────────────────────── *@
 <nav class="d-flex justify-content-between align-items-center mt-3">
-    <div class="text-muted">
-        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+    <div class="text-muted small">
+        Toplam <strong>@Model.TotalCount</strong> kayıt — Sayfa <strong>@Model.page</strong> / <strong>@Model.TotalPages</strong>
     </div>
-    <ul class="pagination mb-0">
+    <ul class="pagination pagination-sm mb-0">
         <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-page="@(Model.page - 1)"
-               asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy"
-               asp-route-siparisTur="@(Model.siparisTur?.ToString())">Önceki</a>
+            <a class="page-link" asp-page="./Index"
+               asp-route-q="@Model.q" asp-route-page="@(Model.page - 1)"
+               asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="@(Model.siparisTur?.ToString())"
+               asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir">‹</a>
         </li>
+        @{
+            int startPage = Math.Max(1, Model.page - 2);
+            int endPage   = Math.Min(Model.TotalPages, Model.page + 2);
+        }
+        @if (startPage > 1)
+        {
+            <li class="page-item"><a class="page-link" asp-page="./Index" asp-route-q="@Model.q" asp-route-page="1" asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy" asp-route-siparisTur="@(Model.siparisTur?.ToString())" asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir">1</a></li>
+            @if (startPage > 2) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+        }
+        @for (int p = startPage; p <= endPage; p++)
+        {
+            <li class="page-item @(p == Model.page ? "active" : "")">
+                <a class="page-link" asp-page="./Index"
+                   asp-route-q="@Model.q" asp-route-page="@p"
+                   asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy"
+                   asp-route-siparisTur="@(Model.siparisTur?.ToString())"
+                   asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir">@p</a>
+            </li>
+        }
+        @if (endPage < Model.TotalPages)
+        {
+            @if (endPage < Model.TotalPages - 1) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+            <li class="page-item"><a class="page-link" asp-page="./Index" asp-route-q="@Model.q" asp-route-page="@Model.TotalPages" asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy" asp-route-siparisTur="@(Model.siparisTur?.ToString())" asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir">@Model.TotalPages</a></li>
+        }
         <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Index"
-               asp-route-q="@Model.q"
-               asp-route-page="@(Model.page + 1)"
-               asp-route-pageSize="@Model.pageSize"
-               asp-route-groupBy="@Model.groupBy"
-               asp-route-siparisTur="@(Model.siparisTur?.ToString())">Sonraki</a>
+            <a class="page-link" asp-page="./Index"
+               asp-route-q="@Model.q" asp-route-page="@(Model.page + 1)"
+               asp-route-pageSize="@Model.pageSize" asp-route-groupBy="@Model.groupBy"
+               asp-route-siparisTur="@(Model.siparisTur?.ToString())"
+               asp-route-sortBy="@Model.sortBy" asp-route-sortDir="@Model.sortDir">›</a>
         </li>
     </ul>
 </nav>
 
-<style>
-    .siparis-table td,
-    .siparis-table th {
-        font-size: 0.9rem;
-    }
 
-    .siparis-table .btn {
-        font-size: 0.8rem;
-        padding: .2rem .45rem;
-    }
-</style>
+</div>@* /lj-page-compact *@
+
+@* ══════════════════════════════════════════════════════
+   YARDIM MODAL
+══════════════════════════════════════════════════════ *@
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Siparişler — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+
+                @* GENEL BAKIŞ *@
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa firmanıza ait tüm aktif siparişleri listeler. Sonlandırılmış siparişler ayrı sayfada görüntülenir.</p>
+                    <ul class="mb-0">
+                        <li><strong>Özet kartlar</strong> — Sayfanın üstünde toplam, taslak, yüklendi, araçta ve tamamlandı sayıları görünür.</li>
+                        <li>Satıra tıklamak ilgili siparişin detay sayfasını açar.</li>
+                        <li><strong>Tarih</strong>, <strong>Tutar</strong> ve <strong>Durum</strong> sütunlarına tıklayarak sıralama yapılabilir (↑↓ ikon).</li>
+                    </ul>
+                </div>
+
+                @* DURUM BADGE'LERİ *@
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🏷️ Sipariş Durumları</h6>
+                    <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                        <thead class="table-light">
+                            <tr><th>Durum</th><th>Anlamı</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><span class="badge bg-secondary">Taslak</span></td><td>Sipariş oluşturulmuş, henüz işlem görmemiş.</td></tr>
+                            <tr><td><span class="badge bg-info">Yüklendi</span></td><td>Yük araca yüklenmiş, sevkiyat başlamış.</td></tr>
+                            <tr><td><span class="badge bg-primary">Araçta</span></td><td>Yük yolda, teslimat devam ediyor.</td></tr>
+                            <tr><td><span class="badge bg-success">Tamamlandı</span></td><td>Teslimat başarıyla gerçekleşmiş.</td></tr>
+                            <tr><td><span class="badge bg-danger">Sonlandırıldı</span></td><td>Sipariş kapatılmış. Sonlandırılanlar sayfasında görünür.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                @* ÜST BAR BUTONLARI *@
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🖱️ Üst Bar Butonları</h6>
+                    <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                        <thead class="table-light">
+                            <tr><th>Buton</th><th>Ne Yapar?</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>+ Yeni Sipariş</td><td>Yeni bir sipariş oluşturma ekranını açar.</td></tr>
+                            <tr><td>Sonlandırılan</td><td>Kapatılmış / sonlandırılmış siparişlerin listesini görüntüler.</td></tr>
+                            <tr><td>📥 İndir (Excel/PDF)</td><td>Mevcut tablo görünümünü dışa aktarır.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                @* FİLTRE *@
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🔍 Filtreleme</h6>
+                    <ul class="mb-0">
+                        <li><strong>Ara</strong> — Müşteri adı, sipariş no veya arama terimi ile filtrelenir.</li>
+                        <li><strong>Tür</strong> — Tümü / Yurtdışı / Yurtiçi olarak sipariş türüne göre daraltılır.</li>
+                        <li><strong>Sayfa Boyutu</strong> — Sayfada gösterilecek kayıt sayısı seçilir (10 / 20 / 50 / 100).</li>
+                    </ul>
+                </div>
+
+                @* SATIR İŞLEMLERİ *@
+                <div class="mb-1">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ Satır Üzerindeki İşlemler</h6>
+                    <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                        <thead class="table-light">
+                            <tr><th>İşlem</th><th>Ne Yapar?</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Detay</td><td>Siparişin tüm bilgilerini, bağlı sefer ve sevkiyat detaylarını görüntüler.</td></tr>
+                            <tr><td>Düzenle</td><td>Sipariş bilgilerini (gönderen, alıcı, tutar, tarih vb.) günceller.</td></tr>
+                            <tr><td>Sil</td><td>Siparişi kalıcı olarak siler. Bu işlem geri alınamaz.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('tr.rowlink').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (e.target.closest('a, button, form')) return;
+            window.location = row.dataset.href;
+        });
+    });
+</script>

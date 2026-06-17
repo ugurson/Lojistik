@@ -1,101 +1,164 @@
-﻿@page
+@page
 @model Lojistik.Pages.Siparisler.SonlananModel
 @{
     ViewData["Title"] = "Sonlandırılan Siparişler";
 }
 
-<h2 class="mb-3">Sonlandırılan Siparişler</h2>
+<div class="lj-page-compact">
 
-<div class="d-flex gap-2 mb-3">
-    <a asp-page="./Index" class="btn btn-outline-secondary">Aktif Siparişlere Dön</a>
-</div>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sonlandırılan Siparişler</h2>
+        <div class="d-flex gap-2">
+            <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">← Aktif Siparişler</a>
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
+        </div>
+    </div>
 
-<form method="get" class="row g-2 mb-3 align-items-end">
-    <div class="col-sm-5">
-        <input name="q" value="@Model.q" class="form-control" placeholder="Ara (terim, müşteri, sipariş no)..." />
+    @* ─── FİLTRE ─────────────────────────────────────────────────── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6">
+                    <label class="form-label">Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Terim, müşteri, sipariş no..." />
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label">Sayfa Boyutu</label>
+                    <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                        @{
+                            int[] sizes = new[] { 10, 20, 50, 100 };
+                            foreach (var sz in sizes)
+                            {
+                                <option value="@sz" selected="@(Model.pageSize == sz ? "selected" : null)">@sz</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <input type="hidden" name="p" value="1" />
+                <div class="col-auto">
+                    <button class="btn btn-primary">Ara</button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="col-sm-3">
-        <select name="pageSize" class="form-select" onchange="this.form.submit()">
-            @{
-                int[] sizes = new[] { 10, 20, 50, 100 };
-                foreach (var s in sizes)
-                {
-                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
-                }
-            }
-        </select>
-    </div>
-    <input type="hidden" name="page" value="1" />
-    <div class="col-sm-2">
-        <button class="btn btn-primary w-100">Ara</button>
-    </div>
-</form>
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Tarih</th>
-                <th>Gönderen</th>
-                <th>Alıcı</th>
-                <th>Alıcı Ülke</th>
-                <th>Alıcı Şehir</th>
-                <th>Tutar</th>
-                <th>PB</th>
-                <th>Dorse</th>
-                <th>Sefer Kodu</th>
-                <th>Sefer Çekici</th>
-                <th>Sürücü</th>
-                <th>Durum</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var r in Model.Items)
-            {
+    @* ─── TABLO ──────────────────────────────────────────────────── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle lj-table lj-table-compact">
+            <thead>
                 <tr>
-                    <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
-                    <td>@r.Gonderen</td>
-                    <td>@r.Alici</td>
-                    <td>@r.AliciUlke</td>
-                    <td>@r.AliciSehir</td>
-                    <td>@(r.Tutar?.ToString("N2") ?? "—")</td>
-                    <td>@r.ParaBirimi</td>
-                    <td>@r.DorsePlaka</td>
-                    <td>@r.SeferKodu</td>
-                    <td>@r.SeferAracPlaka</td>
-                    <td>@r.SeferSurucuAdi</td>
-                    <td><span class="badge bg-danger">Sonlandırıldı</span></td>
-
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-outline-primary">Detay</a>
-                        </div>
-                    </td>
+                    <th>Tarih</th>
+                    <th>Gönderen</th>
+                    <th>Alıcı</th>
+                    <th>Ülke</th>
+                    <th>Şehir</th>
+                    <th class="text-end">Tutar</th>
+                    <th>PB</th>
+                    <th>Dorse</th>
+                    <th>Sefer</th>
+                    <th>Çekici</th>
+                    <th>Sürücü</th>
+                    <th>Durum</th>
+                    <th class="text-end">İşlemler</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @if (!Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="13" class="text-center py-4 text-muted">
+                            <div class="fs-4 mb-1">📭</div>
+                            Kayıt bulunamadı.
+                        </td>
+                    </tr>
+                }
+                @foreach (var r in Model.Items)
+                {
+                    <tr>
+                        <td>@r.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                        <td>@r.Gonderen</td>
+                        <td>@r.Alici</td>
+                        <td>@r.AliciUlke</td>
+                        <td>@r.AliciSehir</td>
+                        <td class="text-end">@(r.Tutar?.ToString("N2") ?? "—")</td>
+                        <td>@r.ParaBirimi</td>
+                        <td>@r.DorsePlaka</td>
+                        <td>@r.SeferKodu</td>
+                        <td>@r.SeferAracPlaka</td>
+                        <td>@r.SeferSurucuAdi</td>
+                        <td><span class="badge bg-danger">Sonlandırıldı</span></td>
+                        <td class="text-end">
+                            <a asp-page="./Details" asp-route-id="@r.SiparisID" class="btn btn-pastel-blue btn-sm">Detay</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* ─── SAYFALAMA ───────────────────────────────────────────────── *@
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">
+            Toplam <strong>@Model.TotalCount</strong> kayıt — Sayfa <strong>@Model.p</strong> / <strong>@Model.TotalPages</strong>
+        </small>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(Model.p <= 1 ? "disabled" : null)">
+                <a class="page-link"
+                   asp-page="./Sonlanan"
+                   asp-route-q="@Model.q"
+                   asp-route-p="@(Model.p - 1)"
+                   asp-route-pageSize="@Model.pageSize">‹</a>
+            </li>
+            <li class="page-item @(Model.p >= Model.TotalPages ? "disabled" : null)">
+                <a class="page-link"
+                   asp-page="./Sonlanan"
+                   asp-route-q="@Model.q"
+                   asp-route-p="@(Model.p + 1)"
+                   asp-route-pageSize="@Model.pageSize">›</a>
+            </li>
+        </ul>
+    </div>
+
 </div>
 
-<nav class="d-flex justify-content-between align-items-center mt-3">
-    <div class="text-muted">
-        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Sonlandırılan Siparişler — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, tamamlanarak kapatılmış veya iptal edilmiş siparişlerin arşivini gösterir. Aktif siparişler ana sipariş listesinde yer alır.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo Sütunları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Tarih</strong> — Sipariş tarihi.</li>
+                        <li><strong>Gönderen / Alıcı</strong> — Kargonun çıkış ve varış tarafları.</li>
+                        <li><strong>Ülke / Şehir</strong> — Teslimat adresi bilgileri.</li>
+                        <li><strong>Tutar / PB</strong> — Sipariş tutarı ve para birimi.</li>
+                        <li><strong>Dorse / Sefer / Çekici / Sürücü</strong> — İlgili operasyon bilgileri.</li>
+                        <li><strong>Durum</strong> — Tüm kayıtlar "Sonlandırıldı" durumundadır.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Detay</strong> — Siparişin tüm bilgilerini görüntüleyin.</li>
+                        <li>Sonlandırılmış siparişler üzerinde değişiklik yapılamaz; yalnızca görüntülenebilir.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
     </div>
-    <ul class="pagination mb-0">
-        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Sonlanan"
-               asp-route-q="@Model.q"
-               asp-route-page="@(Model.page - 1)"
-               asp-route-pageSize="@Model.pageSize">Önceki</a>
-        </li>
-        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Sonlanan"
-               asp-route-q="@Model.q"
-               asp-route-page="@(Model.page + 1)"
-               asp-route-pageSize="@Model.pageSize">Sonraki</a>
-        </li>
-    </ul>
-</nav>
+</div>

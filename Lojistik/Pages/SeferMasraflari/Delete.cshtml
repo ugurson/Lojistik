@@ -1,34 +1,41 @@
-﻿@* Pages/SeferMasraflari/Delete.cshtml *@
+@* Pages/SeferMasraflari/Delete.cshtml *@
 @page "{id:int}"
 @model Lojistik.Pages.SeferMasraflari.DeleteModel
 @{
     ViewData["Title"] = "Masraf Sil";
     var x = Model.Data!;
 }
-<h2 class="mb-3 text-danger">Masraf Sil</h2>
 
-<div class="alert alert-warning">
-    <strong>Bu masrafı silmek istediğinize emin misiniz?</strong>
-</div>
+<div class="lj-page-compact">
 
-<div class="card mb-3">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">ID</dt>
-            <dd class="col-sm-9">@x.SeferMasrafID</dd>
-            <dt class="col-sm-3">Sefer</dt>
-            <dd class="col-sm-9">SF-@x.SeferID</dd>
-            <dt class="col-sm-3">Tarih</dt>
-            <dd class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</dd>
-            <dt class="col-sm-3">Tip</dt>
-            <dd class="col-sm-9">@x.MasrafTipi</dd>
-            <dt class="col-sm-3">Tutar</dt>
-            <dd class="col-sm-9">@x.Tutar.ToString("N2") @x.ParaBirimi</dd>
-        </dl>
+    <h2 class="mb-3 text-danger">Masraf Sil</h2>
+
+    <div class="alert alert-danger">
+        <strong>Bu masrafı silmek istediğinize emin misiniz?</strong>
+        Bu işlem geri alınamaz.
     </div>
-</div>
 
-<form method="post" class="d-flex gap-2">
-    <button type="submit" class="btn btn-danger">Evet, Sil</button>
-    <a asp-page="./Details" asp-route-id="@x.SeferMasrafID" class="btn btn-outline-secondary">Vazgeç</a>
-</form>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header fw-semibold">Masraf Özeti</div>
+        <div class="card-body">
+            <div class="row g-2" style="font-size:0.875rem;">
+                <div class="col-sm-3 text-muted">Sefer</div>
+                <div class="col-sm-9">SF-@x.SeferID</div>
+                <div class="col-sm-3 text-muted">Tarih</div>
+                <div class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</div>
+                <div class="col-sm-3 text-muted">Tip</div>
+                <div class="col-sm-9">
+                    <span class="badge bg-light text-dark border">@x.MasrafTipi</span>
+                </div>
+                <div class="col-sm-3 text-muted">Tutar</div>
+                <div class="col-sm-9 net-neg fw-semibold">@x.Tutar.ToString("N2") @x.ParaBirimi</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+        <a asp-page="./Details" asp-route-id="@x.SeferMasrafID" class="btn btn-pastel-blue">Vazgeç</a>
+    </form>
+
+</div>

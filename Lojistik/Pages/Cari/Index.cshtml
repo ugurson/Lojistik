@@ -1,110 +1,246 @@
-﻿@page
+@page
 @model Lojistik.Pages.Cari.IndexModel
 @{
     ViewData["Title"] = "Cari Özeti";
 }
 
-<h2 class="mb-3">Cari Özeti</h2>
+<div class="lj-page-compact">
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-sm-6">
-        <input name="q" value="@Model.q" class="form-control" placeholder="Müşteri ara..." />
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Cari Özeti</h2>
+        <div class="d-flex gap-2">
+            <partial name="_DownloadActions"
+                     view-data='@(new ViewDataDictionary(ViewData) {
+                         ["FileBase"] = "cari_ozeti",
+                         ["TableSelector"] = ".lj-table"
+                     })' />
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
+        </div>
     </div>
-    <div class="col-sm-2">
-        <button class="btn btn-primary w-100">Ara</button>
-    </div>
-</form>
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Müşteri</th>
-                <th>PB</th>
-                <th class="text-end">Borç (PB)</th>
-                <th class="text-end">Alacak (PB)</th>
-                <th class="text-end">Net (PB)</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-
-        @* === PB'ye göre gruplanmış gövde === *@
-        <tbody>
-            @{
-                var groups = Model.Items
-                .GroupBy(x => x.ParaBirimi)
-                .OrderBy(g => g.Key); // PB alfabetik: EUR, TL, USD...
-            }
-
-            @if (!groups.Any())
+    @* ── Özet kartlar ── *@
+    @if (Model.Totals.Any())
+    {
+        <div class="row g-2 mb-3">
+            @foreach (var t in Model.Totals)
             {
-                <tr><td colspan="6" class="text-center text-muted">Kayıt yok.</td></tr>
+                var netClass = t.NetPB > 0 ? "text-success" : t.NetPB < 0 ? "text-danger" : "text-secondary";
+                var netIcon  = t.NetPB > 0 ? "↑" : t.NetPB < 0 ? "↓" : "–";
+                <div class="col-sm-6 col-lg-4">
+                    <div class="lj-ozet-kart">
+                        <small>@t.ParaBirimi</small>
+                        <span class="val @netClass">@netIcon @Math.Abs(t.NetPB).ToString("N2")</span>
+                    </div>
+                </div>
             }
-            else
-            {
-                foreach (var g in groups)
-                {
-                    <!-- Grup başlığı -->
-                    <tr class="table-active">
-                        <td colspan="6" class="fw-semibold">Para Birimi: @g.Key</td>
-                    </tr>
+        </div>
+    }
 
-                    <!-- Grup satırları -->
-                    @foreach (var r in g.OrderByDescending(x => x.NetPB).ThenBy(x => x.MusteriAdi))
+    @* ── Arama ── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-7 col-md-5">
+                    <label class="form-label">Müşteri Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Müşteri ara..." />
+                    <input type="hidden" name="showZero" value="@(Model.showZero ? "true" : "false")" />
+                </div>
+                <div class="col-auto d-flex gap-1 flex-wrap">
+                    <button class="btn btn-pastel-blue">Ara</button>
+                    @if (!string.IsNullOrWhiteSpace(Model.q))
                     {
-                        var detayUrl = Url.Page("./Ekstre", new { musteriId = r.MusteriID, pb = r.ParaBirimi }); // hedef sayfa
-                         <tr class="rowlink" data-href="@detayUrl" style="cursor:pointer;">
-                         <td>@r.MusteriAdi</td>
-                         <td>@r.ParaBirimi</td>
-                         <td class="text-end">@r.BorcPB.ToString("N2")</td>
-                          <td class="text-end">@r.AlacakPB.ToString("N2")</td>
-                         <td class="text-end fw-semibold">@r.NetPB.ToString("N2")</td>
-                         <td class="text-end">
-                         <div class="btn-group">
-                         <a asp-page="./Tahsilat"
-                         asp-route-musteriId="@r.MusteriID"
-                           asp-route-pb="@r.ParaBirimi"
-
-                                               class="btn btn-success btn-sm">
-                                                            Tahsilat
-                                                             </a>
-                                       <a asp-page="./Ekstre"
-                                      asp-route-musteriId="@r.MusteriID"
-                                         asp-route-pb="@r.ParaBirimi"
-                                            class="btn btn-primary btn-sm">
-                                                               Detay
-                                                                 </a>
-                                                 </div>
-                         </td>
-                                </tr>
+                        <a asp-page="./Index" asp-route-showZero="@(Model.showZero ? "true" : "false")" class="btn btn-pastel-blue">Temizle</a>
                     }
+                    <a asp-page="./Index"
+                       asp-route-q="@Model.q"
+                       asp-route-showZero="@(Model.showZero ? "false" : "true")"
+                       class="btn @(Model.showZero ? "btn-pastel-amber" : "btn-outline-secondary") btn-sm align-self-end">
+                        @(Model.showZero ? "Sıfır Bakiyelileri Gizle" : "📦 Sıfır Bakiyeliler")
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 
-                    @* Grup alt toplamı *@
-                    var subBorc = g.Sum(x => x.BorcPB);
-                    var subAlacak = g.Sum(x => x.AlacakPB);
-                    var subNet = subAlacak - subBorc;
-
-                    <tr class="table-light fw-semibold">
-                        <td>Toplam</td>
-                        <td>@g.Key</td>
-                        <td class="text-end"><strong>@subBorc.ToString("N2")</strong></td>
-                        <td class="text-end"><strong>@subAlacak.ToString("N2")</strong></td>
-                        <td class="text-end"><strong>@subNet.ToString("N2")</strong></td>
-                        <td></td>
-                    </tr>
+    @* ── Tablo ── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Müşteri</th>
+                    <th>PB</th>
+                    <th class="text-end">Borç</th>
+                    <th class="text-end">Alacak</th>
+                    <th class="text-end">Net</th>
+                    <th class="text-center" style="width:95px;">Son İşlem</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var groups = Model.Items
+                        .GroupBy(x => x.ParaBirimi)
+                        .OrderBy(g => g.Key);
                 }
-            }
-        </tbody>
-        @* Not: tfoot kaldırıldı; her PB grubunun alt toplamı tbody içinde gösteriliyor *@
-    </table>
-    <script>
-        document.addEventListener('click', function (e) {
-          const row = e.target.closest('tr.rowlink');
-          // Buton veya linke tıklanmışsa satır navigasyonunu engelle
-          if (e.target.closest('a, button')) return;
-          if (row && row.dataset.href) {
-            window.location = row.dataset.href;
-          }
-        });
-    </script>
+
+                @if (!groups.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Kayıt yok.
+                    </td></tr>
+                }
+                else
+                {
+                    foreach (var g in groups)
+                    {
+                        var subBorc    = g.Sum(x => x.BorcPB);
+                        var subAlacak  = g.Sum(x => x.AlacakPB);
+                        var subNet     = subBorc - subAlacak;
+                        var subNetClass = subNet > 0 ? "text-success" : subNet < 0 ? "text-danger" : "text-secondary";
+
+                        @* Grup başlığı *@
+                        <tr style="background:var(--bs-gray-100,#f8f9fa);">
+                            <td colspan="2" class="fw-semibold py-1 ps-2" style="font-size:0.82rem;color:#555;">
+                                📌 @g.Key
+                            </td>
+                            <td class="text-end fw-semibold text-success py-1" style="font-size:0.82rem;">@subBorc.ToString("N2")</td>
+                            <td class="text-end fw-semibold text-danger py-1" style="font-size:0.82rem;">@subAlacak.ToString("N2")</td>
+                            <td class="text-end fw-bold py-1 @subNetClass" style="font-size:0.85rem;">@subNet.ToString("N2")</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+
+                        @* Satırlar *@
+                        foreach (var r in g.OrderByDescending(x => Math.Abs(x.NetPB)).ThenBy(x => x.MusteriAdi))
+                        {
+                            var detayUrl  = Url.Page("./Ekstre", new { musteriId = r.MusteriID, pb = r.ParaBirimi });
+
+                            // Item 1: Satır arka plan rengi
+                            string rowBg;
+                            if (r.DevirSifir)
+                                rowBg = "opacity:0.45;";
+                            else if (r.NetPB > 0)
+                                rowBg = "background:rgba(25,135,84,0.06);";   // müşteri borçlu → soluk yeşil
+                            else if (r.NetPB < 0)
+                                rowBg = "background:rgba(220,53,69,0.06);";   // müşteri fazla ödemiş → soluk kırmızı
+                            else
+                                rowBg = "";
+
+                            var netStyle  = r.NetPB > 0  ? "color:#198754;font-weight:600;"
+                                          : r.NetPB < 0  ? "color:#dc3545;font-weight:600;"
+                                          :                "color:#aaa;font-style:italic;";
+                            var netLabel  = r.NetPB > 0 ? "+" + r.NetPB.ToString("N2") : r.NetPB.ToString("N2");
+
+                            // Item 3: Son işlem tarihi rengi
+                            string sonIslemCls = "";
+                            string sonIslemStr = "—";
+                            if (r.SonIslemTarihi.HasValue)
+                            {
+                                var gunFarki = (DateTime.Today - r.SonIslemTarihi.Value.Date).Days;
+                                sonIslemStr = r.SonIslemTarihi.Value.ToString("dd.MM.yyyy");
+                                sonIslemCls = gunFarki > 90 ? "text-danger" : gunFarki > 30 ? "text-warning" : "text-muted";
+                            }
+
+                            <tr class="rowlink" data-href="@detayUrl" style="cursor:pointer; @rowBg">
+                                <td>
+                                    @r.MusteriAdi
+                                    @if (r.DevirSifir)
+                                    {
+                                        <span class="badge bg-light text-secondary border ms-1" style="font-size:0.7em;">Devir ✓</span>
+                                    }
+                                </td>
+                                <td><span class="badge bg-light text-dark border">@r.ParaBirimi</span></td>
+                                <td class="text-end text-success">
+                                    @if (r.BorcPB > 0) { @r.BorcPB.ToString("N2") } else { <span class="text-muted">–</span> }
+                                </td>
+                                <td class="text-end text-danger">
+                                    @if (r.AlacakPB > 0) { @r.AlacakPB.ToString("N2") } else { <span class="text-muted">–</span> }
+                                </td>
+                                <td class="text-end" style="@netStyle">@netLabel</td>
+                                @* Item 3: Son işlem *@
+                                <td class="text-center @sonIslemCls" style="font-size:0.78rem;">@sonIslemStr</td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a asp-page="./Tahsilat"
+                                           asp-route-musteriId="@r.MusteriID"
+                                           asp-route-pb="@r.ParaBirimi"
+                                           class="btn btn-pastel-green btn-sm">Tahsilat</a>
+                                        @* Item 8: Manuel İşlem *@
+                                        <a asp-page="./ManuelIslem"
+                                           asp-route-musteriId="@r.MusteriID"
+                                           asp-route-pb="@r.ParaBirimi"
+                                           class="btn btn-pastel-amber btn-sm">Manuel</a>
+                                        <a asp-page="./Ekstre"
+                                           asp-route-musteriId="@r.MusteriID"
+                                           asp-route-pb="@r.ParaBirimi"
+                                           class="btn btn-pastel-blue btn-sm">Ekstre</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Cari Özeti — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, müşteri ve nakliyeci bazında borç/alacak bakiyelerini özetler. Her müşteri için para birimi ayrı satırda gösterilir.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Bakiye Renk Kodları</h6>
+                    <ul class="mb-0">
+                        <li><span style="color:#198754;font-weight:bold;">Yeşil arka plan</span> — Müşteri borçlu (ödeme bekleniyor).</li>
+                        <li><span style="color:#dc3545;font-weight:bold;">Kırmızı arka plan</span> — Müşteri alacaklı (fazla ödeme yapılmış).</li>
+                        <li><strong>Son İşlem</strong> sütunundaki tarih 30 günden eskiyse sarı, 90 günden eskiyse kırmızı gösterilir.</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo Sütunları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Müşteri</strong> — Firma veya kişi adı. "Devir ✓" etiketi arşivlenmiş bakiye olduğunu gösterir.</li>
+                        <li><strong>PB</strong> — Para birimi (TL, EUR, USD vb.).</li>
+                        <li><strong>Borç / Alacak</strong> — Dönem hareketleri.</li>
+                        <li><strong>Net</strong> — Borç - Alacak farkı.</li>
+                        <li><strong>Son İşlem</strong> — En son hareket tarihi.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Tahsilat</strong> — Müşteriden tahsilat yapın.</li>
+                        <li><strong>Manuel</strong> — Elle borç/alacak kaydı oluşturun.</li>
+                        <li><strong>Ekstre</strong> — Tüm hareket detaylarını ve döküm tablosunu görün.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+</div>
+
+<script>
+    document.addEventListener('click', function (e) {
+        const row = e.target.closest('tr.rowlink');
+        if (!row) return;
+        if (e.target.closest('a:not(.disabled), button:not([disabled]), form')) return;
+        if (row.dataset.href) window.location = row.dataset.href;
+    });
+</script>

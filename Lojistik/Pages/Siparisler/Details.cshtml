@@ -44,6 +44,8 @@
     };
 }
 
+<div class="lj-page-compact">
+
 <h2 class="mb-3">Sipariş Detayı</h2>
 
 @if (TempData["StatusMessage"] is string msg && !string.IsNullOrWhiteSpace(msg))
@@ -54,35 +56,35 @@
 <div class="mb-3 d-flex gap-2 flex-wrap">
     @if (finalized)
     {
-        <a class="btn btn-warning disabled" aria-disabled="true" tabindex="-1">Düzenle</a>
-        <a class="btn btn-danger disabled" aria-disabled="true" tabindex="-1">Sil</a>
+        <a class="btn btn-pastel-amber disabled" aria-disabled="true" tabindex="-1">Düzenle</a>
+        <a class="btn btn-pastel-red disabled" aria-disabled="true" tabindex="-1">Sil</a>
     }
     else
     {
-        <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-warning">Düzenle</a>
-        <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-danger">Sil</a>
+        <a asp-page="./Edit" asp-route-id="@s.SiparisID" class="btn btn-pastel-amber">Düzenle</a>
+        <a asp-page="./Delete" asp-route-id="@s.SiparisID" class="btn btn-pastel-red">Sil</a>
     }
-    <a asp-page="./Index" class="btn btn-outline-secondary">Listeye Dön</a>
+    <a asp-page="./Index" class="btn btn-pastel-blue">Listeye Dön</a>
 
     @* Sonlandırılmış siparişte sevkiyat oluşturma tamamen pasif *@
     @if (finalized)
     {
-        <button class="btn btn-success" disabled>+ Sevkiyat Oluştur</button>
+        <button class="btn btn-pastel-green disabled" disabled>+ Sevkiyat Oluştur</button>
     }
     else if (Model.HasSevkiyat)
     {
-        <button class="btn btn-success" disabled>Sevkiyat Oluştur</button>
+        <button class="btn btn-pastel-green disabled" disabled>Sevkiyat Oluştur</button>
     }
     else
     {
-        <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-success">+ Sevkiyat Oluştur</a>
+        <a asp-page="/Sevkiyatlar/Create" asp-route-siparisId="@s.SiparisID" class="btn btn-pastel-green">+ Sevkiyat Oluştur</a>
     }
   
     @if (!finalized)
     {
         <form method="post" asp-page-handler="Sonlandir" asp-route-id="@Model.Data!.SiparisID" class="d-inline ms-2">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-danger"
+            <button type="submit" class="btn btn-pastel-red"
                     onclick="return confirm('Bu siparişi sonlandırmak (Durum=7) istiyor musunuz?');">
                 Siparişi Sonlandır
             </button>
@@ -92,7 +94,7 @@
     {
         <form method="post" asp-page-handler="GeriAktifEt" asp-route-id="@s.SiparisID" class="d-inline ms-2">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-primary"
+            <button type="submit" class="btn btn-pastel-blue"
                     onclick="return confirm('Siparişi tekrar aktif (Durum=2) yapmak istiyor musunuz?');">
                 Tekrar Aktif Yap
             </button>
@@ -102,11 +104,11 @@
     @* ======= CARI EK: Carileştir butonu (mevcut yapıyı bozmadan eklendi) ======= *@
     @if (finalized)
     {
-        <button type="button" class="btn btn-primary ms-auto" disabled>Cariye İşle</button>
+        <button type="button" class="btn btn-pastel-blue ms-auto" disabled>Cariye İşle</button>
     }
     else
     {
-        <button type="button" class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#carilestirModal">
+        <button type="button" class="btn btn-pastel-blue ms-auto" data-bs-toggle="modal" data-bs-target="#carilestirModal">
             Cariye İşle
         </button>
     }
@@ -150,7 +152,7 @@
                                 @if (finalized)
                                 {
                                     <button type="button"
-                                            class="btn btn-danger btn-sm ms-2 disabled"
+                                            class="btn btn-pastel-red btn-sm ms-2 disabled"
                                             aria-disabled="true"
                                             tabindex="-1"
                                             style="position:relative; top:.25em;">
@@ -165,7 +167,7 @@
                                           class="d-inline ms-2">
                                         @Html.AntiForgeryToken()
                                         <button type="submit"
-                                                class="btn btn-danger btn-sm"
+                                                class="btn btn-pastel-red btn-sm"
                                                 style="position:relative; top:.25em;"
                                                 onclick="return confirm('Bu siparişe ait cari hareket silinsin mi?');">
                                             Cariye İşlemeyi Kaldır
@@ -268,13 +270,12 @@
                                     <div class="d-inline-flex flex-wrap gap-1">
                                         @if (finalized)
                                         {
-                                            <a class="btn btn-warning btn-sm disabled" aria-disabled="true">Düzenle</a>
-                                            <button type="button" class="btn btn-danger btn-sm" disabled>Sil</button>
+                                            <a class="btn btn-pastel-amber btn-sm disabled" aria-disabled="true">Düzenle</a>
+                                            <button type="button" class="btn btn-pastel-red btn-sm disabled" disabled>Sil</button>
                                         }
                                         else
                                         {
-                                            <!-- "Aç" BUTONU KALDIRILDI -->
-                                            <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-warning btn-sm">Düzenle</a>
+                                            <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-pastel-amber btn-sm">Düzenle</a>
                                             <form method="post"
                                                   asp-page="/Sevkiyatlar/Delete"
                                                   class="d-inline"
@@ -282,7 +283,7 @@
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@r.SevkiyatID" />
                                                 <input type="hidden" name="siparisId" value="@s.SiparisID" />
-                                                <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                                                <button type="submit" class="btn btn-pastel-red btn-sm">Sil</button>
                                             </form>
                                         }
                                     </div>
@@ -334,7 +335,7 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-inline-flex flex-wrap gap-1">
-                                        <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-primary btn-sm">Aç</a>
+                                        <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-pastel-blue btn-sm">Aç</a>
                                     </div>
                                 </td>
                             </tr>
@@ -399,10 +400,11 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
-                <button class="btn btn-primary" type="submit">Carileştir</button>
+                <button class="btn btn-pastel-blue" data-bs-dismiss="modal">Vazgeç</button>
+                <button class="btn btn-pastel-green" type="submit">Carileştir</button>
             </div>
         </form>
     </div>
 </div>
 
+</div>@* /lj-page-compact *@

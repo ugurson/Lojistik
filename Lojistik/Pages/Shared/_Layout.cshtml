@@ -1,8 +1,43 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject Lojistik.Data.AppDbContext _layoutDb
 @{
-    var ad = User?.FindFirst("KullaniciAdi")?.Value ?? User?.Identity?.Name;
+    var ad    = User?.FindFirst("KullaniciAdi")?.Value ?? User?.Identity?.Name;
     var firma = User?.FindFirst("FirmaKodu")?.Value;
     string path = Context.Request.Path.Value ?? "";
+
+    var aracYetkisi = User.FindFirst("AracYetkisi")?.Value ?? "0";
+    var aracMenuGor = aracYetkisi == "1";
+
+    string y(string key) => User.FindFirst(key)?.Value ?? "0";
+
+    var firmaAdminGor = User.FindFirst("IsFirmaAdmin")?.Value == "true";
+
+    var siparisGor    = y("SiparisYetkisi")    == "1" || y("SiparisYetkisi")    == "2";
+    var seferGor      = y("SeferYetkisi")      == "1" || y("SeferYetkisi")      == "2";
+    var musteriGor    = y("MusteriYetkisi")    == "1" || y("MusteriYetkisi")    == "2";
+    var cariGor       = y("CariYetkisi")       == "1" || y("CariYetkisi")       == "2";
+    var raporGor      = y("RaporYetkisi")      == "1" || y("RaporYetkisi")      == "2";
+    var forwardingGor = y("ForwardingYetkisi") == "1" || y("ForwardingYetkisi") == "2";
+
+    // Aktif sayfa yardımcısı
+    bool Active(string segment) =>
+        path.StartsWith(segment, StringComparison.OrdinalIgnoreCase);
+
+    // Dropdown item için aktif CSS sınıfı
+    string DI(string segment) =>
+        Active(segment) ? "dropdown-item lj-active" : "dropdown-item";
+
+    // Firma logosu — sadece giriş yapmış kullanıcılar için, tek satır DB sorgusu
+    string? firmaLogoYolu = null;
+    if (int.TryParse(User?.FindFirst("FirmaID")?.Value, out var _layoutFirmaId))
+    {
+        firmaLogoYolu = await _layoutDb.Firmalar
+            .AsNoTracking()
+            .Where(f => f.FirmaID == _layoutFirmaId)
+            .Select(f => f.LogoYolu)
+            .FirstOrDefaultAsync();
+    }
 }
 
 <!DOCTYPE html>
@@ -10,109 +45,174 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(Convert.ToString(ViewData["Title"]) ?? "Lojistik") - Lojistik</title>
+    <title>@(Convert.ToString(ViewData["Title"]) ?? "Lojistik") — Lojistik</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Lojistik.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.css" />
+    <link rel="stylesheet" href="~/css/site.css"           asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css"            asp-append-version="true" />
+    <link rel="stylesheet" href="~/Lojistik.styles.css"    asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-dark lj-navbar border-bottom mb-3">
             <div class="container">
-                <a class="navbar-brand d-flex align-items-center gap-2" asp-page="/Index">
-                    <img src="~/images/logo21.png" asp-append-version="true"
-                         alt="Lojistik" style="height:32px; width:auto;" />
-                    <span>Lojistik</span>
+
+                @* ─── LOGO + FİRMA KODU ─────────────────────────────── *@
+                <a class="navbar-brand d-flex align-items-center" asp-page="/Index"
+                   style="font-size:1.1rem; font-weight:700; letter-spacing:.02em; color:#fff; text-decoration:none;">
+                    @if (!string.IsNullOrEmpty(firmaLogoYolu))
+                    {
+                        <img src="@firmaLogoYolu"
+                             alt="Firma logosu"
+                             style="max-height:34px; max-width:150px; object-fit:contain; margin-right:8px;"
+                             onerror="this.style.display='none'" />
+                    }
+                    <span style="color:#e53e3e;">Taşımacılık</span>&nbsp;Sistemi
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="araclarMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Siparişler
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="araclarMenu">
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-page="/Siparisler/Index" asp-route-siparisTur="1">
-                                        Yurtdışı Siparişler
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-page="/Siparisler/Index" asp-route-siparisTur="2">
-                                        Yurtiçi Siparişler
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                    @* ─── SOL MENÜ ──────────────────────────────────── *@
+                    <ul class="navbar-nav flex-grow-1 gap-1">
 
+                        @if (siparisGor)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold @(Active("/Siparisler") ? "active" : "")"
+                                   asp-page="/Siparisler/Index" asp-route-siparisTur="1">
+                                    Siparişler
+                                </a>
+                            </li>
+                        }
 
-                        <li class="nav-item"><a class="nav-link" asp-page="/Seferler/Index">Seferler</a></li>
+                        @if (seferGor)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold @(Active("/Seferler") ? "active" : "")"
+                                   asp-page="/Seferler/Index">Seferler</a>
+                            </li>
+                        }
 
-                        <li class="nav-item">
-                            <a class="nav-link @(path.Contains("/Musteriler") ? "active" : "")" asp-page="/Musteriler/Index">
-                                Müşteriler
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="araclarMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Araçlar
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="araclarMenu">
-                                <li><a class="dropdown-item" asp-page="/Araclar/Index">Tüm Araçlar</a></li>
-                                <li><a class="dropdown-item" asp-page="/Soforler/Index">Şoförler</a></li>
+                        @if (forwardingGor)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold @(Active("/Forwarding") ? "active" : "")"
+                                   asp-page="/Forwarding/Index">Forwarding</a>
+                            </li>
+                        }
 
-                                <li><a class="dropdown-item" asp-page="/Araclar/BitenBelgeler">Süresi Biten/Bitecek Belgeler</a></li>
-                                <li><hr class="dropdown-divider" /></li>
-                                <li><a class="dropdown-item" asp-page="/Belgeler/Tum">Tüm Belgeler</a></li> <!-- [YENİ] -->
-                            </ul>
-                        </li>
+                        @if (musteriGor)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold @(Active("/Musteriler") ? "active" : "")"
+                                   asp-page="/Musteriler/Index">Müşteriler</a>
+                            </li>
+                        }
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle @(Context.Request.Path.StartsWithSegments("/Cari") ? "active" : "")"
-                               href="#" id="cariMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Cari
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="cariMenu">
-                                <li><a class="dropdown-item" asp-page="/Cari/Index">Cari Özeti</a></li>
-                                <li><a class="dropdown-item" asp-page="/Cari/ManuelIslem">Manuel İşlem Ekle</a></li>
-                            </ul>
-                        </li>
+                        @if (aracMenuGor)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link fw-semibold dropdown-toggle @(Active("/Araclar") || Active("/Soforler") || Active("/Kademeler") || Active("/KademeFirmalari") || Active("/Belgeler") ? "active" : "")"
+                                   href="#" id="araclarMenu" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    Araçlar
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="araclarMenu">
+                                    <li><a class="@DI("/Araclar/Index")"           asp-page="/Araclar/Index">Tüm Araçlar</a></li>
+                                    <li><a class="@DI("/Soforler")"                asp-page="/Soforler/Index">Şoförler</a></li>
+                                    <li><a class="@DI("/KademeFirmalari")"         asp-page="/KademeFirmalari/Index">Kademe Firmaları</a></li>
+                                    <li><a class="@DI("/Kademeler")"               asp-page="/Kademeler/Index">Kademe</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="@DI("/Belgeler")"                asp-page="/Belgeler/Tum">Tüm Belgeler</a></li>
+                                    <li><a class="@DI("/Araclar/BitenBelgeler")"   asp-page="/Araclar/BitenBelgeler">Biten / Bitecek Belgeler</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="@DI("/Raporlar/KademeRaporu")"   asp-page="/Raporlar/KademeRaporu">Kademe Raporu</a></li>
+                                </ul>
+                            </li>
+                        }
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Raporlar</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-page="/Raporlar/SiparisDurum/Index">Sipariş Durum</a></li>
-                                <li><a class="dropdown-item" asp-page="/Raporlar/SiparisCari/Index">Sipariş Cari Durum</a></li>
-                                <li>
-                                    <a class="dropdown-item" asp-page="/Raporlar/Sefer/Index" asp-route-ozmal="true">
-                                        Sefer Raporu
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if (cariGor)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link fw-semibold dropdown-toggle @(Active("/Cari") ? "active" : "")"
+                                   href="#" id="cariMenu" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    Cari
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="cariMenu">
+                                    <li><a class="@DI("/Cari/Index")"       asp-page="/Cari/Index">Cari Özeti</a></li>
+                                    <li><a class="@DI("/Cari/Manuel")"      asp-page="/Cari/ManuelIslem">Manuel İşlem Ekle</a></li>
+                                </ul>
+                            </li>
+                        }
+
+                        @if (raporGor)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link fw-semibold dropdown-toggle @(Active("/Raporlar") ? "active" : "")"
+                                   href="#" id="raporMenu" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    Raporlar
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="raporMenu">
+                                    <li><a class="@DI("/Raporlar/SiparisDurum")"  asp-page="/Raporlar/SiparisDurum/Index">Sipariş Durum</a></li>
+                                    <li><a class="@DI("/Raporlar/SiparisCari")"   asp-page="/Raporlar/SiparisCari/Index">Sipariş Cari Durum</a></li>
+                                    <li><a class="@DI("/Raporlar/Cari")"          asp-page="/Raporlar/Cari/Index">Cari Rapor</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="@DI("/Raporlar/Sefer")"         asp-page="/Raporlar/Sefer/Index" asp-route-ozmal="true">Sefer Raporu</a></li>
+                                    <li><a class="@DI("/Raporlar/Sefer/SurucuPerformans")" asp-page="/Raporlar/Sefer/SurucuPerformans">Sürücü Performans</a></li>
+                                    <li><a class="@DI("/Raporlar/Sefer/AracKarlilik")"     asp-page="/Raporlar/Sefer/AracKarlilik">Araç Karlılık</a></li>
+                                    <li><a class="@DI("/Raporlar/Yakit")"         asp-page="/Raporlar/Yakit/Index">Yakıt Raporu</a></li>
+                                    <li><a class="@DI("/Raporlar/KademeRaporu")"  asp-page="/Raporlar/KademeRaporu">Kademe Raporu</a></li>
+                                    <li><a class="@DI("/Raporlar/AracBelgeler")"  asp-page="/Raporlar/AracBelgeler">Araç Belgeler</a></li>
+                                </ul>
+                            </li>
+                        }
+
                     </ul>
 
-                    <!-- [YENİ] Kullanıcı menüsü -->
+                        @* ─── FİRMA AYARLARI (sadece firma admin) ───────── *@
+                        @if (firmaAdminGor)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link fw-semibold dropdown-toggle @(Active("/FirmaPanel") ? "active" : "")"
+                                   href="#" id="firmaAyarlariMenu" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    ⚙ Firma Ayarları
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="firmaAyarlariMenu">
+                                    <li><a class="@DI("/FirmaPanel/Index")"       href="/FirmaPanel">Firma Paneli</a></li>
+                                    <li><a class="@DI("/FirmaPanel/Logo")"        href="/FirmaPanel/Logo">Logo</a></li>
+                                    <li><a class="@DI("/FirmaPanel/Kullanicilar")" href="/FirmaPanel/Kullanicilar">Kullanıcılar</a></li>
+                                </ul>
+                            </li>
+                        }
+
+                    @* ─── KULLANICI MENÜSÜ ──────────────────────────── *@
                     <ul class="navbar-nav ms-auto">
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu"
-                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-person-circle me-1"></i>
-                                    @(ad) @(string.IsNullOrEmpty(firma) ? "" : $"({firma})")
+                                <a class="nav-link fw-semibold dropdown-toggle d-flex align-items-center gap-1"
+                                   href="#" id="userMenu" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                         fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                                        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+                                    </svg>
+                                    @ad
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/UserHesap/Profil">Profilim</a>
-                                    </li>
+                                    <li><a class="dropdown-item" asp-page="/UserHesap/Profil">Profilim</a></li>
+                                    <li><a class="dropdown-item" asp-page="/DilekIstek/Index">Dilek & İstek</a></li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form method="post" asp-page="/UserHesap/Cikis" class="px-3">
@@ -125,11 +225,11 @@
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-page="/UserHesap/Giris">Giriş</a>
+                                <a class="nav-link fw-semibold" asp-page="/UserHesap/Giris">Giriş</a>
                             </li>
                         }
                     </ul>
-                    <!-- [YENİ] SON -->
+
                 </div>
             </div>
         </nav>
@@ -141,39 +241,47 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - Lojistik - <a asp-area="" asp-page="/Privacy">Privacy</a>
+    <footer class="border-top footer text-muted mt-4">
+        <div class="container py-2">
+            <small>&copy; @DateTime.Now.Year — Lojistik</small>
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/form-helpers.js"   asp-append-version="true"></script>
+    <script src="~/js/export-helpers.js" asp-append-version="true"></script>
+    <script src="~/js/page-progress.js"  asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
-    @* --- Global Toast for TempData["StatusMessage"] --- *@
+    @* ─── Global Toast (TempData["StatusMessage"]) ──────────────── *@
     @if (TempData["StatusMessage"] is string statusMsg && !string.IsNullOrWhiteSpace(statusMsg))
     {
+        var toastType  = TempData["StatusType"] as string ?? "success";
+        var toastClass = toastType == "danger"  ? "bg-danger"
+                       : toastType == "warning" ? "bg-warning text-dark"
+                       : "bg-success";
+
         <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="statusToast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div id="statusToast"
+                 class="toast align-items-center text-white @toastClass border-0"
+                 role="alert" aria-live="assertive" aria-atomic="true">
                 <div class="d-flex">
-                    <div class="toast-body">
-                        @statusMsg
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Kapat"></button>
+                    <div class="toast-body">@statusMsg</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast" aria-label="Kapat"></button>
                 </div>
             </div>
         </div>
-
         <script>
-            (function() {
+            (function () {
                 var el = document.getElementById('statusToast');
-                if (el) {
-                    var t = new bootstrap.Toast(el, { delay: 3500 });
-                    t.show();
-                }
+                if (el) { new bootstrap.Toast(el, { delay: 3500 }).show(); }
             })();
         </script>
     }

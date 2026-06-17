@@ -1,65 +1,75 @@
-﻿@page "{id:int?}"
+@page "{id:int?}"
 @model Lojistik.Pages.Sevkiyatlar.DeleteModel
 @{
     ViewData["Title"] = "Sevkiyat Sil";
     var s = Model.Data;
 }
 
-<h2 class="mb-3">Sevkiyat Sil</h2>
+<div class="lj-page-compact">
 
-@if (TempData["DelError"] is string err)
-{
-    <div class="alert alert-danger"><pre class="mb-0">@err</pre></div>
-}
-@if (TempData["DelDiag"] is string diag)
-{
-    <div class="alert alert-info"><pre class="mb-0">@diag</pre></div>
-}
+    <h2 class="mb-3 text-danger">Sevkiyat Sil</h2>
 
-@if (s is null)
-{
-    <div class="alert alert-danger">Kayıt bulunamadı.</div>
-}
-else
-{
-    <div class="alert alert-warning">
-        Bu sevkiyatı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
-    </div>
+    @if (TempData["DelError"] is string err)
+    {
+        <div class="alert alert-danger"><pre class="mb-0">@err</pre></div>
+    }
+    @if (TempData["DelDiag"] is string diag)
+    {
+        <div class="alert alert-info"><pre class="mb-0">@diag</pre></div>
+    }
 
-    <div class="card mb-3">
-        <div class="card-header fw-semibold">Özet</div>
-        <div class="card-body">
-            <dl class="row mb-0">
-                <dt class="col-sm-3">Sevkiyat ID</dt>
-                <dd class="col-sm-9">@s.SevkiyatID</dd>
-
-                <dt class="col-sm-3">Sipariş ID</dt>
-                <dd class="col-sm-9">@s.SiparisID</dd>
-
-                <dt class="col-sm-3">Çekici</dt>
-                <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.CekiciPlaka) ? s.CekiciPlaka : "—")</dd>
-
-                <dt class="col-sm-3">Dorse</dt>
-                <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(s.DorsePlaka) ? s.DorsePlaka : "—")</dd>
-
-                <dt class="col-sm-3">Yükleme</dt>
-                <dd class="col-sm-9">@s.YuklemeTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
-
-                <dt class="col-sm-3">Varış</dt>
-                <dd class="col-sm-9">@s.VarisTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
-
-                <dt class="col-sm-3">Durum</dt>
-                <dd class="col-sm-9"><span class="badge bg-secondary">@s.Durum</span></dd>
-            </dl>
+    @if (s is null)
+    {
+        <div class="alert alert-danger">Kayıt bulunamadı.</div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <strong>Bu sevkiyatı silmek istediğinize emin misiniz?</strong>
+            Bu işlem geri alınamaz.
         </div>
-    </div>
 
-    <form method="post" class="d-flex gap-2">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="id" value="@s.SevkiyatID" />
-        <input type="hidden" name="siparisId" value="@s.SiparisID" />
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header fw-semibold">Sevkiyat Özeti</div>
+            <div class="card-body">
+                <div class="row g-2" style="font-size:0.875rem;">
+                    <div class="col-sm-3 text-muted">Sevkiyat ID</div>
+                    <div class="col-sm-9 fw-semibold">SV-@s.SevkiyatID</div>
+                    <div class="col-sm-3 text-muted">Sipariş</div>
+                    <div class="col-sm-9">@s.SiparisID</div>
+                    @if (!string.IsNullOrWhiteSpace(s.CekiciPlaka))
+                    {
+                        <div class="col-sm-3 text-muted">Çekici</div>
+                        <div class="col-sm-9"><span class="badge bg-light text-dark border">@s.CekiciPlaka</span></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(s.DorsePlaka))
+                    {
+                        <div class="col-sm-3 text-muted">Dorse</div>
+                        <div class="col-sm-9">@s.DorsePlaka</div>
+                    }
+                    @if (s.YuklemeTarihi.HasValue)
+                    {
+                        <div class="col-sm-3 text-muted">Yükleme</div>
+                        <div class="col-sm-9">@s.YuklemeTarihi.Value.ToString("dd.MM.yyyy HH:mm")</div>
+                    }
+                    @if (s.VarisTarihi.HasValue)
+                    {
+                        <div class="col-sm-3 text-muted">Varış</div>
+                        <div class="col-sm-9">@s.VarisTarihi.Value.ToString("dd.MM.yyyy HH:mm")</div>
+                    }
+                    <div class="col-sm-3 text-muted">Durum</div>
+                    <div class="col-sm-9"><span class="badge bg-secondary">@s.Durum</span></div>
+                </div>
+            </div>
+        </div>
 
-        <button type="submit" class="btn btn-danger">Sil</button>
-        <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID" class="btn btn-outline-secondary">Vazgeç</a>
-    </form>
-}
+        <form method="post" class="d-flex gap-2">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@s.SevkiyatID" />
+            <input type="hidden" name="siparisId" value="@s.SiparisID" />
+            <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+            <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID" class="btn btn-pastel-blue">Vazgeç</a>
+        </form>
+    }
+
+</div>

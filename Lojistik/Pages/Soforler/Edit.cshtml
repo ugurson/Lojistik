@@ -1,116 +1,154 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model Lojistik.Pages.Soforler.EditModel
 @{
     ViewData["Title"] = "Şoför Düzenle";
 }
 
-<h2 class="mb-3">Şoför Düzenle</h2>
+<style>
+    .lj-card-hdr { font-size: 0.82rem; letter-spacing: .04em; text-transform: uppercase; }
+    .lj-lbl      { font-size: 0.78rem; margin-bottom: 2px; color: #6c757d; }
+</style>
 
-<form method="post" class="row g-3">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <input type="hidden" asp-for="Input.SoforID" />
+<div class="lj-page-compact">
 
-    <div class="col-md-6">
-        <label asp-for="Input.AdSoyad" class="form-label"></label>
-        <input asp-for="Input.AdSoyad" class="form-control" />
-        <span asp-validation-for="Input.AdSoyad" class="text-danger"></span>
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.Telefon" class="form-label"></label>
-        <input asp-for="Input.Telefon" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.Eposta" class="form-label"></label>
-        <input asp-for="Input.Eposta" class="form-control" />
+    @* ─── BAŞLIK ─────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Şoför Düzenle</h2>
+        <div class="d-flex gap-2">
+            <button type="submit" form="mainForm" class="btn btn-pastel-green btn-sm">Kaydet</button>
+            <a class="btn btn-pastel-blue btn-sm" asp-page="Index">← Liste</a>
+        </div>
     </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.TCKimlikNo" class="form-label"></label>
-        <input asp-for="Input.TCKimlikNo" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.Uyruk" class="form-label"></label>
-        <input asp-for="Input.Uyruk" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.DogumTarihi" class="form-label"></label>
-        <input asp-for="Input.DogumTarihi" class="form-control" type="date" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.KanGrubu" class="form-label"></label>
-        <input asp-for="Input.KanGrubu" class="form-control" />
-    </div>
+    <form id="mainForm" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-2 small"></div>
+        <input type="hidden" asp-for="Input.SoforID" />
 
-    <div class="col-md-3">
-        <label asp-for="Input.EhliyetNo" class="form-label"></label>
-        <input asp-for="Input.EhliyetNo" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.EhliyetSinifi" class="form-label"></label>
-        <input asp-for="Input.EhliyetSinifi" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.EhliyetVerilisTarihi" class="form-label"></label>
-        <input asp-for="Input.EhliyetVerilisTarihi" class="form-control" type="date" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.EhliyetGecerlilikTarihi" class="form-label"></label>
-        <input asp-for="Input.EhliyetGecerlilikTarihi" class="form-control" type="date" />
-    </div>
+        @* ─── KİŞİSEL BİLGİLER ──────────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Kişisel Bilgiler</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
 
-    <div class="col-md-3">
-        <label asp-for="Input.SRCBelgeNo" class="form-label"></label>
-        <input asp-for="Input.SRCBelgeNo" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.PsikoteknikNo" class="form-label"></label>
-        <input asp-for="Input.PsikoteknikNo" class="form-control" />
-    </div>
+                    @* Satır 1: Ad Soyad · Telefon · E-posta · Durum *@
+                    <div class="col-md-4">
+                        <label asp-for="Input.AdSoyad" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.AdSoyad" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.AdSoyad" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Telefon" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.Telefon" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Eposta" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.Eposta" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label lj-lbl">Durum</label>
+                        <select asp-for="Input.Durum" class="form-select form-select-sm">
+                            <option value="1">Aktif</option>
+                            <option value="0">Pasif</option>
+                        </select>
+                    </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.PasaportNo" class="form-label"></label>
-        <input asp-for="Input.PasaportNo" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.PasaportBitisTarihi" class="form-label"></label>
-        <input asp-for="Input.PasaportBitisTarihi" class="form-control" type="date" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.VizeBitisTarihi" class="form-label"></label>
-        <input asp-for="Input.VizeBitisTarihi" class="form-control" type="date" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.SurucuKartNo" class="form-label"></label>
-        <input asp-for="Input.SurucuKartNo" class="form-control" />
-    </div>
+                    @* Satır 2: TC · Uyruk · Doğum · Kan · SGK · IBAN *@
+                    <div class="col-md-3">
+                        <label asp-for="Input.TCKimlikNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.TCKimlikNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.Uyruk" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.Uyruk" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.DogumTarihi" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.DogumTarihi" class="form-control form-control-sm" type="date" />
+                    </div>
+                    <div class="col-md-1">
+                        <label asp-for="Input.KanGrubu" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.KanGrubu" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.SGKNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.SGKNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.IBAN" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.IBAN" class="form-control form-control-sm" />
+                    </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.SGKNo" class="form-label"></label>
-        <input asp-for="Input.SGKNo" class="form-control" />
-    </div>
-    <div class="col-md-5">
-        <label asp-for="Input.IBAN" class="form-label"></label>
-        <input asp-for="Input.IBAN" class="form-control" />
-    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="col-md-2">
-        <label class="form-label">Durum</label>
-        <select asp-for="Input.Durum" class="form-select">
-            <option value="1">Aktif</option>
-            <option value="0">Pasif</option>
-        </select>
-    </div>
+        @* ─── EHLİYET, BELGE & PASAPORT ─────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Ehliyet, Belge & Pasaport</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
 
-    <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label"></label>
-        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
-    </div>
+                    @* Satır 1: Ehliyet alanları *@
+                    <div class="col-md-3">
+                        <label asp-for="Input.EhliyetNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.EhliyetNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.EhliyetSinifi" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.EhliyetSinifi" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.EhliyetVerilisTarihi" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.EhliyetVerilisTarihi" class="form-control form-control-sm" type="date" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.EhliyetGecerlilikTarihi" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.EhliyetGecerlilikTarihi" class="form-control form-control-sm" type="date" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.SurucuKartNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.SurucuKartNo" class="form-control form-control-sm" />
+                    </div>
 
-    <div class="col-12 d-flex gap-2">
-        <button class="btn btn-primary">Kaydet</button>
-        <a class="btn btn-outline-secondary" asp-page="Index">Vazgeç</a>
-    </div>
-</form>
+                    @* Satır 2: Diğer belgeler + Pasaport & Vize *@
+                    <div class="col-md-3">
+                        <label asp-for="Input.SRCBelgeNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.SRCBelgeNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.PsikoteknikNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.PsikoteknikNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.PasaportNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.PasaportNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.PasaportBitisTarihi" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.PasaportBitisTarihi" class="form-control form-control-sm" type="date" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.VizeBitisTarihi" class="form-label lj-lbl"></label>
+                        <input asp-for="Input.VizeBitisTarihi" class="form-control form-control-sm" type="date" />
+                    </div>
+
+                    @* Satır 3: Notlar *@
+                    <div class="col-12">
+                        <label asp-for="Input.Notlar" class="form-label lj-lbl"></label>
+                        <textarea asp-for="Input.Notlar" rows="2" class="form-control form-control-sm"></textarea>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-pastel-green btn-sm" type="submit">Kaydet</button>
+            <a class="btn btn-pastel-blue btn-sm" asp-page="Index">İptal</a>
+        </div>
+    </form>
+
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -1,20 +1,359 @@
-﻿@page
+@page
 @model IndexModel
 @{
     ViewData["Title"] = "Ana Sayfa";
 }
 
-<div class="text-center">
-    <h1 class="display-3">Lojistik Taşımacılık Sistemi</h1>
-    <p></p>
-    <p>
-        <div class="d-flex justify-content-center">
-            <a asp-page="/Siparisler/Index" class="btn btn-primary me-2">Siparişler</a>
-            <a asp-page="/Seferler/Index" class="btn btn-primary me-2">Seferler</a>
-            <a asp-page="/Musteriler/Index" class="btn btn-primary me-2">Müşteriler</a>
-            <a asp-page="/Araclar/Index" class="btn btn-primary">Araçlar</a>
-           
-        </div>
+<div class="lj-page-compact">
 
-    </p>
+    @* ─── BAŞLIK BUTONU ─────────────────────────────────────────── *@
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal" data-bs-target="#yardimModal"
+                title="Bu sayfa hakkında yardım">
+            ❓ Yardım
+        </button>
+    </div>
+
+    @* ─── HERO ───────────────────────────────────────────────────── *@
+    <div class="text-center py-4 mb-4">
+        <div style="font-size:2.2rem; font-weight:800; letter-spacing:.04em; color:#1e293b; line-height:1.1;">
+            <span style="color:#e53e3e;">Taşımacılık</span>&nbsp;Sistemi
+        </div>
+        <p class="text-muted mt-2 mb-0" style="font-size:0.95rem;">
+            Lojistik yönetim paneline hoş geldiniz
+        </p>
+    </div>
+
+    @* ─── DASHBOARD ──────────────────────────────────────────────── *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-lg">
+                <div class="lj-ozet-kart text-center">
+                    <div class="lj-ozet-kart-label">Bugün Açılan Sipariş</div>
+                    <div class="lj-ozet-kart-deger">@Model.BugünAcilanSiparis</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="lj-ozet-kart text-center">
+                    <div class="lj-ozet-kart-label">Açık Sipariş</div>
+                    <div class="lj-ozet-kart-deger">@Model.AcikSiparisSayisi</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="lj-ozet-kart text-center">
+                    <div class="lj-ozet-kart-label">Aktif Sefer</div>
+                    <div class="lj-ozet-kart-deger">@Model.AktifSeferSayisi</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <a asp-page="/Araclar/BitenBelgeler" asp-fragment="bitenler"
+                   class="lj-ozet-kart lj-ozet-link text-center @(Model.SuresiBitenBelgeSayisi > 0 ? "lj-ozet-alert" : "")"
+                   title="Süresi biten belgelerin listesine git">
+                    <div class="lj-ozet-kart-label">Süresi Biten Belge</div>
+                    <div class="lj-ozet-kart-deger @(Model.SuresiBitenBelgeSayisi > 0 ? "net-neg" : "")">
+                        @Model.SuresiBitenBelgeSayisi
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <a asp-page="/Araclar/BitenBelgeler" asp-fragment="yaklasanlar"
+                   class="lj-ozet-kart lj-ozet-link text-center @(Model.YaklasanBelgeSayisi > 0 ? "lj-ozet-warn" : "")"
+                   title="30 gün içinde bitecek belgelerin listesine git">
+                    <div class="lj-ozet-kart-label">Bitecek Belge (30 gün)</div>
+                    <div class="lj-ozet-kart-deger @(Model.YaklasanBelgeSayisi > 0 ? "text-warning" : "")"
+                         style="@(Model.YaklasanBelgeSayisi > 0 ? "color:#b45309 !important;" : "")">
+                        @Model.YaklasanBelgeSayisi
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="lj-ozet-kart text-center">
+                    <div class="lj-ozet-kart-label">Son 30 Gün Yakıt</div>
+                    @if (Model.Son30GunYakit.Count == 0)
+                    {
+                        <div class="lj-ozet-kart-deger">—</div>
+                    }
+                    else
+                    {
+                        foreach (var kv in Model.Son30GunYakit)
+                        {
+                            <div class="lj-ozet-kart-deger net-neg" style="font-size:1rem;">
+                                @kv.Value.ToString("N0") <small>@kv.Key</small>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ─── HIZLI ERİŞİM KARTLARI ──────────────────────────────────── *@
+    @{
+        string yv(string key) => User.FindFirst(key)?.Value ?? "0";
+        bool gorSiparis    = yv("SiparisYetkisi")    == "1" || yv("SiparisYetkisi")    == "2";
+        bool gorSefer      = yv("SeferYetkisi")      == "1" || yv("SeferYetkisi")      == "2";
+        bool gorMusteri    = yv("MusteriYetkisi")    == "1" || yv("MusteriYetkisi")    == "2";
+        bool gorArac       = yv("AracYetkisi")       == "1" || yv("AracYetkisi")       == "2";
+        bool gorCari       = yv("CariYetkisi")       == "1" || yv("CariYetkisi")       == "2";
+        bool gorRapor      = yv("RaporYetkisi")      == "1" || yv("RaporYetkisi")      == "2";
+        bool gorForwarding = yv("ForwardingYetkisi") == "1" || yv("ForwardingYetkisi") == "2";
+    }
+    <div class="row g-3 justify-content-center">
+        @if (gorSiparis)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Siparisler/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #0d6efd !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">📦</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Siparişler</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Yurtdışı & Yurtiçi sipariş takibi</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+        @if (gorSefer)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Seferler/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #198754 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">🚛</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Seferler</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Araç seferleri ve gelir/gider</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+        @if (gorForwarding)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Forwarding/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #20c997 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">🗂️</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Forwarding</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Acente iş dosyaları</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+        @if (gorMusteri)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Musteriler/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #0dcaf0 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">👥</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Müşteriler</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Müşteri kayıtları ve cari</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+        @if (gorArac)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Araclar/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #6610f2 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">🚗</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Araçlar</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Araç, şoför ve belge yönetimi</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+        @if (gorCari)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Cari/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #fd7e14 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">💰</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Cari</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Borç, alacak ve ekstre</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+        @if (gorRapor)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="/Raporlar/SiparisDurum/Index" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #dc3545 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">📊</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Raporlar</div>
+                            <div class="text-muted mt-1" style="font-size:0.75rem;">Sipariş, sefer ve cari raporları</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    @* ─── DİLEK & İSTEK + GÜNCELLEME NOTLARI ────────────────────── *@
+    <div class="row g-3 mt-1">
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <a href="/DilekIstek/Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 text-center"
+                     style="border-top:3px solid #6c757d !important;transition:box-shadow .15s ease;"
+                     onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                     onmouseout="this.style.boxShadow=''">
+                    <div class="card-body py-3 px-2">
+                        <div style="font-size:1.8rem;line-height:1;">💬</div>
+                        <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Dilek & İstek</div>
+                        <div class="text-muted mt-1" style="font-size:0.75rem;">Sisteme geri bildirim gönder</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        @if (Model.GuncellemeNotlari.Any())
+        {
+            var _sonNot = Model.GuncellemeNotlari.First();
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <div data-bs-toggle="modal" data-bs-target="#guncellemeModal" style="cursor:pointer;">
+                    <div class="card border-0 shadow-sm h-100 text-center"
+                         style="border-top:3px solid #6366f1 !important;transition:box-shadow .15s ease;"
+                         onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)'"
+                         onmouseout="this.style.boxShadow=''">
+                        <div class="card-body py-3 px-2">
+                            <div style="font-size:1.8rem;line-height:1;">🔔</div>
+                            <div class="fw-semibold mt-2" style="font-size:0.9rem;color:#1e293b;">Güncelleme Notları</div>
+                            <div class="mt-1">
+                                @if (!string.IsNullOrEmpty(_sonNot.Surum))
+                                {
+                                    <span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;display:inline-block;">@_sonNot.Surum</span>
+                                }
+                                <div class="text-muted" style="font-size:0.72rem;margin-top:3px;">@_sonNot.Tarih.ToString("dd.MM.yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+
+@* ─── GÜNCELLEME NOTLARI MODAL ────────────────────────────────── *@
+@if (Model.GuncellemeNotlari.Any())
+{
+    <div class="modal fade" id="guncellemeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#f5f3ff;border-bottom:2px solid #ddd6fe;">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0">🔔 Güncelleme Notları</h5>
+                        <small class="text-muted" style="font-size:12px;">Son @Model.GuncellemeNotlari.Count güncelleme</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4" style="font-size:14px;">
+                    @foreach (var not in Model.GuncellemeNotlari)
+                    {
+                        bool sonKayit = not == Model.GuncellemeNotlari.Last();
+                        <div class="@(!sonKayit ? "pb-3 mb-3 border-bottom" : "pb-1")">
+                            <div class="d-flex align-items-start gap-2 flex-wrap">
+                                <div style="flex:1;min-width:0;">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                        <span class="fw-bold" style="color:#1e293b;font-size:15px;">@not.Baslik</span>
+                                        @if (!string.IsNullOrEmpty(not.Surum))
+                                        {
+                                            <span style="background:#ede9fe;color:#6d28d9;font-size:11px;font-weight:700;border-radius:20px;padding:2px 9px;">@not.Surum</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(not.Bolum))
+                                        {
+                                            <span style="background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;border-radius:20px;padding:2px 9px;border:1px solid #e2e8f0;">@not.Bolum</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(not.Aciklama))
+                                    {
+                                        <div style="color:#475569;font-size:13px;line-height:1.65;white-space:pre-wrap;">@not.Aciklama</div>
+                                    }
+                                </div>
+                                <span style="color:#94a3b8;font-size:12px;white-space:nowrap;flex-shrink:0;">@not.Tarih.ToString("dd.MM.yyyy")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer py-2" style="background:#f8f9fa;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Ana Sayfa — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, lojistik yönetim sisteminin ana panosu (dashboard) olup güncel operasyonel durumu özetler ve tüm modüllere hızlı erişim sağlar.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Özet Kartlar</h6>
+                    <ul class="mb-0">
+                        <li><strong>Bugün Açılan Sipariş</strong> — Bugün sisteme girilen sipariş sayısı.</li>
+                        <li><strong>Açık Sipariş</strong> — Teslim bekleyen aktif sipariş sayısı.</li>
+                        <li><strong>Aktif Sefer</strong> — Devam eden sefer sayısı.</li>
+                        <li><strong>Süresi Biten Belge</strong> — Geçerliliği sona eren araç belgesi sayısı. Kırmızı renk acil dikkat gerektirir; tıklayarak listeye gidin.</li>
+                        <li><strong>Bitecek Belge (30 gün)</strong> — Önümüzdeki 30 günde dolacak belgeler. Tıklayarak listeye gidin.</li>
+                        <li><strong>Son 30 Gün Yakıt</strong> — Son 30 günde toplam yakıt maliyeti.</li>
+                        <li><strong>Son 30 Gün Gelir</strong> — Son 30 günde kayıtlı toplam sefer geliri.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🗂️ Hızlı Erişim Kartları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Siparişler</strong> — Yurt içi ve yurt dışı sipariş takibi.</li>
+                        <li><strong>Seferler</strong> — Araç seferleri ve gelir/gider yönetimi.</li>
+                        <li><strong>Müşteriler</strong> — Müşteri kayıtları ve cari hesaplar.</li>
+                        <li><strong>Araçlar</strong> — Araç, şoför ve belge yönetimi.</li>
+                        <li><strong>Cari</strong> — Borç, alacak ve ekstre işlemleri.</li>
+                        <li><strong>Raporlar</strong> — Sipariş, sefer ve cari raporları.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
 </div>

@@ -1,25 +1,56 @@
-﻿@page
+@page "{id:int}"
 @model Lojistik.Pages.Seferler.DeleteModel
 @{
     ViewData["Title"] = "Sefer Sil";
 }
 
-<h2 class="mb-3">Sefer Sil</h2>
+<div class="lj-page-compact">
 
-@if (Model.Sefer != null)
-{
-    <div class="alert alert-warning">
-        <strong>@Model.Sefer.SeferKodu</strong> seferini silmek istediğinize emin misiniz?
-    </div>
+    <h2 class="mb-3 text-danger">Sefer Sil</h2>
 
-    <form method="post">
-        <button type="submit" class="btn btn-danger">Sil</button>
-        <a asp-page="./Index" class="btn btn-secondary">İptal</a>
-    </form>
-}
-else
-{
-    <div class="alert alert-info">
-        Sefer bulunamadı.
-    </div>
-}
+    @if (Model.Sefer != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Bu seferi silmek istediğinize emin misiniz?</strong>
+            Bu işlem geri alınamaz.
+        </div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header fw-semibold">Sefer Özeti</div>
+            <div class="card-body">
+                <div class="row g-2" style="font-size:0.875rem;">
+                    <div class="col-sm-3 text-muted">Sefer Kodu</div>
+                    <div class="col-sm-9 fw-semibold">@Model.Sefer.SeferKodu</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Sefer.Arac?.Plaka))
+                    {
+                        <div class="col-sm-3 text-muted">Çekici</div>
+                        <div class="col-sm-9">
+                            <span class="badge bg-light text-dark border">@Model.Sefer.Arac?.Plaka</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Sefer.SurucuAdi))
+                    {
+                        <div class="col-sm-3 text-muted">Sürücü</div>
+                        <div class="col-sm-9">@Model.Sefer.SurucuAdi</div>
+                    }
+                    @if (Model.Sefer.CikisTarihi.HasValue)
+                    {
+                        <div class="col-sm-3 text-muted">Çıkış</div>
+                        <div class="col-sm-9">@Model.Sefer.CikisTarihi.Value.ToString("dd.MM.yyyy")</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="d-flex gap-2">
+            <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue">İptal</a>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-info">Sefer bulunamadı.</div>
+        <a asp-page="./Index" class="btn btn-pastel-blue">← Liste</a>
+    }
+
+</div>

@@ -1,231 +1,405 @@
-﻿@page
+@page
 @model Lojistik.Pages.Raporlar.Sefer.IndexModel
+@using System.Globalization
 @{
     ViewData["Title"] = "Sefer Raporu";
+
+    var trCulture = new CultureInfo("tr-TR");
+    var ayAdi     = Model.Start?.ToString("MMMM yyyy", trCulture) ?? "";
+
+    // ─── Route parametre yardımcıları ───────────────────────────
+    Dictionary<string, string?> BaseParams() => new() {
+        ["Start"]      = Model.Start?.ToString("yyyy-MM-dd"),
+        ["End"]        = Model.End?.ToString("yyyy-MM-dd"),
+        ["q"]          = Model.q,
+        ["ozmal"]      = Model.ozmal.ToString().ToLower(),
+        ["showClosed"] = Model.showClosed ? "true" : "false",
+        ["pbFilter"]   = Model.pbFilter,
+        ["pageSize"]   = Model.pageSize.ToString(),
+        ["altSube"]    = Model.altSube,
+        ["EurKur"]     = Model.EurKur > 0 ? Model.EurKur.ToString("F4", CultureInfo.InvariantCulture) : null,
+    };
+
+    Dictionary<string, string?> PD(int pg) {
+        var d = BaseParams(); d["p"] = pg.ToString(); return d;
+    }
+
+    Dictionary<string, string?> OzmalD(bool ozmal) {
+        var d = BaseParams(); d["p"] = "1"; d["ozmal"] = ozmal.ToString().ToLower(); return d;
+    }
 }
 
-<h2 class="mb-3">Sefer Raporu</h2>
+<div class="lj-page-compact">
 
-<form method="get" class="row g-2 mb-3 align-items-end">
-    <div class="col-md-2">
-        <label class="form-label">Başlangıç</label>
-        <input type="date" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" />
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Bitiş</label>
-        <input type="date" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Ara</label>
-        <input name="q" value="@Model.q" class="form-control" placeholder="Sefer kodu / plaka / sürücü..." />
+    @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sefer Raporu</h2>
+        <button type="button" class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal" data-bs-target="#yardimModal"
+                title="Bu sayfa hakkında yardım">
+            ❓ Yardım
+        </button>
     </div>
 
-    <div class="col-md-3">
-        <label class="form-label d-block">Gösterim</label>
-        <div class="btn-group d-flex" role="group">
-            <a class="btn btn-outline-primary @(Model.ozmal ? "active" : "")"
-               asp-page="./Index"
-               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
-               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
-               asp-route-q="@Model.q"
-               asp-route-ozmal="true"
-               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
-               asp-route-pbFilter="@Model.pbFilter"
-               asp-route-page="1"
-               asp-route-pageSize="@Model.pageSize">
-                Özmal
-            </a>
-            <a class="btn btn-outline-primary @(!Model.ozmal ? "active" : "")"
-               asp-page="./Index"
-               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
-               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
-               asp-route-q="@Model.q"
-               asp-route-ozmal="false"
-               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
-               asp-route-pbFilter="@Model.pbFilter"
-               asp-route-page="1"
-               asp-route-pageSize="@Model.pageSize">
-                Yüklenici
-            </a>
+    @* ─── FİLTRE KARTI ──────────────────────────────────────────── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <small class="text-muted">
+                    <span class="badge bg-info text-dark">Varsayılan aralık:</span>
+                    <strong>@ayAdi</strong> — 1. günden bugüne
+                    (@Model.Start?.ToString("dd.MM.yyyy") – @Model.End?.ToString("dd.MM.yyyy"))
+                </small>
+            </div>
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Sefer kodu / plaka / sürücü..." />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">PB Filtresi</label>
+                    <input name="pbFilter" value="@Model.pbFilter" class="form-control" placeholder="TL,EUR,USD" />
+                </div>
+                <div class="col-sm-6 col-md-1">
+                    <label class="form-label">Sayfa</label>
+                    <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                        @foreach (var s in new[] { 10, 20, 50, 100 })
+                        {
+                            <option value="@s" selected="@(Model.pageSize == s)">@s</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Seferler</label>
+                    <select name="showClosed" class="form-select" onchange="this.form.submit()">
+                        <option value="false" selected="@(!Model.showClosed)">Açık / Kısmi</option>
+                        <option value="true"  selected="@(Model.showClosed)">Kapalı</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Bölüm</label>
+                    <select name="altSube" class="form-select" onchange="this.form.submit()">
+                        <option value="">Hepsi</option>
+                        @foreach (var kv in Model.AltSubeAdMap.OrderBy(x => x.Value))
+                        {
+                            <option value="@kv.Key" selected="@(Model.altSube == kv.Key)">@kv.Value</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Gösterim</label>
+                    <div class="btn-group w-100">
+                        <a class="btn @(Model.ozmal ? "btn-pastel-amber" : "btn-pastel-blue")"
+                           asp-page="./Index" asp-all-route-data="@OzmalD(true)">Özmal</a>
+                        <a class="btn @(!Model.ozmal ? "btn-pastel-amber" : "btn-pastel-blue")"
+                           asp-page="./Index" asp-all-route-data="@OzmalD(false)">Yüklenici</a>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">
+                        EUR/TL Kur
+                        @if (Model.EurKurOtomatik)
+                        {
+                            <span class="badge bg-info text-dark ms-1" style="font-size:.7rem;">TCMB</span>
+                        }
+                        else
+                        {
+                            <small class="text-muted">(net için)</small>
+                        }
+                    </label>
+                    <input type="number" step="0.0001" name="EurKur"
+                           value="@(Model.EurKur > 0 ? Model.EurKur.ToString("F4", System.Globalization.CultureInfo.InvariantCulture) : "")"
+                           class="form-control" placeholder="Otomatik (TCMB)" />
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue" asp-page="./Index">Temizle</a>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="col-md-2">
-        <label class="form-label">Sayfa Boyutu</label>
-        <select name="pageSize" class="form-select" onchange="this.form.submit()">
-            @{
-                int[] sizes = new[] { 10, 20, 50, 100 };
-                foreach (var s in sizes)
-                {
-                    <option value="@s" selected="@(Model.pageSize == s)">@s</option>
-                }
-            }
-        </select>
-    </div>
+    @* ─── ÖZET KARTLAR ──────────────────────────────────────────── *@
+    @if (Model.RangeGelirPB.Count > 0 || Model.RangeMasrafPB.Count > 0)
+    {
+        decimal _gelirTL  = Model.RangeGelirPB.GetValueOrDefault("TL");
+        decimal _gelirEUR = Model.RangeGelirPB.GetValueOrDefault("EUR");
+        decimal _giderTL  = Model.RangeMasrafPB.GetValueOrDefault("TL");
+        decimal _giderEUR = Model.RangeMasrafPB.GetValueOrDefault("EUR");
+        bool    _kurVar   = Model.EurKur > 0;
+        decimal _netTL    = _kurVar
+            ? (_gelirTL + _gelirEUR * Model.EurKur) - (_giderTL + _giderEUR * Model.EurKur)
+            : _gelirTL - _giderTL;
+        string  _netBg    = _netTL >= 0 ? "#dbeafe" : "#fef3c7";
+        string  _netCls   = _netTL >= 0 ? "text-primary" : "text-warning";
 
-    <div class="col-md-3">
-        <label class="form-label">Kapalı Seferler</label>
-        <select name="showClosed" class="form-select" onchange="this.form.submit()">
-            <option value="false" selected="@(!Model.showClosed)">Açık / Kısmi</option>
-            <option value="true" selected="@(Model.showClosed)">Kapalı</option>
-        </select>
-    </div>
-
-    <div class="col-md-3">
-        <label class="form-label">PB Filtresi (virgülle):</label>
-        <input name="pbFilter" value="@Model.pbFilter" class="form-control" placeholder="Örn: TL,EUR,USD" />
-    </div>
-
-    <div class="col-md-2 d-grid">
-        <button class="btn btn-primary">Uygula</button>
-    </div>
-</form>
-
-@if (Model.PageGelirPB.Count > 0 || Model.PageMasrafPB.Count > 0)
-{
-    <div class="alert alert-secondary py-2">
-        <div class="mb-1">
-            <strong>Sayfa Geliri:</strong>
-            @foreach (var kv in Model.PageGelirPB)
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @foreach (var kv in Model.RangeGelirPB)
             {
-                <span class="badge bg-success me-2">@kv.Value.ToString("N2") @kv.Key</span>
+                <div class="card px-3 py-2 border-0" style="background:#dcfce7;">
+                    <div class="text-muted small">Gelir (@kv.Key)</div>
+                    <div class="fw-bold fs-6 text-success">@kv.Value.ToString("N2") @kv.Key</div>
+                </div>
             }
+            @foreach (var kv in Model.RangeMasrafPB)
+            {
+                <div class="card px-3 py-2 border-0" style="background:#fee2e2;">
+                    <div class="text-muted small">Gider (@kv.Key)</div>
+                    <div class="fw-bold fs-6 text-danger">@kv.Value.ToString("N2") @kv.Key</div>
+                </div>
+            }
+            <div class="card px-3 py-2 border-0" style="background:@_netBg;">
+                <div class="text-muted small">
+                    Net TL
+                    @if (_kurVar && _gelirEUR > 0)
+                    {
+                        <span class="ms-1" style="font-size:.7rem;">(EUR × @Model.EurKur.ToString("N2") dahil)</span>
+                    }
+                </div>
+                <div class="fw-bold fs-6 @_netCls">@_netTL.ToString("N2") TL</div>
+            </div>
         </div>
-        <div class="mb-1">
-            <strong>Sayfa Gideri:</strong>
-            @foreach (var kv in Model.PageMasrafPB)
-            {
-                <span class="badge bg-danger me-2">@kv.Value.ToString("N2") @kv.Key</span>
-            }
-        </div>
-        <div>
-            <strong>Sayfa Net:</strong>
-            @foreach (var kv in Model.PageNetPB)
-            {
-                var cls = kv.Value >= 0 ? "bg-primary" : "bg-warning text-dark";
-                <span class="badge @cls me-2">@kv.Value.ToString("N2") @kv.Key</span>
-            }
-        </div>
+    }
+
+    @* ─── ÖZET BAR ───────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center gap-3 mb-2">
+        <small class="text-muted">
+            Toplam <strong>@Model.TotalCount</strong> kayıt —
+            Sayfa <strong>@Model.p</strong> / <strong>@Model.TotalPages</strong>
+        </small>
+        <small>
+            <span class="badge @(Model.ozmal ? "bg-success" : "bg-secondary")">
+                @(Model.ozmal ? "Özmal" : "Yüklenici")
+            </span>
+            <span class="badge @(Model.showClosed ? "bg-dark" : "bg-info text-dark") ms-1">
+                @(Model.showClosed ? "Kapalı" : "Açık / Kısmi")
+            </span>
+        </small>
     </div>
-}
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Çıkış</th>
-                <th>Dönüş</th>
-                <th>Sefer Kodu</th>
-                <th>Çekici</th>
-                <th>Dorse</th>
-                <th>Sürücü</th>
-                <th>Tür</th>
-                <th>PB Toplamlar</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var r in Model.Items)
-            {
-                // satır PB rozetleri hazırla:
-                var gelir = Model.GelirBySeferPB.TryGetValue(r.SeferID, out var gmap) ? gmap : null;
-                var masraf = Model.MasrafBySeferPB.TryGetValue(r.SeferID, out var mmap) ? mmap : null;
-
+    @* ─── TABLO ─────────────────────────────────────────────────── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
                 <tr>
-                    <td>@(r.CikisTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
-                    <td>@(r.DonusTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
-                    <td>@r.SeferKodu</td>
-                    <td>@r.CekiciPlaka</td>
-                    <td>@r.DorsePlaka</td>
-                    <td>@r.SurucuAdi</td>
-                    <td>
-                        @if (r.Ozmal == true)
-                        {
-                            <span class="badge bg-success">Özmal</span>
-                        }
-                        else if (r.Ozmal == false)
-                        {
-
-                            <span class="badge bg-secondary">Yüklenici</span>
-                        }
-                        else
-                        {
-
-                            <span class="badge bg-light text-dark">—</span>
-                        }
-                        @if (r.Durum == 2)
-                        {
-                            <span class="badge bg-dark ms-1">Kapalı</span>
-                        }
-                        else
-                        {
-
-                            <span class="badge bg-info ms-1">Açık</span>
-                        }
-                    </td>
-
-                    <td>
-                        @if (gelir != null && gelir.Count > 0)
-                        {
-                            <div class="mb-1">
-                                <span class="me-1 text-muted">G:</span>
-                                @foreach (var kv in gelir)
-                                {
-                                    <span class="badge bg-success me-1">@kv.Value.ToString("N2") @kv.Key</span>
-                                }
-                            </div>
-                        }
-                        @if (masraf != null && masraf.Count > 0)
-                        {
-                            <div>
-                                <span class="me-1 text-muted">M:</span>
-                                @foreach (var kv in masraf)
-                                {
-                                    <span class="badge bg-danger me-1">@kv.Value.ToString("N2") @kv.Key</span>
-                                }
-                            </div>
-                        }
-                    </td>
-
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID" class="btn btn-outline-primary">Detay</a>
-                        </div>
-                    </td>
+                    <th>Çıkış</th>
+                    <th>Dönüş</th>
+                    <th>Süre / KM</th>
+                    <th>Sefer Kodu</th>
+                    <th>Çekici</th>
+                    <th>Sürücü</th>
+                    <th>Tür / Durum</th>
+                    <th>Bölüm</th>
+                    <th>Gelir / Masraf / Yakıt</th>
+                    <th class="text-end" style="width:80px">İşlemler</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @if (!Model.Items.Any())
+                {
+                    <tr><td colspan="10" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Kayıt bulunamadı.
+                    </td></tr>
+                }
+                @foreach (var r in Model.Items)
+                {
+                    var gelir  = Model.GelirBySeferPB.TryGetValue(r.SeferID,  out var gmap) ? gmap  : null;
+                    var masraf = Model.MasrafBySeferPB.TryGetValue(r.SeferID, out var mmap) ? mmap : null;
+                    var yakitLitre = Model.YakitLitreBySeferID.TryGetValue(r.SeferID, out var yl) ? yl : 0m;
+                    string sureCls = r.SeferSuresiGun switch {
+                        null => "text-muted",
+                        <= 3 => "text-success",
+                        <= 7 => "text-info",
+                        <= 14 => "text-warning",
+                        _ => "text-danger fw-bold"
+                    };
+                    <tr>
+                        <td>@(r.CikisTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
+                        <td>@(r.DonusTarihi?.ToString("dd.MM.yyyy") ?? "—")</td>
+                        <td>
+                            @if (r.SeferSuresiGun.HasValue)
+                            {
+                                <span class="@sureCls">@r.SeferSuresiGun gün</span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                            @if (r.KmMesafe.HasValue)
+                            {
+                                <div class="text-muted" style="font-size:.75rem">@r.KmMesafe.Value.ToString("N0") km</div>
+                            }
+                        </td>
+                        <td class="fw-semibold">
+                            <span class="badge bg-light text-dark border">@r.SeferKodu</span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(r.CekiciPlaka))
+                            {
+                                <span class="badge bg-light text-dark border">@r.CekiciPlaka</span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(r.SurucuAdi) ? "—" : r.SurucuAdi)</td>
+                        <td>
+                            @if (r.Ozmal == true)
+                            { <span class="badge bg-success bg-opacity-75">Özmal</span> }
+                            else if (r.Ozmal == false)
+                            { <span class="badge bg-secondary">Yüklenici</span> }
+                            else
+                            { <span class="badge bg-light text-dark">—</span> }
+                            @if (r.Durum == 2)
+                            { <span class="badge bg-dark ms-1">Kapalı</span> }
+                            else
+                            { <span class="badge bg-info text-dark ms-1">Açık</span> }
+                        </td>
+                        <td class="text-muted">@(string.IsNullOrWhiteSpace(r.AltSubeAdi) ? "—" : r.AltSubeAdi)</td>
+                        <td>
+                            @if (gelir?.Count > 0)
+                            {
+                                <div class="mb-1">
+                                    <span class="text-muted me-1" style="font-size:.75rem">G:</span>
+                                    @foreach (var kv in gelir)
+                                    {
+                                        <span class="badge bg-success bg-opacity-75 me-1">@kv.Value.ToString("N2") @kv.Key</span>
+                                    }
+                                </div>
+                            }
+                            @if (masraf?.Count > 0)
+                            {
+                                <div class="mb-1">
+                                    <span class="text-muted me-1" style="font-size:.75rem">M:</span>
+                                    @foreach (var kv in masraf)
+                                    {
+                                        <span class="badge bg-danger bg-opacity-75 me-1">@kv.Value.ToString("N2") @kv.Key</span>
+                                    }
+                                </div>
+                            }
+                            @if (yakitLitre > 0)
+                            {
+                                <div>
+                                    <span class="text-muted me-1" style="font-size:.75rem">Y:</span>
+                                    <span class="badge bg-warning text-dark me-1">@yakitLitre.ToString("N1") lt</span>
+                                    @if (r.KmMesafe.HasValue && r.KmMesafe.Value > 0)
+                                    {
+                                        var verim = (yakitLitre / r.KmMesafe.Value) * 100m;
+                                        <span class="badge bg-light text-dark border">@verim.ToString("N1") lt/100km</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <form method="post" asp-page="./SeferRaporDetay">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="SeferId" value="@r.SeferID" />
+                                <button type="submit" class="btn btn-pastel-blue btn-sm">Detay</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* ─── SAYFALAMA ──────────────────────────────────────────────── *@
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <small class="text-muted">
+                Toplam <strong>@Model.TotalCount</strong> — Sayfa <strong>@Model.p</strong> / <strong>@Model.TotalPages</strong>
+            </small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(Model.p <= 1 ? "disabled" : null)">
+                    <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(1)">İlk</a>
+                </li>
+                <li class="page-item @(Model.p <= 1 ? "disabled" : null)">
+                    <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.p - 1)">‹ Önceki</a>
+                </li>
+                @{
+                    int pgStart = Math.Max(1, Model.p - 2);
+                    int pgEnd   = Math.Min(Model.TotalPages, Model.p + 2);
+                }
+                @if (pgStart > 1)
+                {
+                    <li class="page-item"><a class="page-link" asp-page="./Index" asp-all-route-data="@PD(1)">1</a></li>
+                    @if (pgStart > 2) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+                }
+                @for (int pg = pgStart; pg <= pgEnd; pg++)
+                {
+                    <li class="page-item @(pg == Model.p ? "active" : null)">
+                        <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(pg)">@pg</a>
+                    </li>
+                }
+                @if (pgEnd < Model.TotalPages)
+                {
+                    @if (pgEnd < Model.TotalPages - 1) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+                    <li class="page-item"><a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.TotalPages)">@Model.TotalPages</a></li>
+                }
+                <li class="page-item @(Model.p >= Model.TotalPages ? "disabled" : null)">
+                    <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.p + 1)">Sonraki ›</a>
+                </li>
+                <li class="page-item @(Model.p >= Model.TotalPages ? "disabled" : null)">
+                    <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.TotalPages)">Son</a>
+                </li>
+            </ul>
+        </div>
+    }
+
 </div>
 
-<nav class="d-flex justify-content-between align-items-center mt-3">
-    <div class="text-muted">
-        Toplam @Model.TotalCount kayıt — Sayfa @Model.page / @Model.TotalPages
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Sefer Raporu — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, seçilen tarih aralığındaki seferlerin gelir, gider ve yakıt verilerini özetler. Özmal ve yüklenici araçlar ayrı filtrelenebilir.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📈 Özet Kartlar</h6>
+                    <ul class="mb-0">
+                        <li><strong>Gelir</strong> — Para birimi bazında toplam sefer gelirleri.</li>
+                        <li><strong>Gider</strong> — Para birimi bazında toplam sefer masrafları.</li>
+                        <li><strong>Net TL</strong> — EUR/TL kuru dahil TL bazında kar/zarar.</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🔍 Filtreleme</h6>
+                    <ul class="mb-0">
+                        <li><strong>Tarih Aralığı</strong> — Varsayılan: cari ayın başından bugüne.</li>
+                        <li><strong>Özmal / Yüklenici</strong> — Filoya göre görüntüleyin.</li>
+                        <li><strong>Açık / Kapalı</strong> — Devam eden veya tamamlanmış seferler.</li>
+                        <li><strong>EUR/TL Kur</strong> — Net TL hesabı için kur girebilir veya TCMB otomatik kurunu kullanabilirsiniz.</li>
+                        <li><strong>Bölüm</strong> — Alt şube bazında filtreleme.</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo Sütunları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Çıkış / Dönüş</strong> — Sefer tarihleri.</li>
+                        <li><strong>Süre / KM</strong> — Sefer süresi (gün) ve mesafe. Renk: 🟢 ≤3 · 🔵 ≤7 · 🟡 ≤14 · 🔴 &gt;14 gün.</li>
+                        <li><strong>Gelir / Masraf / Yakıt</strong> — Sefer bazında finansal özet.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Detay</strong> — Seferin tam gelir/gider dökümünü görün.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
     </div>
-    <ul class="pagination mb-0">
-        <li class="page-item @(Model.page <= 1 ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Index"
-               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
-               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
-               asp-route-q="@Model.q"
-               asp-route-ozmal="@Model.ozmal"
-               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
-               asp-route-pbFilter="@Model.pbFilter"
-               asp-route-page="@(Model.page - 1)"
-               asp-route-pageSize="@Model.pageSize">Önceki</a>
-        </li>
-        <li class="page-item @(Model.page >= Model.TotalPages ? "disabled" : null)">
-            <a class="page-link"
-               asp-page="./Index"
-               asp-route-Start="@(Model.Start?.ToString("yyyy-MM-dd"))"
-               asp-route-End="@(Model.End?.ToString("yyyy-MM-dd"))"
-               asp-route-q="@Model.q"
-               asp-route-ozmal="@Model.ozmal"
-               asp-route-showClosed="@(Model.showClosed ? "true" : "false")"
-               asp-route-pbFilter="@Model.pbFilter"
-               asp-route-page="@(Model.page + 1)"
-               asp-route-pageSize="@Model.pageSize">Sonraki</a>
-        </li>
-    </ul>
-</nav>
+</div>

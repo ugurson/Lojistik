@@ -84,7 +84,6 @@ namespace Lojistik.Pages.Siparisler
             {
                 s.Durum = 7;
                 await _context.SaveChangesAsync();
-                TempData["StatusMessage"] = "Sipariş sonlandırıldı (Durum = 7).";
             }
 
             return RedirectToPage(new { id });

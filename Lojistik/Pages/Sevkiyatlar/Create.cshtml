@@ -1,101 +1,106 @@
-﻿@page
+@page
 @model Lojistik.Pages.Sevkiyatlar.CreateModel
 @{
     ViewData["Title"] = "Yeni Sevkiyat";
 }
 
-<h2 class="mb-3">Yeni Sevkiyat</h2>
+<div class="lj-page-compact">
 
-<form method="post" class="row g-3" enctype="multipart/form-data" autocomplete="off">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="col-md-4">
-        <label asp-for="Input.SiparisID" class="form-label">Sipariş</label>
-        <select asp-for="Input.SiparisID" asp-items="Model.SiparisSelect" class="form-select" disabled>
-            <option value="">Seçiniz...</option>
-        </select>
-        <input type="hidden" asp-for="Input.SiparisID" />
-        <span asp-validation-for="Input.SiparisID" class="text-danger"></span>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Yeni Sevkiyat</h2>
+        <a asp-page="/Siparisler/Index" class="btn btn-pastel-blue btn-sm">← Siparişler</a>
     </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.DorseID" class="form-label">Dorse</label>
-        <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select" required>
-            <option value="">(Seçiniz)</option>
-        </select>
-        <span asp-validation-for="Input.DorseID" class="text-danger"></span>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" autocomplete="off">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Input.SiparisID" class="form-label">Sipariş</label>
+                        <select asp-for="Input.SiparisID" asp-items="Model.SiparisSelect" class="form-select" disabled>
+                            <option value="">Seçiniz...</option>
+                        </select>
+                        <input type="hidden" asp-for="Input.SiparisID" />
+                        <span asp-validation-for="Input.SiparisID" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.DorseID" class="form-label">Dorse</label>
+                        <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select" required>
+                            <option value="">(Seçiniz)</option>
+                        </select>
+                        <span asp-validation-for="Input.DorseID" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Yükleme Müşteri</label>
+                        <select class="form-select" disabled asp-items="Model.YuklemeMusteriSelect"></select>
+                        <input type="hidden" asp-for="Input.YuklemeMusteriID" />
+                        <span asp-validation-for="Input.YuklemeMusteriID" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Boşaltma Müşteri</label>
+                        <select class="form-select" disabled asp-items="Model.BosaltmaMusteriSelect"></select>
+                        <input type="hidden" asp-for="Input.BosaltmaMusteriID" />
+                        <span asp-validation-for="Input.BosaltmaMusteriID" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.YuklemeAdres" class="form-label">Yükleme Adres</label>
+                        <input asp-for="Input.YuklemeAdres" class="form-control" />
+                        <span asp-validation-for="Input.YuklemeAdres" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.BosaltmaAdres" class="form-label">Boşaltma Adres</label>
+                        <input asp-for="Input.BosaltmaAdres" class="form-control" />
+                        <span asp-validation-for="Input.BosaltmaAdres" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.PlanlananYuklemeTarihi" class="form-label">Planlanan Yükleme</label>
+                        <input asp-for="Input.PlanlananYuklemeTarihi" type="date" class="form-control" />
+                        <span asp-validation-for="Input.PlanlananYuklemeTarihi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.YuklemeTarihi" class="form-label">Yükleme</label>
+                        <input asp-for="Input.YuklemeTarihi" type="date" class="form-control" />
+                        <span asp-validation-for="Input.YuklemeTarihi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.GumrukCikisTarihi" class="form-label">Gümrük Çıkış</label>
+                        <input asp-for="Input.GumrukCikisTarihi" type="date" class="form-control" />
+                        <span asp-validation-for="Input.GumrukCikisTarihi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.VarisTarihi" class="form-label">Varış</label>
+                        <input asp-for="Input.VarisTarihi" type="date" class="form-control" />
+                        <span asp-validation-for="Input.VarisTarihi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">CMR (dosya yükle)</label>
+                        <input asp-for="Input.CMRFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                        <div class="form-text">PDF / JPG / PNG</div>
+                        <span asp-validation-for="Input.CMRFile" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.MRN" class="form-label">MRN</label>
+                        <input asp-for="Input.MRN" class="form-control" />
+                        <span asp-validation-for="Input.MRN" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
+                        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
+                        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button class="btn btn-pastel-green" type="submit">Kaydet</button>
+                    <a asp-page="/Siparisler/Index" class="btn btn-pastel-blue">Vazgeç</a>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="col-md-6">
-        <label class="form-label">Yükleme Müşteri</label>
-        <select class="form-select" disabled asp-items="Model.YuklemeMusteriSelect"></select>
-        <input type="hidden" asp-for="Input.YuklemeMusteriID" />
-        <span asp-validation-for="Input.YuklemeMusteriID" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label class="form-label">Boşaltma Müşteri</label>
-        <select class="form-select" disabled asp-items="Model.BosaltmaMusteriSelect"></select>
-        <input type="hidden" asp-for="Input.BosaltmaMusteriID" />
-        <span asp-validation-for="Input.BosaltmaMusteriID" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-6">
-        <label asp-for="Input.YuklemeAdres" class="form-label">Yükleme Adres</label>
-        <input asp-for="Input.YuklemeAdres" class="form-control" />
-        <span asp-validation-for="Input.YuklemeAdres" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="Input.BosaltmaAdres" class="form-label">Boşaltma Adres</label>
-        <input asp-for="Input.BosaltmaAdres" class="form-control" />
-        <span asp-validation-for="Input.BosaltmaAdres" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-3">
-        <label asp-for="Input.PlanlananYuklemeTarihi" class="form-label">Planlanan Yükleme</label>
-        <input asp-for="Input.PlanlananYuklemeTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.PlanlananYuklemeTarihi" class="text-danger"></span>
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.YuklemeTarihi" class="form-label">Yükleme</label>
-        <input asp-for="Input.YuklemeTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.YuklemeTarihi" class="text-danger"></span>
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.GumrukCikisTarihi" class="form-label">Gümrük Çıkış</label>
-        <input asp-for="Input.GumrukCikisTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.GumrukCikisTarihi" class="text-danger"></span>
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Input.VarisTarihi" class="form-label">Varış</label>
-        <input asp-for="Input.VarisTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.VarisTarihi" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-6">
-        <label class="form-label">CMR (dosya yükle)</label>
-        <input asp-for="Input.CMRFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
-        <small class="text-muted">PDF/JPG/PNG</small>
-        <span asp-validation-for="Input.CMRFile" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="Input.MRN" class="form-label">MRN</label>
-        <input asp-for="Input.MRN" class="form-control" />
-        <span asp-validation-for="Input.MRN" class="text-danger"></span>
-    </div>
-
-    @* Durum girişi kaldırıldı – backend 0 (Yeni) atayacak *@
-
-    <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
-        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
-        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
-    </div>
-
-    <div class="col-12 d-flex gap-2">
-        <button class="btn btn-success" type="submit">Kaydet</button>
-        <a asp-page="/Siparisler/Index" class="btn btn-outline-secondary">Vazgeç</a>
-    </div>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

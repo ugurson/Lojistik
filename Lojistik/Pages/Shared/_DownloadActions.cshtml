@@ -1,0 +1,44 @@
+@*
+    _DownloadActions.cshtml — Standart "İndir" dropdown'u
+    Kullanım:
+        <partial name="_DownloadActions"
+                 view-data='@(new ViewDataDictionary(ViewData) {
+                     ["FileBase"] = "siparisler",
+                     ["TableSelector"] = ".lj-table"
+                 })' />
+
+    Parametreler:
+        FileBase       (string) — indirilecek dosya adı kökü (ör. "musteriler")
+        TableSelector  (string) — opsiyonel, varsayılan ".lj-table"
+*@
+@{
+    var fileBase      = ViewData["FileBase"] as string ?? "liste";
+    var tableSelector = ViewData["TableSelector"] as string ?? ".lj-table";
+}
+
+<div class="dropdown d-inline-block lj-download-btn lj-print-hide">
+    <button class="btn btn-pastel-blue btn-sm dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false" title="İndir / Yazdır">
+        ⬇ İndir
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+            <button type="button" class="dropdown-item lj-export-excel"
+                    data-table="@tableSelector" data-file="@fileBase">
+                Excel (.xlsx)
+            </button>
+        </li>
+        <li>
+            <button type="button" class="dropdown-item lj-export-pdf"
+                    data-file="@fileBase">
+                PDF (Yazdır → PDF olarak kaydet)
+            </button>
+        </li>
+        <li><hr class="dropdown-divider" /></li>
+        <li>
+            <button type="button" class="dropdown-item lj-export-print">
+                Yazdır
+            </button>
+        </li>
+    </ul>
+</div>

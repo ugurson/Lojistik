@@ -1,102 +1,133 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model Lojistik.Pages.Musteriler.EditModel
 @{
     ViewData["Title"] = "Müşteri Düzenle";
 }
 
-<h2>Müşteri Düzenle</h2>
-<hr />
+<style>
+    .lj-card-hdr { font-size: 0.82rem; letter-spacing: .04em; text-transform: uppercase; }
+    .lj-lbl      { font-size: 0.78rem; margin-bottom: 2px; color: #6c757d; }
+</style>
 
-<form method="post" class="form-horizontal">
-    <input type="hidden" asp-for="Musteri.MusteriID" />
-    <input type="hidden" asp-for="Musteri.FirmaID" />
+<div class="lj-page-compact">
 
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Müşteri Adı</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.MusteriAdi" class="form-control" />
-            <span asp-validation-for="Musteri.MusteriAdi" class="text-danger"></span>
+    @* ─── BAŞLIK ─────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Müşteri Düzenle</h2>
+        <div class="d-flex gap-2">
+            <button type="submit" form="mainForm" class="btn btn-pastel-green btn-sm">Kaydet</button>
+            <a class="btn btn-pastel-blue btn-sm" asp-page="./Index">← Liste</a>
         </div>
     </div>
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Ülke</label>
-        <div class="col-sm-6">
-            <select asp-for="Musteri.UlkeID" class="form-select" id="UlkeID">
-                @foreach (var u in Model.UlkeList)
-                {
-                    <option value="@u.UlkeID" selected="@(Model.Musteri.UlkeID == u.UlkeID)">
-                        @u.UlkeAdi
-                    </option>
-                }
-            </select>
-            <span asp-validation-for="Musteri.UlkeID" class="text-danger"></span>
-        </div>
-    </div>
+    <form id="mainForm" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-2 small"></div>
+        <input type="hidden" asp-for="Musteri.MusteriID" />
+        <input type="hidden" asp-for="Musteri.FirmaID" />
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Şehir</label>
-        <div class="col-sm-6">
-            <select asp-for="Musteri.SehirID" class="form-select" id="SehirID">
-                @foreach (var s in Model.SehirList)
-                {
-                    <option value="@s.SehirID" selected="@(Model.Musteri.SehirID == s.SehirID)">
-                        @s.SehirAdi
-                    </option>
-                }
-            </select>
-            <span asp-validation-for="Musteri.SehirID" class="text-danger"></span>
-        </div>
-    </div>
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Müşteri Bilgileri</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Adres</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.Adres" class="form-control" />
-        </div>
-    </div>
+                    @* Satır 1: Kategori · Ünvan · Telefon · E-posta *@
+                    <div class="col-md-2">
+                        <label asp-for="Musteri.Kategori" class="form-label lj-lbl">Kategori</label>
+                        <select asp-for="Musteri.Kategori" class="form-select form-select-sm">
+                            <option value="0">Müşteri</option>
+                            <option value="1">Tedarikçi</option>
+                            <option value="2">Nakliyeci</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Musteri.MusteriAdi" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.MusteriAdi" class="form-control form-control-sm" />
+                        <span asp-validation-for="Musteri.MusteriAdi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Musteri.Telefon" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.Telefon" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.Email" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.Email" class="form-control form-control-sm" />
+                        <span asp-validation-for="Musteri.Email" class="text-danger small"></span>
+                    </div>
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Posta Kodu</label>
-        <div class="col-sm-3">
-            <input asp-for="Musteri.PostaKodu" class="form-control" />
-        </div>
-        <label class="col-sm-1 col-form-label text-end">Telefon</label>
-        <div class="col-sm-3">
-            <input asp-for="Musteri.Telefon" class="form-control" />
-        </div>
-    </div>
+                    @* Satır 2: Yetkili · Vergi Dairesi · Vergi No · Gümrük Kodu *@
+                    <div class="col-md-4">
+                        <label asp-for="Musteri.YetkiliIsim" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.YetkiliIsim" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.VergiDairesi" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.VergiDairesi" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Musteri.VergiNo" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.VergiNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.GumrukKod" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.GumrukKod" class="form-control form-control-sm" />
+                        <span asp-validation-for="Musteri.GumrukKod" class="text-danger small"></span>
+                    </div>
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">E-posta</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.Email" class="form-control" />
-            <span asp-validation-for="Musteri.Email" class="text-danger"></span>
-        </div>
-    </div>
+                    @* Satır 3: Ülke · Şehir · Adres · Posta Kodu *@
+                    <div class="col-md-2">
+                        <label asp-for="Musteri.UlkeID" class="form-label lj-lbl">Ülke</label>
+                        <select asp-for="Musteri.UlkeID" class="form-select form-select-sm" id="UlkeID">
+                            @foreach (var u in Model.UlkeList)
+                            {
+                                <option value="@u.UlkeID" selected="@(Model.Musteri.UlkeID == u.UlkeID)">
+                                    @u.UlkeAdi
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="Musteri.UlkeID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.SehirID" class="form-label lj-lbl">Şehir</label>
+                        <div class="lj-select-wrap" id="SehirWrap">
+                            <select asp-for="Musteri.SehirID" class="form-select form-select-sm" id="SehirID">
+                                @foreach (var s in Model.SehirList)
+                                {
+                                    <option value="@s.SehirID" selected="@(Model.Musteri.SehirID == s.SehirID)">
+                                        @s.SehirAdi
+                                    </option>
+                                }
+                            </select>
+                            <span class="lj-select-spinner" aria-hidden="true"></span>
+                        </div>
+                        <span asp-validation-for="Musteri.SehirID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Musteri.Adres" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.Adres" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Musteri.PostaKodu" class="form-label lj-lbl"></label>
+                        <input asp-for="Musteri.PostaKodu" class="form-control form-control-sm" />
+                    </div>
 
-    <!-- Gümrük Kodu (yeni) -->
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Gümrük Kodu</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.GumrukKod" class="form-control" />
-            <span asp-validation-for="Musteri.GumrukKod" class="text-danger"></span>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div>
-        <button type="submit" class="btn btn-primary me-1">Kaydet</button>
-        <a asp-page="./Index" class="btn btn-secondary">İptal</a>
-    </div>
-</form>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-pastel-green btn-sm">Kaydet</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">İptal</a>
+        </div>
+    </form>
+
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const ulkeSel = document.getElementById('UlkeID');
-        const sehirSel = document.getElementById('SehirID');
+        const ulkeSel   = document.getElementById('UlkeID');
+        const sehirSel  = document.getElementById('SehirID');
+        const sehirWrap = document.getElementById('SehirWrap');
 
         ulkeSel.addEventListener('change', async () => {
             const ulkeId = ulkeSel.value;
@@ -104,18 +135,28 @@
                 sehirSel.innerHTML = '<option value="">Önce ülke seçiniz</option>';
                 return;
             }
-            sehirSel.innerHTML = '<option value="">Yükleniyor...</option>';
 
-            const url = `@Url.Page("./Edit", null, new { handler = "Sehirler" }, Request.Scheme)&ulkeId=${ulkeId}`;
-            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
+            sehirWrap.classList.add('is-loading');
+            sehirSel.disabled = true;
+            sehirSel.innerHTML = '<option value="">Yükleniyor…</option>';
 
-            sehirSel.innerHTML = '<option value="">-- Seçiniz --</option>';
-            for (const s of data) {
-                const opt = document.createElement('option');
-                opt.value = s.sehirID;   // JSON camelCase
-                opt.textContent = s.sehirAdi;
-                sehirSel.appendChild(opt);
+            try {
+                const url = `@Url.Page("./Edit", null, new { handler = "Sehirler" }, Request.Scheme)&ulkeId=${ulkeId}`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+
+                sehirSel.innerHTML = '<option value="">-- Seçiniz --</option>';
+                for (const s of data) {
+                    const opt = document.createElement('option');
+                    opt.value = s.sehirID;
+                    opt.textContent = s.sehirAdi;
+                    sehirSel.appendChild(opt);
+                }
+            } catch (err) {
+                sehirSel.innerHTML = '<option value="">Hata — tekrar deneyin</option>';
+            } finally {
+                sehirWrap.classList.remove('is-loading');
+                sehirSel.disabled = false;
             }
         });
     </script>

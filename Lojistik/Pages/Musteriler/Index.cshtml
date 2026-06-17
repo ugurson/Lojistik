@@ -1,52 +1,174 @@
-﻿@page
+@page
 @model Lojistik.Pages.Musteriler.IndexModel
+@using Lojistik.Models
 @{
     ViewData["Title"] = "Müşteriler";
 }
 
-<h2>Müşteriler</h2>
+<div class="lj-page-compact">
 
-<p>
-    <a class="btn btn-success btn-sm" asp-page="./Create">Yeni Müşteri</a>
-</p>
+    @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Müşteriler</h2>
+        <div class="d-flex gap-2">
+            <partial name="_DownloadActions"
+                     view-data='@(new ViewDataDictionary(ViewData) {
+                         ["FileBase"] = "musteriler",
+                         ["TableSelector"] = ".lj-table"
+                     })' />
+            <a class="btn btn-pastel-green btn-sm" asp-page="./Create">+ Yeni Müşteri</a>
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
+        </div>
+    </div>
 
-<table class="table table-striped table-sm">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Ad</th>
-            <th>Adres</th>
-            <th>Posta Kodu</th>
-            <th>Telefon</th>
-            <th>E-posta</th>
-            <th>Ülke</th>
-            <th>Şehir</th>
-            <th class="text-end">İşlemler</th>
-        </tr>
-    </thead>
-    <tbody>
-        @{
-            var i = 0;
-            foreach (var m in Model.List)
-            {
+    @* ─── FİLTRE ────────────────────────────────────────────────── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-5 col-md-4">
+                    <label class="form-label">Ara</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Müşteri adı..." />
+                </div>
+                <div class="col-sm-4 col-md-3">
+                    <label class="form-label">Kategori</label>
+                    <select name="kategori" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="0" selected="@(Model.kategori == 0)">Müşteri</option>
+                        <option value="1" selected="@(Model.kategori == 1)">Tedarikçi</option>
+                        <option value="2" selected="@(Model.kategori == 2)">Nakliyeci</option>
+                    </select>
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue" asp-page="./Index">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* ─── ÖZET BAR ──────────────────────────────────────────────── *@
+    <div class="mb-2">
+        <small class="text-muted">Toplam <strong>@Model.List.Count</strong> kayıt</small>
+    </div>
+
+    @* ─── TABLO ─────────────────────────────────────────────────── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
                 <tr>
-                    <td>@(++i)</td>
-                    <td>@m.MusteriAdi</td>
-                    <td>@m.Adres</td>
-                    <td>@m.PostaKodu</td>
-                    <td>@m.Telefon</td>
-                    <td>@m.Email</td>
-                    <td>@m.Ulke?.UlkeAdi</td>
-                    <td>@m.Sehir?.SehirAdi</td>
-                    <td class="text-end">
-                        <div class="btn-group">
-                            <a class="btn btn-info btn-sm" asp-page="./Details" asp-route-id="@m.MusteriID">Detay</a>
-                            <a class="btn btn-primary btn-sm" asp-page="./Edit" asp-route-id="@m.MusteriID">Düzenle</a>
-                            <a class="btn btn-danger btn-sm" asp-page="./Delete" asp-route-id="@m.MusteriID">Sil</a>
-                        </div>
-                    </td>
+                    <th>#</th>
+                    <th>Kategori</th>
+                    <th>Müşteri / Firma Adı</th>
+                    <th>Yetkili İsim</th>
+                    <th>Ülke</th>
+                    <th>Şehir</th>
+                    <th>Telefon</th>
+                    <th>E-posta</th>
+                    <th>Vergi No</th>
+                    <th>Durum</th>
+                    <th class="text-end" style="width:160px;">İşlemler</th>
                 </tr>
-            }
-        }
-    </tbody>
-</table>
+            </thead>
+            <tbody>
+                @if (!Model.List.Any())
+                {
+                    <tr><td colspan="11" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Kayıt bulunamadı.
+                    </td></tr>
+                }
+                @{
+                    var i = 0;
+                }
+                @foreach (var m in Model.List)
+                {
+                    var detayUrl = Url.Page("./Details", new { id = m.MusteriID });
+                    <tr class="rowlink" data-href="@detayUrl">
+                        <td class="text-muted">@(++i)</td>
+                        <td><span class="badge @Musteri.KategoriBadgeCss(m.Kategori)" style="font-size:0.75rem;">@Musteri.KategoriAdi(m.Kategori)</span></td>
+                        <td class="fw-semibold">@m.MusteriAdi</td>
+                        <td>@m.YetkiliIsim</td>
+                        <td>@m.Ulke?.UlkeAdi</td>
+                        <td>@m.Sehir?.SehirAdi</td>
+                        <td>@m.Telefon</td>
+                        <td>@m.Email</td>
+                        <td>@m.VergiNo</td>
+                        <td>
+                            @if (m.IsActive)
+                            { <span class="badge bg-success bg-opacity-75">Aktif</span> }
+                            else
+                            { <span class="badge bg-secondary">Pasif</span> }
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a class="btn btn-pastel-blue"  asp-page="./Details" asp-route-id="@m.MusteriID">Detay</a>
+                                <a class="btn btn-pastel-amber" asp-page="./Edit"    asp-route-id="@m.MusteriID">Düzenle</a>
+                                <a class="btn btn-pastel-red"   asp-page="./Delete"  asp-route-id="@m.MusteriID">Sil</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Müşteriler — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, sisteme kayıtlı tüm müşteri, nakliyeci ve tedarikçileri listeler. Kategori bazında filtreleme yapabilir ve cari hesap işlemlerine ulaşabilirsiniz.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🏷️ Kategoriler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Müşteri</strong> — Mal veya hizmet satılan firma/kişi.</li>
+                        <li><strong>Tedarikçi</strong> — Hizmet veya ürün alınan firma.</li>
+                        <li><strong>Nakliyeci</strong> — Taşıma hizmeti sağlayan firma.</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo Sütunları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Müşteri / Firma Adı</strong> — Kayıtlı firma veya kişi adı.</li>
+                        <li><strong>Yetkili İsim</strong> — İletişim kurulacak kişi.</li>
+                        <li><strong>Ülke / Şehir</strong> — Firma lokasyonu.</li>
+                        <li><strong>Vergi No</strong> — Vergi kimlik numarası.</li>
+                        <li><strong>Durum</strong> — Aktif veya Pasif.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Detay</strong> — Müşteri bilgilerini ve işlem geçmişini görüntüleyin.</li>
+                        <li><strong>Düzenle</strong> — Müşteri bilgilerini güncelleyin.</li>
+                        <li><strong>Sil</strong> — Müşteriyi sistemden kaldırın.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+    document.querySelectorAll('tr.rowlink').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (e.target.closest('a, button, form')) return;
+            window.location = row.dataset.href;
+        });
+    });
+</script>
+

@@ -1,63 +1,87 @@
-﻿@page
+@page
 @model Lojistik.Pages.Belgeler.DetailsModel
-
 @{
     ViewData["Title"] = "Belge Detay";
+    var b = Model.AracBelgesi;
 }
 
-<h2 class="mb-3">Belge Detay</h2>
+<div class="lj-page-compact">
 
-@if (Model.AracBelgesi is null)
-{
-    <div class="alert alert-warning">Kayıt bulunamadı.</div>
-}
-else
-{
-    <div class="container px-0">
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Belge Tipi</div>
-            <div class="col-sm-6">@Model.AracBelgesi.BelgeTipi</div>
+    @if (b is null)
+    {
+        <div class="alert alert-warning">Kayıt bulunamadı.</div>
+    }
+    else
+    {
+        @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="mb-0">@b.BelgeTipi</h2>
+            <div class="btn-group btn-group-sm">
+                <a asp-page="./Edit"   asp-route-id="@b.BelgeID"   class="btn btn-pastel-amber">Düzenle</a>
+                <a asp-page="./Delete" asp-route-id="@b.BelgeID"   class="btn btn-pastel-red">Sil</a>
+                <a asp-page="/Araclar/Details" asp-route-id="@b.AracID" class="btn btn-pastel-blue">← Araç</a>
+            </div>
         </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Belge No</div>
-            <div class="col-sm-6">@Model.AracBelgesi.BelgeNo</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Firma</div>
-            <div class="col-sm-6">@Model.AracBelgesi.Firma</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Başlangıç Tarihi</div>
-            <div class="col-sm-6">@Model.AracBelgesi.BaslangicTarihi.ToString("dd-MM-yyyy")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Bitiş Tarihi</div>
-            <div class="col-sm-6">@(Model.AracBelgesi.BitisTarihi?.ToString("dd-MM-yyyy") ?? "-")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Tutar</div>
-            <div class="col-sm-6">@(Model.AracBelgesi.Tutar?.ToString("N2") ?? "-")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Para Birimi</div>
-            <div class="col-sm-6">@Model.AracBelgesi.ParaBirimi</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Dosya Yolu</div>
-            <div class="col-sm-6">@Model.AracBelgesi.DosyaYolu</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Notlar</div>
-            <div class="col-sm-6">@Model.AracBelgesi.Notlar</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Araç</div>
-            <div class="col-sm-6">@Model.AracBelgesi.Arac?.Plaka</div>
-        </div>
-    </div>
 
-    <div class="mt-3">
-        <a asp-page="./Edit" asp-route-id="@Model.AracBelgesi.BelgeID" class="btn btn-primary me-2">Düzenle</a>
-        <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
-    </div>
-}
+        @* ─── BELGE BİLGİLERİ ────────────────────────────────────── *@
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Belge Bilgileri</div>
+            <div class="card-body py-3">
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Araç Plakası</div>
+                        <div class="fw-semibold">@b.Arac?.Plaka</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Belge Tipi</div>
+                        <div class="fw-semibold">@b.BelgeTipi</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Belge No</div>
+                        <div>@b.BelgeNo</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Firma</div>
+                        <div>@b.Firma</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Başlangıç Tarihi</div>
+                        <div>@b.BaslangicTarihi.ToString("dd.MM.yyyy")</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Bitiş Tarihi</div>
+                        <div>@(b.BitisTarihi?.ToString("dd.MM.yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Tutar</div>
+                        <div>@(b.Tutar?.ToString("N2") ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Para Birimi</div>
+                        <div>@b.ParaBirimi</div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(b.DosyaYolu))
+                    {
+                        <div class="col-6 col-md-4">
+                            <div class="text-muted small">Dosya</div>
+                            <div>
+                                @{
+                                    var yol = b.DosyaYolu.StartsWith("~") ? b.DosyaYolu : "~/" + b.DosyaYolu.TrimStart('/');
+                                }
+                                <a href="@Url.Content(yol)" target="_blank" rel="noopener" class="btn btn-pastel-green btn-sm">Görsel Aç</a>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(b.Notlar))
+                    {
+                        <div class="col-12">
+                            <div class="text-muted small">Notlar</div>
+                            <div>@b.Notlar</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

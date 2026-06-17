@@ -19,9 +19,20 @@ namespace Lojistik.Pages.Seferler
     public class DetailsModel : PageModel
     {
         public bool IsClosed { get; private set; }
-
+        [BindProperty(SupportsGet = true)]
+        public int ro { get; set; } = 0;
         private readonly AppDbContext _context;
-        public DetailsModel(AppDbContext context) => _context = context;
+        private readonly ICurrencyRateService _kurService;
+
+        public DetailsModel(AppDbContext context, ICurrencyRateService kurService)
+        {
+            _context    = context;
+            _kurService = kurService;
+        }
+
+        // Kur bilgileri (OnGet'te doldurulur)
+        public decimal EurToTry { get; set; } = 1m;
+        public decimal UsdToTry { get; set; } = 1m;
 
         public SeferItem? Data { get; set; }
         public List<SiparisRow> Siparisler { get; set; } = new();
@@ -49,7 +60,8 @@ namespace Lojistik.Pages.Seferler
             string? FaturaBelgeNo,
             string? Ulke,
             string? Yer,
-            string? Notlar
+            string? Notlar,
+            decimal? YakitLitre
         );
 
         public record GelirRow(
@@ -65,9 +77,10 @@ namespace Lojistik.Pages.Seferler
     string? VarisIl,
     bool IsCarilestirildi,
     string? CariMusteriAdi,
-    string? CariIslemTuru
+    string? CariIslemTuru,
+    bool FaturaNoCarideMevcut
         );
-
+        public bool IsReadOnly => ro == 1;
         public List<GelirRow> Gelirler { get; set; } = new();
         public List<MasrafRow> Masraflar { get; set; } = new();
         public Dictionary<string, decimal> MasrafToplamlari { get; set; } = new();
@@ -114,7 +127,7 @@ namespace Lojistik.Pages.Seferler
 
             MusteriOptions = await _context.Musteriler
 .AsNoTracking()
-.Where(m => m.FirmaID == firmaId)
+.Where(m => m.FirmaID == firmaId && m.Kategori != 1)
 .OrderBy(m => m.MusteriAdi)
 .Select(m => new SelectListItem
 {
@@ -157,7 +170,8 @@ Text = m.MusteriAdi
                     m.FaturaBelgeNo,
                     m.Ulke,
                     m.Yer,
-                    m.Notlar
+                    m.Notlar,
+                    m.YakitLitre
                 ))
                 .ToListAsync();
 
@@ -188,7 +202,8 @@ Text = m.MusteriAdi
         g.VarisIl,
 false,  // IsCarilestirildi
         null,   // CariMusteriAdi
-        null 
+        null,   // CariIslemTuru
+        false   // FaturaNoCarideMevcut — in-memory hesaplanacak
     ))
     .ToListAsync();
             var gelirIds = Gelirler.Select(x => x.SeferGelirID).ToList();
@@ -214,11 +229,39 @@ false,  // IsCarilestirildi
                 .GroupBy(x => x.SeferGelirID)
                 .ToDictionary(g => g.Key, g => g.First());
 
+            // Fatura no’ları topla — sadece dolu olanlar
+            var faturaNoList = Gelirler
+                .Where(x => !string.IsNullOrWhiteSpace(x.FaturaNo))
+                .Select(x => x.FaturaNo!)
+                .Distinct()
+                .ToList();
+
+            // CariHareketler’de EvrakNo olarak kayıtlı fatura no’ları bul
+            HashSet<string> cariEvrakNoSet = new(StringComparer.OrdinalIgnoreCase);
+            if (faturaNoList.Count > 0)
+            {
+                var evraklar = await _context.CariHareketler
+                    .AsNoTracking()
+                    .Where(ch => ch.FirmaID == firmaId
+                              && ch.EvrakNo != null
+                              && faturaNoList.Contains(ch.EvrakNo))
+                    .Select(ch => ch.EvrakNo!)
+                    .Distinct()
+                    .ToListAsync();
+                cariEvrakNoSet = new HashSet<string>(evraklar, StringComparer.OrdinalIgnoreCase);
+            }
+
             // 4) In-memory birleştir
             Gelirler = Gelirler
-                .Select(x => cariMap.TryGetValue(x.SeferGelirID, out var ci)
-                    ? x with { IsCarilestirildi = true, CariMusteriAdi = ci.MusteriAdi, CariIslemTuru = ci.Taraf }
-                    : x)
+                .Select(x =>
+                {
+                    bool cariIslenmiş = cariMap.TryGetValue(x.SeferGelirID, out var ci);
+                    bool faturaCarili  = !string.IsNullOrWhiteSpace(x.FaturaNo)
+                                        && cariEvrakNoSet.Contains(x.FaturaNo!);
+                    return cariIslenmiş
+                        ? x with { IsCarilestirildi = true, CariMusteriAdi = ci!.MusteriAdi, CariIslemTuru = ci.Taraf, FaturaNoCarideMevcut = faturaCarili }
+                        : x with { FaturaNoCarideMevcut = faturaCarili };
+                })
                 .ToList();
 
             GelirToplamlari = await _context.SeferGelirleri
@@ -227,6 +270,11 @@ false,  // IsCarilestirildi
                 .GroupBy(g => g.ParaBirimi)
                 .Select(g => new { PB = g.Key!, Sum = g.Sum(x => x.Tutar) })
                 .ToDictionaryAsync(x => x.PB, x => x.Sum);
+
+            // Güncel EUR ve USD kurlarını çek (TCMB → Frankfurter fallback)
+            var kurTarih = DateTime.Today;
+            EurToTry = await _kurService.GetTryRateAsync("EUR", kurTarih);
+            UsdToTry = await _kurService.GetTryRateAsync("USD", kurTarih);
 
             IsClosed = (Data?.Durum ?? (byte)0) == 2;
             return Page();
@@ -370,6 +418,16 @@ false,  // IsCarilestirildi
             }
             else
             {
+                // Cariye işlenmişse güncelleme yapma
+                var cariIslenmiş = await _context.CariHareketler
+                    .AnyAsync(ch => ch.FirmaID == firmaId && ch.SeferGelirID == mevcut.SeferGelirID);
+
+                if (cariIslenmiş)
+                {
+                    TempData["StatusMessage"] = "Bu siparişe ait gelir zaten cariye işlenmiş, değiştirilemez.";
+                    return RedirectToPage(new { id = seferId });
+                }
+
                 mevcut.Tarih = s.SiparisTarihi.Date;
                 mevcut.Aciklama = acik;
                 mevcut.Tutar = tutar;
@@ -390,7 +448,7 @@ false,  // IsCarilestirildi
             var gelir = await _context.SeferGelirleri
                 .AsNoTracking()
                 .Where(g => g.FirmaID == firmaId && g.SeferGelirID == gelirId && g.SeferID == seferId)
-                .Select(g => new { g.SeferGelirID, g.SeferID, g.Tutar, g.ParaBirimi, g.Tarih })
+                .Select(g => new { g.SeferGelirID, g.SeferID, g.Tutar, g.ParaBirimi, g.Tarih, g.IlgiliSiparisID })
                 .FirstOrDefaultAsync();
 
             if (gelir == null)
@@ -407,6 +465,28 @@ false,  // IsCarilestirildi
             {
                 TempData["StatusMessage"] = "Bu gelir zaten carileştirilmiş.";
                 return RedirectToPage(new { id = seferId });
+            }
+
+            // 2b) Bağlı siparişin fatura no'su cari ekstrelerde (EvrakNo) kayıtlı mı?
+            if (gelir.IlgiliSiparisID.HasValue)
+            {
+                var siparisFaturaNo = await _context.Siparisler
+                    .AsNoTracking()
+                    .Where(s => s.FirmaID == firmaId && s.SiparisID == gelir.IlgiliSiparisID.Value)
+                    .Select(s => s.FaturaNo)
+                    .FirstOrDefaultAsync();
+
+                if (!string.IsNullOrWhiteSpace(siparisFaturaNo))
+                {
+                    var faturaCarili = await _context.CariHareketler
+                        .AnyAsync(ch => ch.FirmaID == firmaId && ch.EvrakNo == siparisFaturaNo);
+
+                    if (faturaCarili)
+                    {
+                        TempData["StatusMessage"] = $"Bu gelire ait fatura ({siparisFaturaNo}) zaten cari ekstrelerde kayıtlı. Tekrar cariye işlenemez.";
+                        return RedirectToPage(new { id = seferId });
+                    }
+                }
             }
 
             // 3) Müşteri gerçekten bu firmaya ait mi?

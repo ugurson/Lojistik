@@ -1,159 +1,208 @@
-﻿@page
+@page
 @model Lojistik.Pages.Raporlar.SiparisDurum.IndexModel
 @{
     ViewData["Title"] = "Sipariş Durum Raporu";
+
+    string DurumBadge(byte durum) => durum switch {
+        0 => "badge bg-secondary",
+        1 => "badge bg-info text-dark",
+        2 => "badge bg-primary bg-opacity-75",
+        3 => "badge bg-success bg-opacity-75",
+        9 => "badge bg-danger",
+        _ => "badge bg-light text-dark border"
+    };
 }
 
-<h2 class="mb-3">Sipariş Durum Raporu</h2>
+<div class="lj-page-compact">
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-sm-2">
-        <label class="form-label">Başlangıç</label>
-        <input type="date" class="form-control" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" />
-    </div>
-    <div class="col-sm-2">
-        <label class="form-label">Bitiş</label>
-        <input type="date" class="form-control" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" />
-    </div>
-    <div class="col-sm-3">
-        <label class="form-label">Arama</label>
-        <input name="q" value="@Model.q" class="form-control" placeholder="Sip.No / müşteri / fatura no" />
-    </div>
-    <div class="col-sm-3">
-        <label class="form-label">Durum(lar)</label>
-        <select name="Durumlar" class="form-select" multiple size="5">
-            @{
-                var durumOps = new (byte, string)[] {
-                        (0, "Açık"), (1, "Yüklendi"), (2, "Sevk"), (7, "Teslim Edildi")
-                        };
-                var selected = Model.Durumlar ?? new List<byte>();
-                foreach (var d in durumOps)
-                {
-                    <option value="@d.Item1" selected="@(selected.Contains(d.Item1))">@d.Item2</option>
-                }
-            }
-        </select>
-        <small class="text-muted">Ctrl/Cmd ile çoklu seçim</small>
-    </div>
-    <div class="col-sm-2">
-        <label class="form-label">Para Birimi</label>
-        <select name="PB" class="form-select">
-            <option value="">(Hepsi)</option>
-            <option value="TRY" selected="@(Model.PB == "TRY")">TRY</option>
-            <option value="EUR" selected="@(Model.PB == "EUR")">EUR</option>
-            <option value="USD" selected="@(Model.PB == "USD")">USD</option>
-        </select>
-    </div>
-    <div class="col-12 d-flex gap-2 mt-2">
-        <button class="btn btn-primary">Uygula</button>
-        <a class="btn btn-outline-secondary" href="@Url.Page(null, new { Start = (DateTime?)null, End = (DateTime?)null, q = (string?)null, PB = (string?)null, Durumlar = (string?)null })">Sıfırla</a>
-        <a class="btn btn-success"
-           href="@Url.Page(null, "Export", new { Model.Start, Model.End, Model.q, Model.PB, Durumlar = Model.Durumlar })">
-            Excel'e Aktar
-        </a>
-    </div>
-</form>
-
-<!-- Durum Özeti (Toplam Kilo KALDIRILDI) -->
-<div class="card mb-3">
-    <div class="card-header">Durum Özeti</div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-sm mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Durum</th>
-                        <th>PB</th>
-                        <th class="text-end">Adet</th>
-                        <th class="text-end">Toplam Tutar (PB)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Ozet.Count == 0)
-                    {
-                        <tr><td colspan="4" class="text-center text-muted">Kayıt bulunamadı</td></tr>
-                    }
-                    else
-                    {
-                        foreach (var r in Model.Ozet)
-                        {
-                            var badge = r.Durum switch
-                            {
-                                0 => "bg-secondary",
-                                1 => "bg-info",
-                                2 => "bg-primary",
-                                3 => "bg-success",
-                                9 => "bg-danger",
-                                _ => "bg-light text-dark"
-                            };
-                            <tr>
-                                <td><span class="badge @badge">@r.DurumAd</span></td>
-                                <td>@r.ParaBirimi</td>
-                                <td class="text-end">@r.Adet</td>
-                                <td class="text-end">@(r.ToplamTutar.HasValue? String.Format("{0:n2}", r.ToplamTutar) : "-")</td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+    @* ─── BAŞLIK ────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sipariş Durum Raporu</h2>
+        <div class="d-flex gap-2">
+            <a class="btn btn-pastel-green btn-sm"
+               href="@Url.Page(null, "Export", new { Model.Start, Model.End, Model.q, Model.PB, Durumlar = Model.Durumlar })">
+                ⬇ Excel'e Aktar
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
         </div>
     </div>
+
+    @* ─── FİLTRE KARTI ──────────────────────────────────────────── *@
+    <div class="card lj-filter-card mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" class="form-control" name="Start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" class="form-control" name="End" value="@(Model.End?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Arama</label>
+                    <input name="q" value="@Model.q" class="form-control" placeholder="Sip.No / müşteri / fatura no" />
+                </div>
+                <div class="col-sm-6 col-md-1">
+                    <label class="form-label">Para Birimi</label>
+                    <select name="PB" class="form-select">
+                        <option value="">(Hepsi)</option>
+                        <option value="TRY" selected="@(Model.PB == "TRY")">TRY</option>
+                        <option value="EUR" selected="@(Model.PB == "EUR")">EUR</option>
+                        <option value="USD" selected="@(Model.PB == "USD")">USD</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Durum(lar) <small class="text-muted">Ctrl ile çoklu</small></label>
+                    <select name="Durumlar" class="form-select" multiple size="4">
+                        @{
+                            var durumOps = new (byte, string)[] {
+                                (0, "Açık"), (1, "Yüklendi"), (2, "Sevk"), (7, "Teslim Edildi")
+                            };
+                            var selected = Model.Durumlar ?? new List<byte>();
+                            foreach (var d in durumOps)
+                            {
+                                <option value="@d.Item1" selected="@(selected.Contains(d.Item1))">@d.Item2</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-auto d-flex gap-1">
+                    <button class="btn btn-pastel-blue" type="submit">Filtrele</button>
+                    <a class="btn btn-pastel-blue"
+                       href="@Url.Page(null, new { Start = (DateTime?)null, End = (DateTime?)null, q = (string?)null, PB = (string?)null, Durumlar = (string?)null })">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* ─── DURUM ÖZETİ ────────────────────────────────────────────── *@
+    <h5 class="mb-2">Durum Özeti</h5>
+    <div class="lj-table-wrap mb-4">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Durum</th>
+                    <th>Para Birimi</th>
+                    <th class="text-end">Adet</th>
+                    <th class="text-end">Toplam Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Ozet.Count == 0)
+                {
+                    <tr><td colspan="4" class="text-center text-muted py-3">Kayıt bulunamadı.</td></tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Ozet)
+                    {
+                        <tr>
+                            <td><span class="@DurumBadge(r.Durum)">@r.DurumAd</span></td>
+                            <td>@r.ParaBirimi</td>
+                            <td class="text-end fw-semibold">@r.Adet</td>
+                            <td class="text-end fw-semibold">@(r.ToplamTutar.HasValue ? r.ToplamTutar.Value.ToString("N2") : "—")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* ─── DETAY KAYITLARI ────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="mb-0">Detay Kayıtları</h5>
+        <small class="text-muted">İlk 1000 kayıt gösteriliyor</small>
+    </div>
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Sip. No</th>
+                    <th>Durum</th>
+                    <th class="text-end">Kilo</th>
+                    <th>Gönderen</th>
+                    <th>Alıcı</th>
+                    <th>Ülke</th>
+                    <th class="text-end">Tutar</th>
+                    <th>PB</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Detay.Count == 0)
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">
+                        <div class="fs-4 mb-1">📭</div>Kayıt bulunamadı.
+                    </td></tr>
+                }
+                else
+                {
+                    foreach (var d in Model.Detay)
+                    {
+                        <tr>
+                            <td>@d.Tarih.ToString("dd.MM.yyyy")</td>
+                            <td class="fw-semibold">@d.SiparisID</td>
+                            <td><span class="@DurumBadge(d.Durum)">@d.DurumAd</span></td>
+                            <td class="text-end">@((d.Kilo ?? 0).ToString("N2"))</td>
+                            <td>@d.Gonderen</td>
+                            <td>@d.Alici</td>
+                            <td>@d.AliciUlke</td>
+                            <td class="text-end fw-semibold">@((d.Tutar ?? 0).ToString("N2"))</td>
+                            <td>@d.ParaBirimi</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
 </div>
 
-<!-- Detay -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Detay Kayıtları (ilk 1000)</span>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Tarih</th>
-                        <th>SipNo</th>   <!-- sadece başlık -->
-                        <th>Durum</th>
-                        <th class="text-end">Kilo</th>
-                        <th>Gönderen</th>
-                        <th>Alıcı</th>
-                        <th>Alıcı Ülke</th>
-                        <th class="text-end">Tutar</th>
-                        <th>PB</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Detay.Count == 0)
-                    {
-                        <tr><td colspan="9" class="text-center text-muted">Kayıt bulunamadı</td></tr>
-                    }
-                    else
-                    {
-                        foreach (var d in Model.Detay)
-                        {
-                            var badge = d.Durum switch
-                            {
-                                0 => "bg-secondary",
-                                1 => "bg-info",
-                                2 => "bg-primary",
-                                3 => "bg-success",
-                                9 => "bg-danger",
-                                _ => "bg-light text-dark"
-                            };
-                            <tr>
-                                <td>@d.Tarih.ToString("dd.MM.yyyy")</td>
-                                <td>@d.SiparisID</td>  <!-- SipNo başlığı altında ID gösterimi -->
-                                <td><span class="badge @badge">@d.DurumAd</span></td>
-                                <td class="text-end">@String.Format("{0:n2}", d.Kilo ?? 0)</td>
-                                <td>@d.Gonderen</td>
-                                <td>@d.Alici</td>
-                                <td>@d.AliciUlke</td>
-                                <td class="text-end">@String.Format("{0:n2}", d.Tutar ?? 0)</td>
-                                <td>@d.ParaBirimi</td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Sipariş Durum Raporu — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, sipariş durumlarına göre gruplandırılmış özet ve detay tablolarını gösterir. Hangi durumda kaç sipariş olduğunu ve toplam tutarını hızlıca görmenizi sağlar.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Durum Özeti Tablosu</h6>
+                    <ul class="mb-0">
+                        <li><strong>Durum</strong> — Sipariş durumu (Açık, Yüklendi, Sevk, Teslim Edildi).</li>
+                        <li><strong>Adet</strong> — O durumda olan sipariş sayısı.</li>
+                        <li><strong>Toplam Tutar</strong> — O durumdaki siparişlerin toplam değeri.</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🔍 Filtreleme</h6>
+                    <ul class="mb-0">
+                        <li><strong>Tarih Aralığı</strong> — Sipariş tarihine göre filtreleyin.</li>
+                        <li><strong>Para Birimi</strong> — TRY, EUR veya USD bazında görün.</li>
+                        <li><strong>Durum(lar)</strong> — Ctrl tuşuyla birden fazla durum seçebilirsiniz.</li>
+                        <li><strong>Arama</strong> — Sipariş numarası, müşteri adı veya fatura no ile arayın.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Excel'e Aktar</strong> — Filtrelenmiş detay verisini Excel'e indirin.</li>
+                        <li>İlk 1000 kayıt Detay tablosunda görüntülenir; tüm veri için Excel ihracını kullanın.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
         </div>
     </div>
 </div>

@@ -1,77 +1,137 @@
-﻿@page
+@page
 @model Lojistik.Pages.Seferler.CreateModel
 @{
     ViewData["Title"] = "Yeni Sefer";
 }
 
-<h2 class="mb-3">Yeni Sefer</h2>
+<style>
+    .lj-card-hdr { font-size: 0.82rem; letter-spacing: .04em; text-transform: uppercase; }
+    .lj-lbl      { font-size: 0.78rem; margin-bottom: 2px; color: #6c757d; }
+</style>
 
-<form method="post" class="row g-3">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="lj-page-compact">
 
-    <div class="col-md-4">
-        <label asp-for="Input.SeferKodu" class="form-label">Sefer Kodu</label>
-        <input asp-for="Input.SeferKodu" class="form-control" readonly />
+    @* ─── BAŞLIK ─────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Yeni Sefer</h2>
+        <div class="d-flex gap-2">
+            <button type="submit" form="mainForm" class="btn btn-pastel-green btn-sm">Kaydet</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">← Liste</a>
+        </div>
     </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.AracID" class="form-label">Çekici</label>
-        <select asp-for="Input.AracID" asp-items="Model.CekicilerSelect" class="form-select"></select>
-        <span asp-validation-for="Input.AracID" class="text-danger"></span>
-    </div>
+    <form id="mainForm" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-2 small"></div>
 
+        @* ─── ARAÇ & SÜRÜCÜ ──────────────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Araç & Sürücü</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
 
+                    @* Satır 1: Sefer Kodu · Çekici · Şoför Listeden *@
+                    <div class="col-md-2">
+                        <label asp-for="Input.SeferKodu" class="form-label lj-lbl">Sefer Kodu</label>
+                        <input asp-for="Input.SeferKodu" class="form-control form-control-sm bg-light" readonly />
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Input.AracID" class="form-label lj-lbl">Çekici</label>
+                        <select asp-for="Input.AracID" asp-items="Model.CekicilerSelect"
+                                class="form-select form-select-sm" id="aracSelect"
+                                onchange="doldurBaslangicKm()"></select>
+                        <span asp-validation-for="Input.AracID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label lj-lbl">Şoför (Listeden)</label>
+                        <select asp-for="Input.SoforID" asp-items="Model.SoforlerSelect"
+                                class="form-select form-select-sm">
+                            <option value="">(Listeden seç ya da boş bırak)</option>
+                        </select>
+                    </div>
 
-    <!-- ✅ Sürücü seçimi veya elle giriş -->
-    <div class="col-md-6">
-        <label class="form-label">Sürücü (Listeden Seç)</label>
-        <select asp-for="Input.SoforID" asp-items="Model.SoforlerSelect" class="form-select">
-            <option value="">(Listeden seç ya da boş bırak)</option>
-        </select>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="Input.SurucuAdi" class="form-label">Sürücü Adı (Elle)</label>
-        <input asp-for="Input.SurucuAdi" class="form-control" placeholder="İstersen elle yaz" />
-        <small class="text-muted">Not: Eğer her ikisi de dolu ise <strong>elle yazılan</strong> ad kullanılacaktır.</small>
-        <span asp-validation-for="Input.SurucuAdi" class="text-danger"></span>
-    </div>
+                    @* Satır 2: Sürücü Adı Elle *@
+                    <div class="col-md-5">
+                        <label asp-for="Input.SurucuAdi" class="form-label lj-lbl">Sürücü Adı (Elle)</label>
+                        <input asp-for="Input.SurucuAdi" class="form-control form-control-sm"
+                               placeholder="İstersen elle yaz" />
+                        <div style="font-size:0.72rem;" class="text-muted mt-1">
+                            Her ikisi doluysa <strong>elle yazılan</strong> ad kullanılır.
+                        </div>
+                        <span asp-validation-for="Input.SurucuAdi" class="text-danger small"></span>
+                    </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.CikisTarihi" class="form-label">Çıkış</label>
-        <input asp-for="Input.CikisTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.CikisTarihi" class="text-danger"></span>
-    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.DonusTarihi" class="form-label">Dönüş</label>
-        <input asp-for="Input.DonusTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.DonusTarihi" class="text-danger"></span>
-    </div>
+        @* ─── TARİHLER, KM & NOTLAR ──────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Tarihler, KM & Notlar</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
 
-        <!--  <div class="col-md-2">
-        <label asp-for="Input.Durum" class="form-label">Durum</label>
-        <select asp-for="Input.Durum" class="form-select">
-            <option value="0">0 - Yeni</option>
-            <option value="1">1 - Planlandı</option>
-            <option value="2">2 - Yolda</option>
-            <option value="3">3 - Tamamlandı</option>
-            <option value="4">4 - İptal</option>
-        </select>
-        <span asp-validation-for="Input.Durum" class="text-danger"></span>
-    </div>-->
+                    @* Satır 1: Çıkış · Dönüş · Başlangıç KM *@
+                    <div class="col-md-3">
+                        <label asp-for="Input.CikisTarihi" class="form-label lj-lbl">Çıkış Tarihi</label>
+                        <input asp-for="Input.CikisTarihi" type="date" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.CikisTarihi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.DonusTarihi" class="form-label lj-lbl">Dönüş Tarihi</label>
+                        <input asp-for="Input.DonusTarihi" type="date" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.DonusTarihi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.BaslangicKm" class="form-label lj-lbl">Başlangıç KM</label>
+                        <div class="input-group input-group-sm">
+                            <input asp-for="Input.BaslangicKm" id="baslangicKm" type="number" min="0"
+                                   class="form-control form-control-sm" placeholder="Sayaç değeri" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                        <div style="font-size:0.72rem;" class="text-muted mt-1">
+                            Aracın önceki seferinden otomatik alınır
+                        </div>
+                    </div>
 
-    <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
-        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
-        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
-    </div>
+                    @* Satır 2: Notlar *@
+                    <div class="col-12">
+                        <label asp-for="Input.Notlar" class="form-label lj-lbl">Notlar</label>
+                        <textarea asp-for="Input.Notlar" rows="2"
+                                  class="form-control form-control-sm" placeholder="İsteğe bağlı..."></textarea>
+                        <span asp-validation-for="Input.Notlar" class="text-danger small"></span>
+                    </div>
 
-    <div class="col-12 d-flex gap-2">
-        <button class="btn btn-success" type="submit">Kaydet</button>
-        <a asp-page="./Index" class="btn btn-outline-secondary">İptal</a>
-    </div>
-</form>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-pastel-green btn-sm" type="submit">Kaydet</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">İptal</a>
+        </div>
+    </form>
+
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        var aracKmMap = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AracSonKmMap));
+
+        function doldurBaslangicKm() {
+            var aracId = parseInt(document.getElementById('aracSelect').value) || 0;
+            var kmInput = document.getElementById('baslangicKm');
+            if (aracId && aracKmMap[aracId]) {
+                kmInput.value = aracKmMap[aracId];
+                kmInput.classList.add('border-success');
+                kmInput.title = 'Aracın son seferindeki bitiş KM değeri otomatik alındı';
+            } else {
+                kmInput.value = '';
+                kmInput.classList.remove('border-success');
+                kmInput.title = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', doldurBaslangicKm);
+    </script>
 }

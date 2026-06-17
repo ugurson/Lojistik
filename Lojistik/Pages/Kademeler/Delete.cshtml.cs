@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Lojistik.Data;
+using Lojistik.Extensions;
 using Lojistik.Models;
 
 namespace Lojistik.Pages.Kademeler
@@ -29,7 +30,10 @@ namespace Lojistik.Pages.Kademeler
                 return NotFound();
             }
 
-            var arackademe = await _context.AracKademeler.FirstOrDefaultAsync(m => m.KademeID == id);
+            var firmaId = User.GetFirmaId();
+            var arackademe = await _context.AracKademeler
+                .Include(k => k.Arac)
+                .FirstOrDefaultAsync(m => m.KademeID == id && m.Arac!.FirmaID == firmaId);
 
             if (arackademe is not null)
             {
@@ -48,7 +52,10 @@ namespace Lojistik.Pages.Kademeler
                 return NotFound();
             }
 
-            var arackademe = await _context.AracKademeler.FindAsync(id);
+            var firmaId = User.GetFirmaId();
+            var arackademe = await _context.AracKademeler
+                .Include(k => k.Arac)
+                .FirstOrDefaultAsync(m => m.KademeID == id && m.Arac!.FirmaID == firmaId);
             if (arackademe != null)
             {
                 AracKademe = arackademe;

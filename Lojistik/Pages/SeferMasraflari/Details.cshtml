@@ -1,44 +1,47 @@
-﻿@* Pages/SeferMasraflari/Details.cshtml *@
+@* Pages/SeferMasraflari/Details.cshtml *@
 @page "{id:int}"
 @model Lojistik.Pages.SeferMasraflari.DetailsModel
 @{
     ViewData["Title"] = "Masraf Detayı";
     var x = Model.Data!;
 }
-<h2 class="mb-3">Masraf Detayı</h2>
 
-<div class="mb-3 d-flex gap-2 flex-wrap">
-    <a asp-page="./Edit" asp-route-id="@x.SeferMasrafID" class="btn btn-warning">Düzenle</a>
-    <a asp-page="./Delete" asp-route-id="@x.SeferMasrafID" class="btn btn-danger">Sil</a>
-    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Sefer’e Dön</a>
-</div>
+<div class="lj-page-compact">
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Sefer</dt>
-            <dd class="col-sm-9"><a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">SF-@x.SeferID</a></dd>
-
-            <dt class="col-sm-3">Tarih</dt>
-            <dd class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</dd>
-
-            <dt class="col-sm-3">Tip</dt>
-            <dd class="col-sm-9">@x.MasrafTipi</dd>
-
-            <dt class="col-sm-3">Tutar</dt>
-            <dd class="col-sm-9">@x.Tutar.ToString("N2") @x.ParaBirimi</dd>
-
-            <dt class="col-sm-3">Fatura/Belge</dt>
-            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.FaturaBelgeNo) ? x.FaturaBelgeNo : "—")</dd>
-
-            <dt class="col-sm-3">Yer</dt>
-            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.Yer) ? x.Yer : "—")</dd>
-
-            <dt class="col-sm-3">Ülke</dt>
-            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.Ulke) ? x.Ulke : "—")</dd>
-
-            <dt class="col-sm-3">Notlar</dt>
-            <dd class="col-sm-9 text-prewrap">@x.Notlar</dd>
-        </dl>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Masraf Detayı</h2>
+        <div class="d-flex gap-2">
+            <a asp-page="./Edit"   asp-route-id="@x.SeferMasrafID" class="btn btn-pastel-amber btn-sm">Düzenle</a>
+            <a asp-page="./Delete" asp-route-id="@x.SeferMasrafID" class="btn btn-pastel-red btn-sm">Sil</a>
+            <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-pastel-blue btn-sm">← Sefer</a>
+        </div>
     </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row g-2" style="font-size:0.875rem;">
+                <div class="col-sm-3 text-muted">Sefer</div>
+                <div class="col-sm-9">
+                    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">SF-@x.SeferID</a>
+                </div>
+                <div class="col-sm-3 text-muted">Tarih</div>
+                <div class="col-sm-9">@x.Tarih.ToString("dd.MM.yyyy")</div>
+                <div class="col-sm-3 text-muted">Tip</div>
+                <div class="col-sm-9">
+                    <span class="badge bg-light text-dark border">@x.MasrafTipi</span>
+                </div>
+                <div class="col-sm-3 text-muted">Tutar</div>
+                <div class="col-sm-9 net-neg fw-semibold">@x.Tutar.ToString("N2") @x.ParaBirimi</div>
+                <div class="col-sm-3 text-muted">Fatura/Belge</div>
+                <div class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.FaturaBelgeNo) ? x.FaturaBelgeNo : "—")</div>
+                <div class="col-sm-3 text-muted">Yer</div>
+                <div class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.Yer) ? x.Yer : "—")</div>
+                <div class="col-sm-3 text-muted">Ülke</div>
+                <div class="col-sm-9">@(!string.IsNullOrWhiteSpace(x.Ulke) ? x.Ulke : "—")</div>
+                <div class="col-sm-3 text-muted">Notlar</div>
+                <div class="col-sm-9 text-prewrap">@x.Notlar</div>
+            </div>
+        </div>
+    </div>
+
 </div>

@@ -1,36 +1,49 @@
-﻿@* Pages/SeferSevkiyatlar/Details.cshtml *@
+@* Pages/SeferSevkiyatlar/Details.cshtml *@
 @page "{id:int}"
 @model Lojistik.Pages.SeferSevkiyatlar.DetailsModel
 @{
     ViewData["Title"] = "Bağlantı Detayı";
     var x = Model.Data!;
 }
-<h2 class="mb-3">Bağlantı Detayı</h2>
 
-<div class="mb-3 d-flex gap-2 flex-wrap">
-    <a asp-page="./Edit" asp-route-id="@x.SeferSevkiyatID" class="btn btn-warning">Düzenle</a>
-    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-outline-secondary">Sefer’e Dön</a>
-    <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID" class="btn btn-outline-secondary">Sevkiyat’a Dön</a>
-</div>
+<div class="lj-page-compact">
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Sefer</dt>
-            <dd class="col-sm-9">
-                <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">@x.SeferKodu</a> — @x.CekiciPlaka
-            </dd>
-
-            <dt class="col-sm-3">Sevkiyat</dt>
-            <dd class="col-sm-9">
-                <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID">@x.SevkiyatKodu</a> — @x.SevkiyatCekici
-            </dd>
-
-            <dt class="col-sm-3">Yön</dt>
-            <dd class="col-sm-9">@x.Yon</dd>
-
-            <dt class="col-sm-3">Notlar</dt>
-            <dd class="col-sm-9 text-prewrap">@x.Notlar</dd>
-        </dl>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Bağlantı Detayı</h2>
+        <div class="d-flex gap-2">
+            <a asp-page="./Edit" asp-route-id="@x.SeferSevkiyatID" class="btn btn-pastel-amber btn-sm">Düzenle</a>
+            <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID" class="btn btn-pastel-blue btn-sm">← Sefer</a>
+            <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID" class="btn btn-pastel-blue btn-sm">← Sevkiyat</a>
+        </div>
     </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row g-2" style="font-size:0.875rem;">
+                <div class="col-sm-3 text-muted">Sefer</div>
+                <div class="col-sm-9">
+                    <a asp-page="/Seferler/Details" asp-route-id="@x.SeferID">@x.SeferKodu</a>
+                    @if (!string.IsNullOrWhiteSpace(x.CekiciPlaka))
+                    {
+                        <span class="ms-2 badge bg-light text-dark border">@x.CekiciPlaka</span>
+                    }
+                </div>
+                <div class="col-sm-3 text-muted">Sevkiyat</div>
+                <div class="col-sm-9">
+                    <a asp-page="/Sevkiyatlar/Details" asp-route-id="@x.SevkiyatID">@x.SevkiyatKodu</a>
+                    @if (!string.IsNullOrWhiteSpace(x.SevkiyatCekici))
+                    {
+                        <span class="ms-2 text-muted">@x.SevkiyatCekici</span>
+                    }
+                </div>
+                <div class="col-sm-3 text-muted">Yön</div>
+                <div class="col-sm-9">
+                    <span class="badge bg-@(x.Yon == 0 ? "secondary" : "info") text-dark">@(x.Yon == 0 ? "Gidiş" : "Dönüş")</span>
+                </div>
+                <div class="col-sm-3 text-muted">Notlar</div>
+                <div class="col-sm-9 text-prewrap">@(string.IsNullOrWhiteSpace(x.Notlar) ? "—" : x.Notlar)</div>
+            </div>
+        </div>
+    </div>
+
 </div>

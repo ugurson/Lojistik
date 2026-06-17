@@ -1,64 +1,62 @@
-﻿@page
+@page
 @model Lojistik.Pages.Kademeler.DeleteModel
 
 @{
-    ViewData["Title"] = "Silme";
+    ViewData["Title"] = "Kademe Sil";
+    var k = Model.AracKademe;
 }
 
-<h1>Silme</h1>
+<div class="lj-page-compact">
 
-<h3>Bu kayıt silinecek ?</h3>
-<div>
-    <h4>AracKademe</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Tarih)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Tarih)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.YapilanIslem)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.YapilanIslem)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Tutar)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Tutar)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.ParaBirimi)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.ParaBirimi)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Notlar)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Notlar)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.CreatedAt)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.CreatedAt)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.AracKademe.Arac)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.AracKademe.Arac.Plaka)
-        </dd>
-    </dl>
-    
-    <form method="post">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0 text-danger">Kademe Sil</h2>
+        <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">← Liste</a>
+    </div>
+
+    <div class="alert alert-danger py-2 mb-3">
+        <strong>Dikkat!</strong> Bu kademe kaydını silmek üzeresiniz. Devam etmek istediğinize emin misiniz?
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Araç</div>
+                    <div class="fw-semibold">
+                        <span class="badge bg-light text-dark border">@k.Arac?.Plaka</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Tarih</div>
+                    <div class="fw-semibold">@k.Tarih.ToString("dd.MM.yyyy")</div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="text-muted small">Yapılan İşlem</div>
+                    <div class="fw-semibold">@k.YapilanIslem</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Tutar</div>
+                    <div class="fw-semibold">@k.Tutar.ToString("N2") @k.ParaBirimi</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">İşlem Firması</div>
+                    <div>@k.IslemFirmasi</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(k.Notlar))
+                {
+                    <div class="col-12">
+                        <div class="text-muted small">Notlar</div>
+                        <div>@k.Notlar</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="d-flex gap-2">
         <input type="hidden" asp-for="AracKademe.KademeID" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-page="./Index">Geri Dön</a>
+        <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+        <a asp-page="./Index" class="btn btn-pastel-blue">İptal</a>
     </form>
+
 </div>

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Lojistik.Data;
-using Lojistik.Extensions; // User.GetFirmaId()
+using Lojistik.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,23 +32,31 @@ namespace Lojistik.Pages.Siparisler
         );
 
         public IList<Row> Items { get; set; } = new List<Row>();
-        public string? q { get; set; }
-        public int page { get; set; } = 1;
-        public int pageSize { get; set; } = 20;
-        public int TotalCount { get; set; }
-        public int TotalPages => (int)Math.Ceiling((double)TotalCount / pageSize);
 
-        public async Task OnGetAsync(string? q, int page = 1, int pageSize = 20)
+        [BindProperty(SupportsGet = true)]
+        public string? q { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int p { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public int pageSize { get; set; } = 20;
+
+        public int TotalCount { get; set; }
+        public int TotalPages => TotalCount == 0 ? 1 : (int)Math.Ceiling((double)TotalCount / pageSize);
+
+        public async Task OnGetAsync()
         {
-            this.q = q;
-            this.page = Math.Max(1, page);
-            this.pageSize = Math.Clamp(pageSize, 10, 100);
+            p = Math.Max(1, p);
+
+            if (pageSize != 10 && pageSize != 20 && pageSize != 50 && pageSize != 100)
+                pageSize = 20;
 
             var firmaId = User.GetFirmaId();
 
             var query = _context.Siparisler
                 .AsNoTracking()
-                .Where(s => s.FirmaID == firmaId && s.Durum == 7); // sadece sonlandırılanlar
+                .Where(s => s.FirmaID == firmaId && s.Durum == 7);
 
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -61,11 +70,18 @@ namespace Lojistik.Pages.Siparisler
                 );
             }
 
-            query = query.OrderByDescending(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID);
+            query = query
+                .OrderByDescending(s => s.SiparisTarihi)
+                .ThenByDescending(s => s.SiparisID);
 
             TotalCount = await query.CountAsync();
 
+            if (p > TotalPages)
+                p = TotalPages;
+
             Items = await query
+                .Skip((p - 1) * pageSize)
+                .Take(pageSize)
                 .Select(s => new Row(
                     s.SiparisID,
                     s.SiparisTarihi,
@@ -100,8 +116,6 @@ namespace Lojistik.Pages.Siparisler
                         .Select(ss => ss.Sefer.SeferKodu)
                         .FirstOrDefault()
                 ))
-                .Skip((this.page - 1) * this.pageSize)
-                .Take(this.pageSize)
                 .ToListAsync();
         }
     }

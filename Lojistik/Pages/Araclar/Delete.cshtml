@@ -1,60 +1,80 @@
-﻿@page
+@page
 @model Lojistik.Pages.Araclar.DeleteModel
 
 @{
     ViewData["Title"] = "Araç Sil";
 }
 
-<h2 class="mb-3 text-danger">Araç Sil</h2>
+<div class="lj-page-compact">
 
-@if (Model.Arac is null)
-{
-    <div class="alert alert-warning">Kayıt bulunamadı.</div>
-}
-else
-{
-    <div class="alert alert-warning">
-        <strong>Dikkat!</strong> Bu aracı silmek üzeresiniz. Devam etmek istediğinize emin misiniz?
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0 text-danger">Araç Sil</h2>
+        <a asp-page="./Index" class="btn btn-pastel-blue btn-sm">← Liste</a>
     </div>
 
-    <div class="container px-0">
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Plaka</div>
-            <div class="col-sm-6">@Model.Arac.Plaka</div>
+    @if (Model.Arac is null)
+    {
+        <div class="alert alert-warning">Kayıt bulunamadı.</div>
+    }
+    else
+    {
+        <div class="alert alert-danger py-2 mb-3">
+            <strong>Dikkat!</strong> Bu aracı silmek üzeresiniz. Devam etmek istediğinize emin misiniz?
         </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Marka</div>
-            <div class="col-sm-6">@Model.Arac.Marka</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Model</div>
-            <div class="col-sm-6">@Model.Arac.Model</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Model Yılı</div>
-            <div class="col-sm-6">@Model.Arac.ModelYili</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Araç Tipi</div>
-            <div class="col-sm-6">@Model.Arac.AracTipi</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Dorse ise</div>
-            <div class="col-sm-6">@(Model.Arac.IsDorse ? "Evet" : "Hayır")</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Durum</div>
-            <div class="col-sm-6">@Model.Arac.Durum</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-sm-2 fw-semibold">Notlar</div>
-            <div class="col-sm-6">@Model.Arac.Notlar</div>
-        </div>
-    </div>
 
-    <form method="post" class="mt-3">
-        <input type="hidden" asp-for="Arac.AracID" />
-        <button type="submit" class="btn btn-danger me-2">Sil</button>
-        <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
-    </form>
-}
+        <div class="card mb-4">
+            <div class="card-body py-3">
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Plaka</div>
+                        <div class="fw-semibold">
+                            <span class="badge bg-light text-dark border">@Model.Arac.Plaka</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Marka / Model</div>
+                        <div class="fw-semibold">@Model.Arac.Marka @Model.Arac.Model</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Model Yılı</div>
+                        <div class="fw-semibold">@Model.Arac.ModelYili</div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="text-muted small">Araç Tipi</div>
+                        <div class="fw-semibold">@Model.Arac.AracTipi</div>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <div class="text-muted small">Tür</div>
+                        <div>
+                            <span class="badge @(Model.Arac.IsDorse ? "bg-info text-dark" : "bg-primary bg-opacity-75")">
+                                @(Model.Arac.IsDorse ? "Dorse" : "Çekici")
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <div class="text-muted small">Durum</div>
+                        <div>
+                            <span class="badge @(Model.Arac.Durum == "Aktif" ? "bg-success bg-opacity-75" : "bg-secondary")">
+                                @Model.Arac.Durum
+                            </span>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Arac.Notlar))
+                    {
+                        <div class="col-12">
+                            <div class="text-muted small">Notlar</div>
+                            <div>@Model.Arac.Notlar</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="d-flex gap-2">
+            <input type="hidden" asp-for="Arac.AracID" />
+            <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue">İptal</a>
+        </form>
+    }
+
+</div>

@@ -37,11 +37,13 @@ namespace Lojistik.Pages.Siparisler
         [BindProperty(SupportsGet = true)] public int page { get; set; } = 1;
         [BindProperty(SupportsGet = true)] public int pageSize { get; set; } = 20;
         [BindProperty(SupportsGet = true)] public string? groupBy { get; set; } // "sefer" olursa gruplarız
-
         [BindProperty(SupportsGet = true)] public int? siparisTur { get; set; }
+        [BindProperty(SupportsGet = true)] public string? sortBy { get; set; }   // "tarih" | "tutar" | "durum"
+        [BindProperty(SupportsGet = true)] public string? sortDir { get; set; }  // "asc" | "desc"
 
         public int TotalCount { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / pageSize);
+        public Dictionary<byte, int> DurumSayilari { get; set; } = new();
 
         public async Task OnGetAsync()
         {
@@ -65,9 +67,27 @@ namespace Lojistik.Pages.Siparisler
                 );
             }
 
-            query = query.OrderByDescending(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID);
+            bool asc = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+            query = sortBy?.ToLower() switch
+            {
+                "tutar" => asc
+                    ? query.OrderBy(s => s.Tutar).ThenByDescending(s => s.SiparisID)
+                    : query.OrderByDescending(s => s.Tutar).ThenByDescending(s => s.SiparisID),
+                "durum" => asc
+                    ? query.OrderBy(s => s.Durum).ThenByDescending(s => s.SiparisID)
+                    : query.OrderByDescending(s => s.Durum).ThenByDescending(s => s.SiparisID),
+                _ => asc && sortBy == "tarih"
+                    ? query.OrderBy(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID)
+                    : query.OrderByDescending(s => s.SiparisTarihi).ThenByDescending(s => s.SiparisID),
+            };
 
             TotalCount = await query.CountAsync();
+
+            var durumGruplari = await query
+                .GroupBy(s => s.Durum)
+                .Select(g => new { Durum = g.Key, Sayi = g.Count() })
+                .ToListAsync();
+            DurumSayilari = durumGruplari.ToDictionary(x => x.Durum, x => x.Sayi);
 
             Items = await query
                 .Select(s => new Row(

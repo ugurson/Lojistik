@@ -1,91 +1,110 @@
-﻿@page
+@page
 @model Lojistik.Pages.Musteriler.CreateModel
 @{
     ViewData["Title"] = "Yeni Müşteri";
 }
 
-<h2>Yeni Müşteri</h2>
-<hr />
+<div class="lj-page-compact">
 
-<form method="post" class="form-horizontal">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <input type="hidden" asp-for="Musteri.FirmaID" />
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Müşteri Adı</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.MusteriAdi" class="form-control" />
-            <span asp-validation-for="Musteri.MusteriAdi" class="text-danger"></span>
-        </div>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Yeni Müşteri</h2>
+        <a class="btn btn-pastel-blue btn-sm" asp-page="./Index">← Liste</a>
     </div>
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Ülke</label>
-        <div class="col-sm-6">
-            <select asp-for="Musteri.UlkeID" class="form-select" id="UlkeID">
-                <option value="">-- Seçiniz --</option>
-                @foreach (var u in Model.UlkeList)
-                {
-                    <option value="@u.UlkeID">@u.UlkeAdi</option>
-                }
-            </select>
-            <span asp-validation-for="Musteri.UlkeID" class="text-danger"></span>
-        </div>
-    </div>
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-3"></div>
+        <input type="hidden" asp-for="Musteri.FirmaID" />
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Şehir</label>
-        <div class="col-sm-6">
-            <select asp-for="Musteri.SehirID" class="form-select" id="SehirID">
-                <option value="">Önce ülke seçiniz</option>
-            </select>
-            <span asp-validation-for="Musteri.SehirID" class="text-danger"></span>
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Müşteri Bilgileri</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.Kategori" class="form-label">Kategori</label>
+                        <select asp-for="Musteri.Kategori" class="form-select">
+                            <option value="0">Müşteri</option>
+                            <option value="1">Tedarikçi</option>
+                            <option value="2">Nakliyeci</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Musteri.MusteriAdi" class="form-label"></label>
+                        <input asp-for="Musteri.MusteriAdi" class="form-control" />
+                        <span asp-validation-for="Musteri.MusteriAdi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.GumrukKod" class="form-label"></label>
+                        <input asp-for="Musteri.GumrukKod" class="form-control" />
+                        <span asp-validation-for="Musteri.GumrukKod" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.Telefon" class="form-label"></label>
+                        <input asp-for="Musteri.Telefon" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Musteri.Email" class="form-label"></label>
+                        <input asp-for="Musteri.Email" class="form-control" />
+                        <span asp-validation-for="Musteri.Email" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Musteri.YetkiliIsim" class="form-label"></label>
+                        <input asp-for="Musteri.YetkiliIsim" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Musteri.VergiDairesi" class="form-label"></label>
+                        <input asp-for="Musteri.VergiDairesi" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.VergiNo" class="form-label"></label>
+                        <input asp-for="Musteri.VergiNo" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.UlkeID" class="form-label">Ülke</label>
+                        <select asp-for="Musteri.UlkeID" class="form-select" id="UlkeID">
+                            <option value="">-- Seçiniz --</option>
+                            @foreach (var u in Model.UlkeList)
+                            {
+                                <option value="@u.UlkeID">@u.UlkeAdi</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Musteri.UlkeID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Musteri.SehirID" class="form-label">Şehir</label>
+                        <div class="lj-select-wrap" id="SehirWrap">
+                            <select asp-for="Musteri.SehirID" class="form-select" id="SehirID">
+                                <option value="">Önce ülke seçiniz</option>
+                            </select>
+                            <span class="lj-select-spinner" aria-hidden="true"></span>
+                        </div>
+                        <span asp-validation-for="Musteri.SehirID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Musteri.Adres" class="form-label"></label>
+                        <input asp-for="Musteri.Adres" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Musteri.PostaKodu" class="form-label"></label>
+                        <input asp-for="Musteri.PostaKodu" class="form-control" />
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Adres</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.Adres" class="form-control" />
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-pastel-green">Kaydet</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue">İptal</a>
         </div>
-    </div>
+    </form>
 
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Posta Kodu</label>
-        <div class="col-sm-3">
-            <input asp-for="Musteri.PostaKodu" class="form-control" />
-        </div>
-        <label class="col-sm-1 col-form-label text-end">Telefon</label>
-        <div class="col-sm-3">
-            <input asp-for="Musteri.Telefon" class="form-control" />
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">E-posta</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.Email" class="form-control" />
-            <span asp-validation-for="Musteri.Email" class="text-danger"></span>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <label class="col-sm-2 col-form-label">Gümrük Kodu</label>
-        <div class="col-sm-6">
-            <input asp-for="Musteri.GumrukKod" class="form-control" />
-            <span asp-validation-for="Musteri.GumrukKod" class="text-danger"></span>
-        </div>
-    </div>
-
-    <div>
-        <button type="submit" class="btn btn-success me-1">Kaydet</button>
-        <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
-    </div>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const ulkeSel = document.getElementById('UlkeID');
+        const ulkeSel  = document.getElementById('UlkeID');
         const sehirSel = document.getElementById('SehirID');
+        const sehirWrap = document.getElementById('SehirWrap');
 
         ulkeSel.addEventListener('change', async () => {
             const ulkeId = ulkeSel.value;
@@ -94,18 +113,27 @@
                 return;
             }
 
-            sehirSel.innerHTML = '<option value="">Yükleniyor...</option>';
+            sehirWrap.classList.add('is-loading');
+            sehirSel.disabled = true;
+            sehirSel.innerHTML = '<option value="">Yükleniyor…</option>';
 
-            const url = `@Url.Page("./Create", null, new { handler = "Sehirler" }, Request.Scheme)&ulkeId=${ulkeId}`;
-            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
+            try {
+                const url = `@Url.Page("./Create", null, new { handler = "Sehirler" }, Request.Scheme)&ulkeId=${ulkeId}`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
 
-            sehirSel.innerHTML = '<option value="">-- Seçiniz --</option>';
-            for (const s of data) {
-                const opt = document.createElement('option');
-                opt.value = s.sehirID;      // JSON property adları camelCase
-                opt.textContent = s.sehirAdi;
-                sehirSel.appendChild(opt);
+                sehirSel.innerHTML = '<option value="">-- Seçiniz --</option>';
+                for (const s of data) {
+                    const opt = document.createElement('option');
+                    opt.value = s.sehirID;
+                    opt.textContent = s.sehirAdi;
+                    sehirSel.appendChild(opt);
+                }
+            } catch (err) {
+                sehirSel.innerHTML = '<option value="">Hata — tekrar deneyin</option>';
+            } finally {
+                sehirWrap.classList.remove('is-loading');
+                sehirSel.disabled = false;
             }
         });
     </script>

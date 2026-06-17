@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Lojistik.Data;
+using Lojistik.Extensions;
 using Lojistik.Models;
 
 namespace Lojistik.Pages.Belgeler
@@ -31,13 +32,16 @@ namespace Lojistik.Pages.Belgeler
                 return NotFound();
             }
 
-            var aracbelgesi =  await _context.AracBelgeleri.FirstOrDefaultAsync(m => m.BelgeID == id);
+            var firmaId = User.GetFirmaId();
+            var aracbelgesi = await _context.AracBelgeleri
+                .Include(b => b.Arac)
+                .FirstOrDefaultAsync(m => m.BelgeID == id && m.Arac!.FirmaID == firmaId);
             if (aracbelgesi == null)
             {
                 return NotFound();
             }
             AracBelgesi = aracbelgesi;
-           ViewData["AracID"] = new SelectList(_context.Araclar, "AracID", "Plaka");
+            ViewData["AracID"] = new SelectList(_context.Araclar.Where(a => a.FirmaID == firmaId), "AracID", "Plaka");
             return Page();
         }
 
@@ -49,6 +53,12 @@ namespace Lojistik.Pages.Belgeler
             {
                 return Page();
             }
+
+            // Kayıt bu firmaya ait mi kontrol et
+            var firmaId = User.GetFirmaId();
+            var sahiplik = await _context.AracBelgeleri
+                .AnyAsync(b => b.BelgeID == AracBelgesi.BelgeID && b.Arac!.FirmaID == firmaId);
+            if (!sahiplik) return NotFound();
 
             _context.Attach(AracBelgesi).State = EntityState.Modified;
 

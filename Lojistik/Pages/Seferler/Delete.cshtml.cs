@@ -17,6 +17,9 @@ namespace Lojistik.Pages.Seferler
         [BindProperty]
         public Sefer? Sefer { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public int Id { get; set; }
+
         public async Task<IActionResult> OnGetAsync(int id)
         {
             var firmaId = User.GetFirmaId();

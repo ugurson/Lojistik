@@ -1,63 +1,92 @@
-﻿@page
+@page
 @model Lojistik.Pages.SeferMasraflari.CreateModel
 @{
     ViewData["Title"] = "Masraf Ekle";
 }
-<h2 class="mb-3">Masraf Ekle</h2>
 
-<form method="post" class="row g-3">
-    <input type="hidden" asp-for="Input.SeferID" />
+<div class="lj-page-compact">
 
-    <div class="col-md-3">
-        <label asp-for="Input.Tarih" class="form-label"></label>
-        <input asp-for="Input.Tarih" class="form-control" />
-        <span asp-validation-for="Input.Tarih" class="text-danger"></span>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Masraf Ekle</h2>
+        <a asp-page="/Seferler/Details" asp-route-id="@Model.Input.SeferID" class="btn btn-pastel-blue btn-sm">← Sefer Detayı</a>
     </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.MasrafTipi" class="form-label"></label>
-        <select asp-for="Input.MasrafTipi" class="form-select" asp-items="Model.MasrafTipleri"></select>
-        <span asp-validation-for="Input.MasrafTipi" class="text-danger"></span>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" asp-for="Input.SeferID" />
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="Input.Tarih" class="form-label">Tarih</label>
+                        <input asp-for="Input.Tarih" class="form-control" />
+                        <span asp-validation-for="Input.Tarih" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.MasrafTipi" class="form-label">Masraf Tipi</label>
+                        <select asp-for="Input.MasrafTipi" class="form-select" asp-items="Model.MasrafTipleri"></select>
+                        <span asp-validation-for="Input.MasrafTipi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3" id="yakitLitreWrap" style="display:none;">
+                        <label asp-for="Input.YakitLitre" class="form-label">Litre</label>
+                        <input asp-for="Input.YakitLitre" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Input.YakitLitre" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Tutar" class="form-label">Tutar</label>
+                        <input asp-for="Input.Tutar" class="form-control" />
+                        <span asp-validation-for="Input.Tutar" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.ParaBirimi" class="form-label">Para Birimi</label>
+                        <select asp-for="Input.ParaBirimi" class="form-select" asp-items="Model.ParaBirimleri"></select>
+                        <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.FaturaBelgeNo" class="form-label">Fatura/Belge No</label>
+                        <input asp-for="Input.FaturaBelgeNo" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Ulke" class="form-label">Ülke</label>
+                        <input asp-for="Input.Ulke" class="form-control" />
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Input.Yer" class="form-label">Yer</label>
+                        <input asp-for="Input.Yer" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
+                        <textarea asp-for="Input.Notlar" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-pastel-green">Kaydet</button>
+                    <a asp-page="/Seferler/Details" asp-route-id="@Model.Input.SeferID" class="btn btn-pastel-blue">Vazgeç</a>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.Tutar" class="form-label"></label>
-        <input asp-for="Input.Tutar" class="form-control" />
-        <span asp-validation-for="Input.Tutar" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-2">
-        <label asp-for="Input.ParaBirimi" class="form-label"></label>
-        <select asp-for="Input.ParaBirimi" class="form-select" asp-items="Model.ParaBirimleri"></select>
-        <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-4">
-        <label asp-for="Input.FaturaBelgeNo" class="form-label"></label>
-        <input asp-for="Input.FaturaBelgeNo" class="form-control" />
-    </div>
-
-    <div class="col-md-3">
-        <label asp-for="Input.Ulke" class="form-label"></label>
-        <input asp-for="Input.Ulke" class="form-control" />
-    </div>
-
-    <div class="col-md-5">
-        <label asp-for="Input.Yer" class="form-label"></label>
-        <input asp-for="Input.Yer" class="form-control" />
-    </div>
-
-    <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label"></label>
-        <textarea asp-for="Input.Notlar" class="form-control" rows="2"></textarea>
-    </div>
-
-    <div class="col-12 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Kaydet</button>
-        <a asp-page="/Seferler/Details" asp-route-id="@Model.Input.SeferID" class="btn btn-secondary">Vazgeç</a>
-    </div>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const tipSel = document.getElementById("Input_MasrafTipi");
+            const wrap = document.getElementById("yakitLitreWrap");
+            const litreInput = document.getElementById("Input_YakitLitre");
+            function toggle() {
+                const v = (tipSel?.value || "").trim();
+                const isYakit = (v === "Yakıt");
+                wrap.style.display = isYakit ? "" : "none";
+                if (!isYakit && litreInput) litreInput.value = "";
+            }
+            if (tipSel && wrap) {
+                tipSel.addEventListener("change", toggle);
+                toggle();
+            }
+        })();
+    </script>
 }

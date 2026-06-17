@@ -32,15 +32,18 @@ namespace Lojistik.Pages.Seferler
 
         public IList<Row> Items { get; set; } = new List<Row>();
 
-        [BindProperty(SupportsGet = true)] public string? q { get; set; }
-        [BindProperty(SupportsGet = true)] public string? sort { get; set; } = "cikis_desc";
-        [BindProperty(SupportsGet = true)] public int page { get; set; } = 1;
-        [BindProperty(SupportsGet = true)] public int pageSize { get; set; } = 20;
-        [BindProperty(SupportsGet = true)] public byte? durum { get; set; }
-        [BindProperty(SupportsGet = true)] public bool ShowClosed { get; set; }   // Kapalıları listele togglesı
+        [BindProperty(SupportsGet = true)] public string?   q         { get; set; }
+        [BindProperty(SupportsGet = true)] public string?   sort      { get; set; } = "cikis_desc";
+        [BindProperty(SupportsGet = true)] public int       p         { get; set; } = 1;
+        [BindProperty(SupportsGet = true)] public int       pageSize  { get; set; } = 20;
+        [BindProperty(SupportsGet = true)] public byte?     durum     { get; set; }
+        [BindProperty(SupportsGet = true)] public bool      ShowClosed{ get; set; }
+        [BindProperty(SupportsGet = true)] public DateTime? d1        { get; set; }
+        [BindProperty(SupportsGet = true)] public DateTime? d2        { get; set; }
 
         public int TotalCount { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / pageSize);
+        public Dictionary<byte, int> DurumSayilari { get; set; } = new();
 
         public async Task OnGetAsync()
         {
@@ -70,6 +73,11 @@ namespace Lojistik.Pages.Seferler
                 );
             }
 
+            if (d1.HasValue)
+                query = query.Where(s => s.CikisTarihi >= d1.Value);
+            if (d2.HasValue)
+                query = query.Where(s => s.CikisTarihi <= d2.Value.Date.AddDays(1).AddTicks(-1));
+
             query = sort switch
             {
                 "cikis_asc" => query.OrderBy(s => s.CikisTarihi).ThenByDescending(s => s.SeferID),
@@ -78,6 +86,13 @@ namespace Lojistik.Pages.Seferler
                 "kod_desc" => query.OrderByDescending(s => s.SeferKodu),
                 _ => query.OrderByDescending(s => s.CikisTarihi).ThenByDescending(s => s.SeferID)
             };
+
+            // Durum bazında özet sayılar (filtre/arama dahil, sayfalama hariç)
+            DurumSayilari = (await query
+                .GroupBy(s => s.Durum)
+                .Select(g => new { Durum = g.Key, Sayi = g.Count() })
+                .ToListAsync())
+                .ToDictionary(x => x.Durum, x => x.Sayi);
 
             TotalCount = await query.CountAsync();
             Items = await query
@@ -131,7 +146,7 @@ namespace Lojistik.Pages.Seferler
 )
 
                 ))
-                .Skip((page - 1) * pageSize)
+                .Skip((p - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 

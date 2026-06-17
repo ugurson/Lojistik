@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Lojistik.Data;
+using Lojistik.Extensions;
 using Lojistik.Models;
 
 namespace Lojistik.Pages.Araclar
@@ -29,7 +30,8 @@ namespace Lojistik.Pages.Araclar
                 return NotFound();
             }
 
-            var arac = await _context.Araclar.FirstOrDefaultAsync(m => m.AracID == id);
+            var firmaId = User.GetFirmaId();
+            var arac = await _context.Araclar.FirstOrDefaultAsync(m => m.AracID == id && m.FirmaID == firmaId);
 
             if (arac is not null)
             {
@@ -48,7 +50,8 @@ namespace Lojistik.Pages.Araclar
                 return NotFound();
             }
 
-            var arac = await _context.Araclar.FindAsync(id);
+            var firmaId = User.GetFirmaId();
+            var arac = await _context.Araclar.FirstOrDefaultAsync(m => m.AracID == id && m.FirmaID == firmaId);
             if (arac != null)
             {
                 Arac = arac;

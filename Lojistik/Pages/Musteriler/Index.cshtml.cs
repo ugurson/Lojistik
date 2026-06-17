@@ -1,6 +1,7 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Lojistik.Data;
 using Lojistik.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,12 +12,13 @@ namespace Lojistik.Pages.Musteriler
         private readonly AppDbContext _context;
         public IndexModel(AppDbContext context) => _context = context;
 
-        // Razor tarafında Model.List ile kullanıyoruz
         public IList<Musteri> List { get; set; } = new List<Musteri>();
+
+        [BindProperty(SupportsGet = true)] public string? q { get; set; }
+        [BindProperty(SupportsGet = true)] public byte? kategori { get; set; }
 
         public async Task OnGetAsync()
         {
-            // FirmaID claim'i ile multi-tenant filtre
             var firmaIdStr = User.FindFirstValue("FirmaID");
             if (!int.TryParse(firmaIdStr, out var firmaId))
             {
@@ -24,12 +26,22 @@ namespace Lojistik.Pages.Musteriler
                 return;
             }
 
-            List = await _context.Musteriler
+            var query = _context.Musteriler
                 .Include(m => m.Ulke)
                 .Include(m => m.Sehir)
                 .Where(m => m.FirmaID == firmaId)
-                .OrderBy(m => m.MusteriAdi)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (kategori.HasValue)
+                query = query.Where(m => m.Kategori == kategori.Value);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim().ToLower();
+                query = query.Where(m => m.MusteriAdi.ToLower().Contains(term));
+            }
+
+            List = await query.OrderBy(m => m.Kategori).ThenBy(m => m.MusteriAdi).ToListAsync();
         }
     }
 }

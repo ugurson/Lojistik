@@ -1,54 +1,125 @@
-﻿@* Pages/SeferMasraflari/Index.cshtml *@
+@* Pages/SeferMasraflari/Index.cshtml *@
 @page
 @model Lojistik.Pages.SeferMasraflari.IndexModel
 @{
     ViewData["Title"] = "Sefer Masrafları";
-}
-<h2 class="mb-3">Sefer Masrafları</h2>
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Sefer</th>
-                <th>Tarih</th>
-                <th>Tip</th>
-                <th class="text-end">Tutar</th>
-                <th>PB</th>
-                <th>Yer</th>
-                <th>Ülke</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.Items?.Count > 0)
-            {
-                foreach (var r in Model.Items)
+    string MasrafBadge(string? tip) => (tip?.ToLower() ?? "") switch {
+        var t when t.Contains("yakıt") || t.Contains("yakit") => "bg-warning text-dark",
+        var t when t.Contains("şoför") || t.Contains("sofor") => "bg-info text-dark",
+        var t when t.Contains("köprü") || t.Contains("geçiş") => "bg-secondary",
+        _ => "bg-light text-dark border"
+    };
+}
+
+<div class="lj-page-compact">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sefer Masrafları</h2>
+        <div class="d-flex gap-2">
+            <partial name="_DownloadActions"
+                     view-data='@(new ViewDataDictionary(ViewData) {
+                         ["FileBase"] = "sefer_masraflari",
+                         ["TableSelector"] = ".lj-table"
+                     })' />
+            <button type="button" class="btn btn-sm btn-outline-info"
+                    data-bs-toggle="modal" data-bs-target="#yardimModal"
+                    title="Bu sayfa hakkında yardım">
+                ❓ Yardım
+            </button>
+        </div>
+    </div>
+
+    @* ─── TABLO ───────────────────────────────────────────────────── *@
+    <div class="lj-table-wrap">
+        <table class="table table-sm table-hover align-middle lj-table lj-table-compact">
+            <thead>
+                <tr>
+                    <th>Sefer</th>
+                    <th>Tarih</th>
+                    <th>Tip</th>
+                    <th class="text-end">Tutar</th>
+                    <th>PB</th>
+                    <th>Yer</th>
+                    <th>Ülke</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items?.Count > 0)
+                {
+                    foreach (var r in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-page="/Seferler/Details" asp-route-id="@r.SeferID">
+                                    SF-@r.SeferID
+                                </a>
+                            </td>
+                            <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
+                            <td><span class="badge @MasrafBadge(r.MasrafTipi)">@r.MasrafTipi</span></td>
+                            <td class="text-end net-neg fw-semibold">@r.Tutar.ToString("N2")</td>
+                            <td>@r.ParaBirimi</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.Yer) ? "—" : r.Yer)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.Ulke) ? "—" : r.Ulke)</td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <a asp-page="./Details" asp-route-id="@r.SeferMasrafID" class="btn btn-pastel-blue btn-sm">Detay</a>
+                                    <a asp-page="./Edit"    asp-route-id="@r.SeferMasrafID" class="btn btn-pastel-amber btn-sm">Düzenle</a>
+                                    <a asp-page="./Delete"  asp-route-id="@r.SeferMasrafID" class="btn btn-pastel-red btn-sm">Sil</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-                        <td>@r.SeferMasrafID</td>
-                        <td><a asp-page="/Seferler/Details" asp-route-id="@r.SeferID">SF-@r.SeferID</a></td>
-                        <td>@r.Tarih.ToString("dd.MM.yyyy")</td>
-                        <td>@r.MasrafTipi</td>
-                        <td class="text-end">@r.Tutar.ToString("N2")</td>
-                        <td>@r.ParaBirimi</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.Yer) ? "—" : r.Yer)</td>
-                        <td>@(string.IsNullOrWhiteSpace(r.Ulke) ? "—" : r.Ulke)</td>
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm">
-                                <a asp-page="./Details" asp-route-id="@r.SeferMasrafID" class="btn btn-outline-primary">Detay</a>
-                                <a asp-page="./Edit" asp-route-id="@r.SeferMasrafID" class="btn btn-outline-warning">Düzenle</a>
-                                <a asp-page="./Delete" asp-route-id="@r.SeferMasrafID" class="btn btn-outline-danger">Sil</a>
-                            </div>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <div class="fs-4 mb-1">📭</div>
+                            Kayıt yok.
                         </td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr><td colspan="9" class="text-center text-muted">Kayıt yok.</td></tr>
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Sefer Masrafları — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, seferlere bağlı tüm gider kayıtlarını listeler. Yakıt, köprü/geçiş ücretleri, şoför harcırahı gibi masraf kalemleri burada görüntülenir.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📊 Tablo Sütunları</h6>
+                    <ul class="mb-0">
+                        <li><strong>Sefer</strong> — Masrafın ait olduğu sefer (tıklayarak sefer detayına gidin).</li>
+                        <li><strong>Tarih</strong> — Masraf tarihi.</li>
+                        <li><strong>Tip</strong> — Masraf kategorisi: Yakıt 🟡 · Şoför 🔵 · Köprü/Geçiş 🔘 · Diğer.</li>
+                        <li><strong>Tutar / PB</strong> — Masraf tutarı ve para birimi.</li>
+                        <li><strong>Yer / Ülke</strong> — Masrafın gerçekleştiği konum.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li>Masraf eklemek için ilgili seferin detay sayfasını kullanın.</li>
+                        <li><strong>Detay / Düzenle / Sil</strong> — Masraf kaydı yönetimi.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
 </div>

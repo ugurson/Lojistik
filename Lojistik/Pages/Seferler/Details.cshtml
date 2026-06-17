@@ -1,38 +1,701 @@
-﻿@page
+@page "{id:int}"
 @model Lojistik.Pages.Seferler.DetailsModel
 @using System.Globalization
 @{
     ViewData["Title"] = "Sefer Detayı";
-    var isClosed = Model.IsClosed;
-    var disClass = isClosed ? " disabled" : "";
-    var ariaDis = isClosed ? "true" : "false";
-    var tabIndex = isClosed ? "-1" : "0";
+    var isClosed   = Model.IsClosed;
+    var isReadOnly = Model.IsReadOnly;
+    var disClass   = isClosed ? " disabled" : "";
+    var ariaDis    = isClosed ? "true"  : "false";
+    var tabIndex   = isClosed ? "-1"    : "0";
+
+    // ── Finansal toplamlar (header'da da lazım) ──────────────────────────
+    decimal GTL  = Model.GelirToplamlari  != null && Model.GelirToplamlari.TryGetValue("TL",  out var _gtl)  ? _gtl  : 0;
+    decimal MTL  = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("TL",  out var _mtl)  ? _mtl  : 0;
+    decimal GEUR = Model.GelirToplamlari  != null && Model.GelirToplamlari.TryGetValue("EUR", out var _ge)   ? _ge   : 0;
+    decimal MEUR = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("EUR", out var _me)  ? _me   : 0;
+    decimal GUSD = Model.GelirToplamlari  != null && Model.GelirToplamlari.TryGetValue("USD", out var _gu)   ? _gu   : 0;
+    decimal MUSD = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("USD", out var _mu)  ? _mu   : 0;
+
+    decimal netTL  = GTL  - MTL;
+    decimal netEUR = GEUR - MEUR;
+    decimal netUSD = GUSD - MUSD;
+
+    decimal gelirTlK = GTL  + GEUR * Model.EurToTry + GUSD * Model.UsdToTry;
+    decimal giderTlK = MTL  + MEUR * Model.EurToTry + MUSD * Model.UsdToTry;
+    decimal netTlK   = netTL + netEUR * Model.EurToTry + netUSD * Model.UsdToTry;
+    bool    kurVarMi = (GEUR + GUSD + MEUR + MUSD) != 0;
+    bool    netPozitif = netTlK >= 0;
 }
 
-<h2 class="mb-3">Sefer Detayı</h2>
+<style>
+/* ── Sefer Detay özel stiller ─────────────────────────────── */
+.sf-header-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+}
+.sf-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0;
+}
+.sf-info-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    border-right: 1px solid #f0f0f0;
+}
+.sf-info-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #6c757d;
+    margin-bottom: 2px;
+}
+.sf-info-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #212529;
+}
+.sf-kpi-card {
+    border-radius: 10px;
+    padding: 14px 18px;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+.sf-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    border-radius: 0 10px 0 50%;
+    opacity: .12;
+}
+.sf-kpi-gelir  { background: #d1f2eb; color: #0a6640; }
+.sf-kpi-gelir::before  { background: #0a6640; }
+.sf-kpi-gider  { background: #fde8e8; color: #8b1a1a; }
+.sf-kpi-gider::before  { background: #8b1a1a; }
+.sf-kpi-net-pos { background: #dbeafe; color: #1d4ed8; }
+.sf-kpi-net-pos::before { background: #1d4ed8; }
+.sf-kpi-net-neg { background: #fef3c7; color: #92400e; }
+.sf-kpi-net-neg::before { background: #92400e; }
+.sf-kpi-label  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; opacity: .75; }
+.sf-kpi-amount { font-size: 12px; font-weight: 700; line-height: 1.1; margin: 4px 0 2px; }
+.sf-kpi-sub    { font-size: 12px; opacity: .7; }
+.sf-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sf-tab-btn:hover { color: #343a40; border-bottom-color: #dee2e6; }
+.sf-tab-btn.active { color: #0d6efd; border-bottom-color: #0d6efd; font-weight: 600; }
+.sf-tab-btn .badge { font-size: 10px; }
+.sf-tabs-bar {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 0;
+    padding: 0 4px;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+.sf-tab-pane { display: none; }
+.sf-tab-pane.active { display: block; }
+.sf-table thead th {
+    background: #f8f9fa;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #6c757d;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+    padding: 8px 10px;
+}
+.sf-table tbody td { padding: 7px 10px; font-size: 13px; vertical-align: middle; }
+.sf-table tbody tr:hover { background: #f8f9ff; }
+.sf-badge-cari   { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.sf-badge-eksik  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.sf-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.sf-status-open   { background: #dcfce7; color: #166534; }
+.sf-status-closed { background: #fee2e2; color: #991b1b; }
+</style>
 
-<div class="mb-3 d-flex gap-2">
-    <a asp-page="./Edit" asp-route-id="@Model.Data?.SeferID"
-       class="btn btn-warning btn-edit-bg@disClass"
-       aria-disabled="@ariaDis" tabindex="@tabIndex">Düzenle</a>
+<div class="lj-page-compact">
 
-    <a asp-page="./Index" class="btn btn-secondary">Listeye Dön</a>
+@if (Model.Data != null)
+{
+    @* ══════════════════════════════════════════════════════
+       HEADER — Sefer Kodu + Durum + Aksiyonlar
+    ══════════════════════════════════════════════════════ *@
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <div class="me-auto">
+            <h4 class="mb-0 fw-bold">
+                🚛 @(Model.Data.SeferKodu ?? $"Sefer #{Model.Data.SeferID}")
+            </h4>
+            <span class="sf-status-pill @(isClosed ? "sf-status-closed" : "sf-status-open") mt-1">
+                @if (isClosed)
+                { <text>● Kapalı</text> }
+                else
+                { <text>● Aktif</text> }
+            </span>
+        </div>
 
-    <a asp-page="./AddSiparis" asp-route-seferId="@Model.Data?.SeferID"
-       class="btn btn-success btn-add-bg@disClass"
-       aria-disabled="@ariaDis" tabindex="@tabIndex">+ Sipariş Ekle</a>
+        @if (!isReadOnly)
+        {
+            <a asp-page="./Index" class="btn btn-sm btn-outline-secondary">
+                ← Listeye Dön
+            </a>
+            <a asp-page="./Edit" asp-route-id="@Model.Data.SeferID"
+               class="btn btn-sm btn-pastel-amber@disClass"
+               aria-disabled="@ariaDis" tabindex="@tabIndex">
+                ✏️ Düzenle
+            </a>
+            <a asp-page="./AddSiparis" asp-route-seferId="@Model.Data.SeferID"
+               class="btn btn-sm btn-pastel-green@disClass"
+               aria-disabled="@ariaDis" tabindex="@tabIndex">
+                + Sipariş Ekle
+            </a>
+            @if (!isClosed)
+            {
+                <button type="button" class="btn btn-sm btn-pastel-red"
+                        data-bs-toggle="modal" data-bs-target="#kapatModal">
+                    🔒 Seferi Kapat
+                </button>
+            }
+        }
+        else
+        {
+            <a asp-page="./Index" class="btn btn-sm btn-outline-secondary">← Listeye Dön</a>
+        }
 
+        <button type="button" class="btn btn-sm btn-outline-info ms-1"
+                data-bs-toggle="modal" data-bs-target="#yardimModal"
+                title="Bu sayfa hakkında yardım">
+            ❓ Yardım
+        </button>
+    </div>
 
+    @* ══════════════════════════════════════════════════════
+       GELİŞTİRİLMİŞ GENEL BİLGİLER KARTI
+    ══════════════════════════════════════════════════════ *@
+    <div class="card sf-header-card mb-4 shadow-sm">
+        <div class="card-body p-0">
 
-    <button type="button"
-            class="btn btn-outline-danger ms-auto"
-            data-bs-toggle="modal"
-            data-bs-target="#kapatModal"
-            @(isClosed ? "disabled" : null)>
-        Seferi Kapat
-    </button>
+            @* Üst bilgi satırı *@
+            <div class="sf-info-grid">
+                <div class="sf-info-item">
+                    <div class="sf-info-label">🚛 Çekici</div>
+                    <div class="sf-info-value">@(Model.Data.AracPlaka ?? "—")</div>
+                </div>
+<div class="sf-info-item">
+                    <div class="sf-info-label">👤 Sürücü</div>
+                    <div class="sf-info-value">@(Model.Data.SurucuAdi ?? "—")</div>
+                </div>
+                <div class="sf-info-item">
+                    <div class="sf-info-label">📅 Çıkış Tarihi</div>
+                    <div class="sf-info-value">
+                        @(Model.Data.CikisTarihi?.ToString("dd.MM.yyyy") ?? "—")
+                    </div>
+                </div>
+                <div class="sf-info-item">
+                    <div class="sf-info-label">🏁 Dönüş Tarihi</div>
+                    <div class="sf-info-value">
+                        @(Model.Data.DonusTarihi?.ToString("dd.MM.yyyy HH:mm") ?? "—")
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Data.Notlar))
+                {
+                    <div class="sf-info-item" style="grid-column: span 2;">
+                        <div class="sf-info-label">📝 Notlar</div>
+                        <div class="sf-info-value text-muted">@Model.Data.Notlar</div>
+                    </div>
+                }
+            </div>
 
-    @if (!isClosed && Model.Data is not null)
+            @* KPI Kartları ─ Gelir / Gider / Net *@
+            <div class="p-3 border-top">
+                <div class="row g-3">
+                    @* Gelir *@
+                    <div class="col-sm-4">
+                        <div class="sf-kpi-card sf-kpi-gelir">
+                            <div class="sf-kpi-label">📈 Toplam Gelir</div>
+                            <div class="sf-kpi-amount">
+                                @GTL.ToString("N2")
+                                <small style="font-size:12px;font-weight:400;opacity:.7;">TL</small>
+                            </div>
+                            @if (GEUR != 0) { <div class="sf-kpi-sub">+ @GEUR.ToString("N2") EUR</div> }
+                            @if (GUSD != 0) { <div class="sf-kpi-sub">+ @GUSD.ToString("N2") USD</div> }
+                            @if (kurVarMi)
+                            {
+                                <div class="mt-1 pt-1 border-top border-success border-opacity-25" style="font-size:20px;font-weight:700;line-height:1.1;">
+                                    ≈ @gelirTlK.ToString("N0") <small style="font-size:11px;font-weight:500;opacity:.75;">TL</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @* Gider *@
+                    <div class="col-sm-4">
+                        <div class="sf-kpi-card sf-kpi-gider">
+                            <div class="sf-kpi-label">📉 Toplam Gider</div>
+                            <div class="sf-kpi-amount">
+                                @MTL.ToString("N2")
+                                <small style="font-size:12px;font-weight:400;opacity:.7;">TL</small>
+                            </div>
+                            @if (MEUR != 0) { <div class="sf-kpi-sub">+ @MEUR.ToString("N2") EUR</div> }
+                            @if (MUSD != 0) { <div class="sf-kpi-sub">+ @MUSD.ToString("N2") USD</div> }
+                            @if (kurVarMi)
+                            {
+                                <div class="mt-1 pt-1 border-top border-danger border-opacity-25" style="font-size:20px;font-weight:700;line-height:1.1;">
+                                    ≈ @giderTlK.ToString("N0") <small style="font-size:11px;font-weight:500;opacity:.75;">TL</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @* Net *@
+                    <div class="col-sm-4">
+                        <div class="sf-kpi-card @(netPozitif ? "sf-kpi-net-pos" : "sf-kpi-net-neg")">
+                            <div class="sf-kpi-label">⚖️ Net Kâr/Zarar</div>
+                            <div class="sf-kpi-amount">
+                                @netTL.ToString("N2")
+                                <small style="font-size:12px;font-weight:400;opacity:.7;">TL</small>
+                            </div>
+                            @if (netEUR != 0) { <div class="sf-kpi-sub">+ @netEUR.ToString("N2") EUR</div> }
+                            @if (netUSD != 0) { <div class="sf-kpi-sub">+ @netUSD.ToString("N2") USD</div> }
+                            @if (kurVarMi)
+                            {
+                                <div class="mt-1 pt-1" style="font-size:20px;font-weight:700;line-height:1.1;border-top:1px solid rgba(0,0,0,.12);">
+                                    ≈ @netTlK.ToString("N0") <small style="font-size:11px;font-weight:500;opacity:.75;">TL</small>
+                                </div>
+                                <div style="font-size:10px;opacity:.65;margin-top:2px;">
+                                    1 EUR = @Model.EurToTry.ToString("N2") TL &nbsp;·&nbsp; 1 USD = @Model.UsdToTry.ToString("N2") TL
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ══════════════════════════════════════════════════════
+       TAB BÖLÜMÜ
+    ══════════════════════════════════════════════════════ *@
+    <div class="card shadow-sm" style="border-radius:10px;overflow:hidden;">
+
+        @* Tab Bar *@
+        <div class="sf-tabs-bar" id="sfTabsBar">
+            <button class="sf-tab-btn active" data-target="pane-siparisler" type="button">
+                📦 Siparişler
+                <span class="badge bg-primary">@Model.Siparisler.Count</span>
+            </button>
+            <button class="sf-tab-btn" data-target="pane-masraflar" type="button">
+                💸 Masraflar
+                <span class="badge bg-secondary">@(Model.Masraflar?.Count ?? 0)</span>
+            </button>
+            <button class="sf-tab-btn" data-target="pane-gelirler" type="button">
+                💰 Gelirler
+                <span class="badge bg-success">@(Model.Gelirler?.Count ?? 0)</span>
+            </button>
+        </div>
+
+        <div class="p-3 bg-white">
+
+            @* ─── SİPARİŞLER ──────────────────────────────── *@
+            <div class="sf-tab-pane active" id="pane-siparisler">
+                @{
+                    int eksikGelir = Model.Siparisler.Count(s =>
+                        !(Model.Gelirler?.Any(g => g.IlgiliSiparisID == s.SiparisID) == true));
+                }
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    @if (eksikGelir > 0)
+                    {
+                        <span class="badge sf-badge-eksik fs-12 px-3 py-2">
+                            ⚠ @eksikGelir sipariş için gelir kaydı yok
+                        </span>
+                    }
+                    else if (Model.Siparisler.Count > 0)
+                    {
+                        <span class="badge sf-badge-cari fs-12 px-3 py-2">✓ Tüm siparişler gelire bağlı</span>
+                    }
+                    <div class="ms-auto">
+                        @if (!isReadOnly)
+                        {
+                            <a asp-page="./AddSiparis" asp-route-seferId="@Model.Data.SeferID"
+                               class="btn btn-sm btn-pastel-green@disClass"
+                               aria-disabled="@ariaDis" tabindex="@tabIndex">
+                                + Sipariş Ekle
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.Siparisler.Count == 0)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div style="font-size:40px;">📦</div>
+                        <div class="mt-2">Henüz sipariş eklenmemiş.</div>
+                    </div>
+                }
+                else
+                {
+                    var cariliIDs = (Model.Gelirler ?? new())
+                        .Where(g => g.IsCarilestirildi && g.IlgiliSiparisID.HasValue)
+                        .Select(g => g.IlgiliSiparisID!.Value)
+                        .ToHashSet();
+
+                    <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 sf-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Yük</th>
+                                <th>Gönderen</th>
+                                <th>Alıcı</th>
+                                <th>Ülke / Şehir</th>
+                                <th>Dorse</th>
+                                <th class="text-end">Tutar</th>
+                                <th>Fatura No</th>
+                                <th>Durum</th>
+                                @if (!isReadOnly) { <th class="text-end">İşlem</th> }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.Siparisler)
+                            {
+                                bool gelirEkli   = Model.Gelirler?.Any(g => g.IlgiliSiparisID == s.SiparisID) == true;
+                                bool cariIslenmiş = cariliIDs.Contains(s.SiparisID);
+                                <tr>
+                                    <td class="text-nowrap">@s.SiparisTarihi.ToString("dd.MM.yy")</td>
+                                    <td>@s.YukAciklamasi</td>
+                                    <td>@s.Gonderen</td>
+                                    <td>@s.Alici</td>
+                                    <td class="text-nowrap">
+                                        <span class="text-muted small">@s.AliciUlke</span>
+                                        @if (!string.IsNullOrWhiteSpace(s.AliciSehir))
+                                        { <span class="mx-1 text-muted">/</span><span class="small">@s.AliciSehir</span> }
+                                    </td>
+                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(s.DorsePlaka) ? "—" : s.DorsePlaka)</td>
+                                    <td class="text-end text-nowrap fw-semibold">
+                                        @s.Tutar?.ToString("N2")
+                                        <span class="text-muted fw-normal small">@s.ParaBirimi</span>
+                                    </td>
+                                    <td class="small text-muted">@(string.IsNullOrWhiteSpace(s.FaturaNo) ? "—" : s.FaturaNo)</td>
+                                    <td>
+                                        @if (cariIslenmiş)
+                                        {
+                                            <span class="badge sf-badge-cari">✓ Carili</span>
+                                        }
+                                        else if (gelirEkli)
+                                        {
+                                            <span class="badge bg-info text-dark">Gelir Var</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge sf-badge-eksik">⚠ Gelir Yok</span>
+                                        }
+                                    </td>
+                                    @if (!isReadOnly)
+                                    {
+                                        <td class="text-end text-nowrap">
+                                            <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID"
+                                               class="btn btn-xs btn-pastel-blue" title="Detay">🔍</a>
+                                            @if (!cariIslenmiş)
+                                            {
+                                                <form method="post" asp-page-handler="GelireKaydet"
+                                                      asp-route-seferId="@Model.Data.SeferID"
+                                                      asp-route-siparisId="@s.SiparisID" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button class="btn btn-xs btn-pastel-green" title="Gelir oluştur"
+                                                            @(isClosed ? "disabled" : null)>+ Gelir</button>
+                                                </form>
+                                            }
+                                            <form method="post" asp-page-handler="SiparisCikar"
+                                                  asp-route-seferId="@Model.Data.SeferID"
+                                                  asp-route-siparisId="@s.SiparisID" class="d-inline"
+                                                  onsubmit="return confirm('Bu siparişi seferden çıkarmak istiyor musunuz?');">
+                                                @Html.AntiForgeryToken()
+                                                <button class="btn btn-xs btn-pastel-red" title="Seferden çıkar"
+                                                        @(isClosed ? "disabled" : null)>✕</button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    </div>
+                }
+            </div>
+
+            @* ─── MASRAFLAR ────────────────────────────────── *@
+            <div class="sf-tab-pane" id="pane-masraflar">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    @if (Model.MasrafToplamlari?.Count > 0)
+                    {
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach (var kv in Model.MasrafToplamlari)
+                            {
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2" style="font-size:12px;">
+                                    💸 @kv.Value.ToString("N2") @kv.Key
+                                </span>
+                            }
+                        </div>
+                    }
+                    <div class="ms-auto">
+                        @if (!isReadOnly)
+                        {
+                            <a asp-page="/SeferMasraflari/Create" asp-route-seferId="@Model.Data.SeferID"
+                               class="btn btn-sm btn-pastel-green@disClass"
+                               aria-disabled="@ariaDis" tabindex="@tabIndex">+ Masraf Ekle</a>
+                        }
+                    </div>
+                </div>
+
+                @if (!(Model.Masraflar?.Count > 0))
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div style="font-size:40px;">💸</div>
+                        <div class="mt-2">Bu sefere kayıtlı masraf yok.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 sf-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Masraf Tipi</th>
+                                <th class="text-end">Tutar</th>
+                                <th>Ülke / Yer</th>
+                                <th class="text-end">Yakıt (L)</th>
+                                <th>Fatura/Belge</th>
+                                <th>Notlar</th>
+                                @if (!isReadOnly) { <th class="text-end">İşlem</th> }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in Model.Masraflar)
+                            {
+                                string masrafBadge = m.MasrafTipi?.ToLower() switch {
+                                    var t when t != null && (t.Contains("yakıt") || t.Contains("yakit")) => "bg-warning text-dark",
+                                    var t when t != null && (t.Contains("şöfor") || t.Contains("sofor") || t.Contains("şoför")) => "bg-info text-dark",
+                                    var t when t != null && (t.Contains("köprü") || t.Contains("gecis") || t.Contains("geçiş")) => "bg-secondary",
+                                    _ => "bg-light text-dark border"
+                                };
+                                <tr>
+                                    <td class="text-nowrap small">@m.Tarih.ToString("dd.MM.yy")</td>
+                                    <td><span class="badge @masrafBadge">@m.MasrafTipi</span></td>
+                                    <td class="text-end fw-semibold text-nowrap">
+                                        @m.Tutar.ToString("N2")
+                                        <span class="text-muted fw-normal small">@m.ParaBirimi</span>
+                                    </td>
+                                    <td class="small text-muted">
+                                        @if (!string.IsNullOrWhiteSpace(m.Ulke)) { <text>@m.Ulke</text> }
+                                        @if (!string.IsNullOrWhiteSpace(m.Yer)) { <text> / @m.Yer</text> }
+                                        @if (string.IsNullOrWhiteSpace(m.Ulke) && string.IsNullOrWhiteSpace(m.Yer)) { <text>—</text> }
+                                    </td>
+                                    <td class="text-end small">
+                                        @if (m.YakitLitre.HasValue && m.YakitLitre > 0)
+                                        { <span>@m.YakitLitre.Value.ToString("N2")</span> }
+                                        else { <span class="text-muted">—</span> }
+                                    </td>
+                                    <td class="small text-muted">@(string.IsNullOrWhiteSpace(m.FaturaBelgeNo) ? "—" : m.FaturaBelgeNo)</td>
+                                    <td class="small text-muted">@m.Notlar</td>
+                                    @if (!isReadOnly)
+                                    {
+                                        <td class="text-end text-nowrap">
+                                            <a asp-page="/SeferMasraflari/Edit" asp-route-id="@m.SeferMasrafID"
+                                               class="btn btn-xs btn-pastel-amber@(isClosed ? " disabled" : "")"
+                                               aria-disabled="@ariaDis" tabindex="@tabIndex">✏️</a>
+                                            <form method="post" asp-page-handler="MasrafSil"
+                                                  asp-route-seferId="@Model.Data.SeferID"
+                                                  asp-route-id="@m.SeferMasrafID" class="d-inline"
+                                                  onsubmit="return confirm('Bu masrafı silmek istiyor musunuz?');">
+                                                @Html.AntiForgeryToken()
+                                                <button class="btn btn-xs btn-pastel-red" @(isClosed ? "disabled" : null)>✕</button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    </div>
+                }
+            </div>
+
+            @* ─── GELİRLER ─────────────────────────────────── *@
+            <div class="sf-tab-pane" id="pane-gelirler">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    @if (Model.GelirToplamlari?.Count > 0)
+                    {
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach (var kv in Model.GelirToplamlari)
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2" style="font-size:12px;">
+                                    💰 @kv.Value.ToString("N2") @kv.Key
+                                </span>
+                            }
+                        </div>
+                    }
+                    <div class="ms-auto">
+                        @if (!isReadOnly)
+                        {
+                            <a asp-page="/SeferGelirleri/Create" asp-route-seferId="@Model.Data.SeferID"
+                               class="btn btn-sm btn-pastel-green@disClass"
+                               aria-disabled="@ariaDis" tabindex="@tabIndex">+ Gelir Ekle</a>
+                        }
+                    </div>
+                </div>
+
+                @if (!(Model.Gelirler?.Count > 0))
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div style="font-size:40px;">💰</div>
+                        <div class="mt-2">Bu sefere kayıtlı gelir yok.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 sf-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th class="text-end">Tutar</th>
+                                <th>Açıklama</th>
+                                <th>Sipariş</th>
+                                <th>Güzergah</th>
+                                <th>Fatura No</th>
+                                <th>Notlar</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var g in Model.Gelirler)
+                            {
+                                string? cikisIl = null, varisIl = null;
+                                if (g.IlgiliSiparisID is not null)
+                                {
+                                    var sip = Model.Siparisler?.FirstOrDefault(x => x.SiparisID == g.IlgiliSiparisID);
+                                    cikisIl = sip?.GetType().GetProperty("CikisIl")?.GetValue(sip)?.ToString()
+                                           ?? sip?.GetType().GetProperty("YuklemeIl")?.GetValue(sip)?.ToString()
+                                           ?? sip?.GetType().GetProperty("GonderenIl")?.GetValue(sip)?.ToString()
+                                           ?? sip?.GetType().GetProperty("GonderenSehir")?.GetValue(sip)?.ToString();
+                                    varisIl = sip?.GetType().GetProperty("VarisIl")?.GetValue(sip)?.ToString()
+                                           ?? sip?.GetType().GetProperty("BosaltmaIl")?.GetValue(sip)?.ToString()
+                                           ?? sip?.GetType().GetProperty("AliciIl")?.GetValue(sip)?.ToString()
+                                           ?? sip?.AliciSehir;
+                                }
+                                cikisIl ??= g.CikisIl;
+                                varisIl ??= g.VarisIl;
+
+                                <tr>
+                                    <td class="text-nowrap small">@g.Tarih.ToString("dd.MM.yy")</td>
+                                    <td class="text-end fw-semibold text-nowrap">
+                                        @g.Tutar.ToString("N2")
+                                        <span class="text-muted fw-normal small">@g.ParaBirimi</span>
+                                    </td>
+                                    <td class="small">@g.Aciklama</td>
+                                    <td class="small">
+                                        @if (g.IlgiliSiparisID is null) { <span class="text-muted">—</span> }
+                                        else
+                                        {
+                                            <a asp-page="/Siparisler/Details" asp-route-id="@g.IlgiliSiparisID"
+                                               title="Sipariş #@g.IlgiliSiparisID">
+                                                @(string.IsNullOrWhiteSpace(g.FaturaNo) ? $"#{g.IlgiliSiparisID}" : g.FaturaNo)
+                                            </a>
+                                        }
+                                    </td>
+                                    <td class="small text-muted text-nowrap">
+                                        @if (!string.IsNullOrWhiteSpace(cikisIl) || !string.IsNullOrWhiteSpace(varisIl))
+                                        {
+                                            <text>@(cikisIl ?? "?") → @(varisIl ?? "?")</text>
+                                        }
+                                        else { <text>—</text> }
+                                    </td>
+                                    <td class="small text-muted">@(string.IsNullOrWhiteSpace(g.FaturaNo) ? "—" : g.FaturaNo)</td>
+                                    <td class="small text-muted">@g.Notlar</td>
+                                    <td class="text-end text-nowrap">
+                                        @if (g.IsCarilestirildi)
+                                        {
+                                            <span class="badge sf-badge-cari me-1" title="@g.CariMusteriAdi">✓ @(g.CariMusteriAdi ?? "Carili")</span>
+                                            @if (!isClosed)
+                                            {
+                                                <form method="post" asp-page-handler="GelirCariCikart"
+                                                      asp-route-seferId="@Model.Data.SeferID"
+                                                      asp-route-gelirId="@g.SeferGelirID" class="d-inline"
+                                                      onsubmit="return confirm('Bu gelire ait cari hareket silinsin mi?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-xs btn-pastel-red" title="Cariyi Kaldır">↩</button>
+                                                </form>
+                                            }
+                                        }
+                                        else if (g.FaturaNoCarideMevcut)
+                                        {
+                                            <span class="badge bg-warning text-dark me-1"
+                                                  title="Bu gelire ait fatura (@g.FaturaNo) cari ekstrelerde zaten kayıtlı.">
+                                                ⚠ Fatura Carili
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-xs btn-pastel-blue me-1 @(isClosed ? "disabled" : "")"
+                                                    data-bs-toggle="modal" data-bs-target="#cariyeIsleModal"
+                                                    data-gelir-id="@g.SeferGelirID"
+                                                    data-pb="@g.ParaBirimi"
+                                                    data-tutar="@g.Tutar.ToString(CultureInfo.InvariantCulture)"
+                                                    data-sefer-kodu="@(Model.Data.SeferKodu ?? ("SF-" + Model.Data.SeferID))"
+                                                    data-cekici-plaka="@(Model.Data.AracPlaka ?? "")"
+                                                    @(isClosed ? "disabled" : null)>
+                                                ⇒ Cariye İşle
+                                            </button>
+                                        }
+                                        <form method="post" asp-page-handler="GelirSil"
+                                              asp-route-seferId="@Model.Data.SeferID"
+                                              asp-route-id="@g.SeferGelirID" class="d-inline"
+                                              onsubmit="return confirm('Bu geliri silmek istiyor musunuz?');">
+                                            @Html.AntiForgeryToken()
+                                            <button class="btn btn-xs btn-pastel-red" @(isClosed ? "disabled" : null)>✕</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    </div>
+                }
+            </div>
+
+        </div>@* /p-3 *@
+    </div>@* /card *@
+
+    @* ══════════════════════════════════════════════════════
+       SEFERI KAPAT MODAL
+    ══════════════════════════════════════════════════════ *@
+    @if (!isReadOnly && !isClosed)
     {
         var varsayilan = (Model.Data.DonusTarihi ?? DateTime.Now).ToString("yyyy-MM-ddTHH:mm");
         <div class="modal fade" id="kapatModal" tabindex="-1" aria-hidden="true">
@@ -41,26 +704,19 @@
                     <form method="post" asp-page-handler="Kapat" asp-route-id="@Model.Data.SeferID">
                         @Html.AntiForgeryToken()
                         <div class="modal-header">
-                            <h5 class="modal-title">Seferi Kapat</h5>
+                            <h5 class="modal-title">🔒 Seferi Kapat</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label">Kapanış Tarih/Saat</label>
-                                <input type="datetime-local"
-                                       name="kapanisTarihi"
-                                       class="form-control"
-                                       value="@varsayilan" />
-                                <div class="form-text">
-                                    Boş bırakırsanız şu anki tarih/saat kullanılacaktır.
-                                </div>
+                                <input type="datetime-local" name="kapanisTarihi" class="form-control" value="@varsayilan" />
+                                <div class="form-text">Boş bırakırsanız şu anki tarih/saat kullanılır.</div>
                             </div>
                         </div>
-
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
-                            <button class="btn btn-danger">Kapat</button>
+                            <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Vazgeç</button>
+                            <button class="btn btn-pastel-red">Kapat</button>
                         </div>
                     </form>
                 </div>
@@ -68,389 +724,146 @@
         </div>
     }
 
-</div>
+    @* ══════════════════════════════════════════════════════
+       YARDIM MODAL
+    ══════════════════════════════════════════════════════ *@
+    <div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                    <h5 class="modal-title fw-bold">❓ Sefer Detayı — Kullanım Kılavuzu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="font-size:14px;line-height:1.7;">
 
-@if (Model.Data != null)
-{
-    <div class="card mb-4">
-        <div class="card-header">Genel Bilgiler</div>
-        <div class="card-body">
-            <dl class="row">
-                <dt class="col-sm-3">Sefer Kodu</dt>
-                <dd class="col-sm-9">@Model.Data.SeferKodu</dd>
+                    @* GENEL BİLGİLER *@
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bilgiler</h6>
+                        <p class="text-muted mb-2">Sayfanın üst kısmında sefer bilgileri ve finansal özet yer alır.</p>
+                        <ul class="mb-0">
+                            <li><strong>Çekici / Sürücü / Tarihler</strong> — Sefere ait araç, sürücü ve çıkış/dönüş bilgileri.</li>
+                            <li><strong>Toplam Gelir</strong> — Bu seferde kayıtlı tüm gelirlerin toplamı.</li>
+                            <li><strong>Toplam Gider</strong> — Bu seferde kayıtlı tüm masrafların toplamı.</li>
+                            <li><strong>Net Kâr/Zarar</strong> — Gelir eksi gider. Yeşil pozitif, sarı negatif kâr anlamına gelir.</li>
+                            <li>Birden fazla para birimi varsa <strong>≈ TL karşılığı</strong> güncel kur üzerinden hesaplanır.</li>
+                        </ul>
+                    </div>
 
-                <dt class="col-sm-3">Çekici</dt>
-                <dd class="col-sm-9">@Model.Data.AracPlaka</dd>
+                    @* BUTONLAR *@
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🖱️ Üst Bar Butonları</h6>
+                        <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                            <thead class="table-light">
+                                <tr><th>Buton</th><th>Ne Yapar?</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>← Listeye Dön</td><td>Sefer listesine geri döner.</td></tr>
+                                <tr><td>✏️ Düzenle</td><td>Seferin çekici, dorse, sürücü, tarih ve not bilgilerini günceller.</td></tr>
+                                <tr><td>+ Sipariş Ekle</td><td>Bu sefere mevcut siparişlerden birini bağlar.</td></tr>
+                                <tr><td>🔒 Seferi Kapat</td><td>Seferi kapatır; kapalı seferde ekleme/silme işlemi yapılamaz.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <dt class="col-sm-3">Dorse</dt>
-                <dd class="col-sm-9">@Model.Data.DorsePlaka</dd>
+                    @* SİPARİŞLER *@
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📦 Siparişler Sekmesi</h6>
+                        <ul class="mb-2">
+                            <li>Bu sefere bağlanmış tüm siparişleri listeler.</li>
+                            <li><span class="badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">✓ Carili</span> — Sipariş geliri cariye işlenmiş.</li>
+                            <li><span class="badge bg-info text-dark">Gelir Var</span> — Gelir oluşturulmuş ama henüz cariye işlenmemiş.</li>
+                            <li><span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">⚠ Gelir Yok</span> — Bu sipariş için henüz gelir kaydı oluşturulmamış.</li>
+                        </ul>
+                        <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                            <thead class="table-light">
+                                <tr><th>İşlem</th><th>Ne Yapar?</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>🔍 (Detay)</td><td>Siparişin kendi detay sayfasını açar.</td></tr>
+                                <tr><td>+ Gelir</td><td>Sipariş tutarını baz alarak otomatik gelir kaydı oluşturur.</td></tr>
+                                <tr><td>✕ (Çıkar)</td><td>Siparişi bu seferden çıkarır; sipariş silinmez.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <dt class="col-sm-3">Sürücü</dt>
-                <dd class="col-sm-9">@Model.Data.SurucuAdi</dd>
+                    @* MASRAFLAR *@
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">💸 Masraflar Sekmesi</h6>
+                        <ul class="mb-2">
+                            <li>Yakıt, köprü geçişi, şoför harcırah gibi sefer giderlerini listeler.</li>
+                            <li>Masraf tipine göre renkli etiket gösterilir (sarı = yakıt, mavi = şoför, gri = geçiş vb.).</li>
+                            <li>Üstte para birimi bazında toplam gider özeti görüntülenir.</li>
+                        </ul>
+                        <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                            <thead class="table-light">
+                                <tr><th>İşlem</th><th>Ne Yapar?</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>+ Masraf Ekle</td><td>Bu sefere yeni masraf kaydı ekler.</td></tr>
+                                <tr><td>✏️ (Düzenle)</td><td>Mevcut masraf kaydını günceller.</td></tr>
+                                <tr><td>✕ (Sil)</td><td>Masrafı kalıcı olarak siler.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <dt class="col-sm-3">Çıkış</dt>
-                <dd class="col-sm-9">@Model.Data.CikisTarihi?.ToString("dd.MM.yyyy")</dd>
+                    @* GELİRLER *@
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">💰 Gelirler Sekmesi</h6>
+                        <ul class="mb-2">
+                            <li>Sefere ait tüm gelir kayıtlarını listeler. Bağlı sipariş varsa güzergah bilgisi otomatik gösterilir.</li>
+                            <li>Üstte para birimi bazında toplam gelir özeti görüntülenir.</li>
+                        </ul>
+                        <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                            <thead class="table-light">
+                                <tr><th>İşlem</th><th>Ne Yapar?</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>+ Gelir Ekle</td><td>Siparişe bağlı olmayan manuel gelir kaydı ekler.</td></tr>
+                                <tr><td>⇒ Cariye İşle</td><td>Geliri seçilen müşteri/nakliyecinin cari hesabına alacak olarak işler.</td></tr>
+                                <tr><td>↩ (Cariyi Kaldır)</td><td>Cariye işlenmiş hareketi geri alır.</td></tr>
+                                <tr><td>✕ (Sil)</td><td>Gelir kaydını kalıcı olarak siler.</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="alert alert-warning py-2 mt-2 mb-0" style="font-size:12px;">
+                            ⚠ Eğer bir gelirin fatura no'su cari ekstrelerde zaten kayıtlıysa <strong>⚠ Fatura Carili</strong> uyarısı gösterilir ve tekrar cariye işlenemez.
+                        </div>
+                    </div>
 
-                <dt class="col-sm-3">Dönüş</dt>
-                <dd class="col-sm-9">@Model.Data.DonusTarihi?.ToString("dd.MM.yyyy HH:mm")</dd>
-
-                <dt class="col-sm-3">Notlar</dt>
-                <dd class="col-sm-9">@Model.Data.Notlar</dd>
-
-                <dt class="col-sm-3">Toplamlar</dt>
-                <dd class="col-sm-9">
-                    @{
-                        decimal GTL = Model.GelirToplamlari != null && Model.GelirToplamlari.TryGetValue("TL", out var _gtl) ? _gtl : 0;
-                        decimal MTL = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("TL", out var _mtl) ? _mtl : 0;
-                        decimal GEUR = Model.GelirToplamlari != null && Model.GelirToplamlari.TryGetValue("EUR", out var _ge) ? _ge : 0;
-                        decimal MEUR = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("EUR", out var _me) ? _me : 0;
-                        decimal GUSD = Model.GelirToplamlari != null && Model.GelirToplamlari.TryGetValue("USD", out var _gu) ? _gu : 0;
-                        decimal MUSD = Model.MasrafToplamlari != null && Model.MasrafToplamlari.TryGetValue("USD", out var _mu) ? _mu : 0;
-
-                        string netTL = (GTL - MTL).ToString("N2");
-                        string netEUR = (GEUR - MEUR).ToString("N2");
-                        string netUSD = (GUSD - MUSD).ToString("N2");
-                    }
-                    <!-- 1. satır: GELİR -->
+                    @* SEFER KAPAMA *@
                     <div class="mb-1">
-                        <span class="badge bg-success">
-                            Gelir: @GTL.ToString("N2") TL / @GEUR.ToString("N2") EUR / @GUSD.ToString("N2") USD
-                        </span>
+                        <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🔒 Sefer Kapatma</h6>
+                        <ul class="mb-0">
+                            <li>Sefer kapatıldıktan sonra sipariş ekleme, masraf/gelir ekleme ve düzenleme işlemleri <strong>devre dışı kalır</strong>.</li>
+                            <li>Kapalı seferde yalnızca görüntüleme yapılabilir.</li>
+                        </ul>
                     </div>
-                    <!-- 2. satır: GİDER + NET (fark giderin yanında) -->
-                    <div>
-                        <span class="badge bg-danger me-2">
-                            Gider: @MTL.ToString("N2") TL / @MEUR.ToString("N2") EUR / @MUSD.ToString("N2") USD
-                        </span>
-                        <span class="badge bg-primary">
-                            Net: @netTL TL / @netEUR EUR / @netUSD USD
-                        </span>
-                    </div>
-                </dd>
-            </dl>
+
+                </div>
+                <div class="modal-footer" style="background:#f8f9fa;">
+                    <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <h4>Bağlı Siparişler</h4>
-    <table class="table table-sm table-bordered table-hover align-middle">
-        <thead>
-            <tr>
-                <th class="d-none">ID</th>
-                <th>Tarih</th>
-                <th>Yük Açıklaması</th>
-                <th>Gönderen</th>
-                <th>Alıcı</th>
-                <th>Ülke</th>
-                <th>Şehir</th>
-                <th>Dorse</th>
-                <th class="text-end">Tutar</th>
-                <th>PB</th>
-                <th>Fatura No</th>
-<th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.Siparisler.Count > 0)
-            {
-
-
-                foreach (var s in Model.Siparisler)
-                {
-                    var amountStr = (s.Tutar ?? 0m).ToString(CultureInfo.InvariantCulture);
-                                        bool ekli = Model.Gelirler?.Any(g => g.IlgiliSiparisID == s.SiparisID) == true;
-    string rowClass = ekli ? "" : "table-warning"; // eklenmemişleri sarımsı vurgula
-                    <tr class="@rowClass">
-                        <td class="d-none">@s.SiparisID</td>
-                        <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
-                        <td>@s.YukAciklamasi</td>
-                        <td>@s.Gonderen</td>
-                        <td>@s.Alici</td>
-                        <td>@s.AliciUlke</td>
-                        <td>@s.AliciSehir</td>
-
-                        <td>@(string.IsNullOrWhiteSpace(s.DorsePlaka) ? "—" : s.DorsePlaka)</td>  <!-- EKLENDİ -->
-
-                        <td class="text-end">@s.Tutar?.ToString("N2")</td>
-                        <td>@s.ParaBirimi</td>
-                        <td>@(string.IsNullOrWhiteSpace(s.FaturaNo) ? "—" : s.FaturaNo)</td>
-                        <td>
-                            <a asp-page="/Siparisler/Details" asp-route-id="@s.SiparisID"
-                               class="btn btn-sm btn-outline-primary me-1">Aç</a>
-
-                            <form method="post"
-                                  asp-page-handler="GelireKaydet"
-                                  asp-route-seferId="@Model.Data!.SeferID"
-                                  asp-route-siparisId="@s.SiparisID"
-                                  class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button class="btn btn-sm btn-outline-success" @(isClosed ? "disabled" : null)>
-                                    Gelir +
-                                </button>
-                            </form>
-
-                            <form method="post"
-                                  asp-page-handler="SiparisCikar"
-                                  asp-route-seferId="@Model.Data!.SeferID"
-                                  asp-route-siparisId="@s.SiparisID"
-                                  class="d-inline"
-                                  onsubmit="return confirm('Bu siparişi seferden çıkarmak istiyor musunuz?');">
-                                @Html.AntiForgeryToken()
-                                <button class="btn btn-sm btn-outline-danger" @(isClosed ? "disabled" : null)>
-                                    Seferden -
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan="11" class="text-center text-muted">Bağlı sipariş yok.</td></tr>
-            }
-        </tbody>
-    </table>
-
-    <hr />
-
-    <h4 class="mt-4 d-flex justify-content-between align-items-center">
-        <span>Sefer Masrafları</span>
-        <a class="btn btn-success btn-sm@disClass"
-           asp-page="/SeferMasraflari/Create"
-           asp-route-seferId="@Model.Data?.SeferID"
-           aria-disabled="@ariaDis" tabindex="@tabIndex">+ Masraf Ekle</a>
-    </h4>
-
-    @if (Model.MasrafToplamlari?.Count > 0)
-    {
-        <div class="alert alert-info py-2">
-            <strong>Toplam:</strong>
-            @foreach (var kv in Model.MasrafToplamlari)
-            {
-                <span class="me-3">@kv.Value.ToString("N2") @kv.Key</span>
-            }
-        </div>
-    }
-
-    <table class="table table-sm table-bordered table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Tarih</th>
-                <th>Masraf Tipi</th>
-                <th class="text-end">Tutar</th>
-                <th>PB</th>
-                <th>Fatura/Belge No</th>
-                <th>Ülke</th>
-                <th>Yer</th>
-                <th>Notlar</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.Masraflar?.Count > 0)
-            {
-                foreach (var m in Model.Masraflar)
-                {
-                    <tr>
-                        <td>@m.Tarih.ToString("dd.MM.yyyy")</td>
-                        <td>@m.MasrafTipi</td>
-                        <td class="text-end">@m.Tutar.ToString("N2")</td>
-                        <td>@m.ParaBirimi</td>
-                        <td>@(string.IsNullOrWhiteSpace(m.FaturaBelgeNo) ? "—" : m.FaturaBelgeNo)</td>
-                        <td>@m.Ulke</td>
-                        <td>@m.Yer</td>
-                        <td>@m.Notlar</td>
-                        <td class="text-end">
-                            <form method="post"
-                                  asp-page-handler="MasrafSil"
-                                  asp-route-seferId="@Model.Data!.SeferID"
-                                  asp-route-id="@m.SeferMasrafID"
-                                  class="d-inline"
-                                  onsubmit="return confirm('Bu masrafı silmek istediğinize emin misiniz?');">
-                                @Html.AntiForgeryToken()
-                                <button class="btn btn-danger btn-sm" @(isClosed ? "disabled" : null)>Sil</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan="9" class="text-center text-muted">Bu sefere kayıtlı masraf yok.</td></tr>
-            }
-        </tbody>
-    </table>
-
-    <hr />
-
-    <h4 class="mt-4 d-flex justify-content-between align-items-center">
-        <span>Sefer Gelirleri</span>
-        <a class="btn btn-success btn-sm@disClass"
-           asp-page="/SeferGelirleri/Create"
-           asp-route-seferId="@Model.Data?.SeferID"
-           aria-disabled="@ariaDis" tabindex="@tabIndex">+ Gelir Ekle</a>
-    </h4>
-
-    @if (Model.GelirToplamlari?.Count > 0)
-    {
-        <div class="alert alert-success py-2">
-            <strong>Toplam Gelir:</strong>
-            @foreach (var kv in Model.GelirToplamlari)
-            {
-                <span class="me-3">@kv.Value.ToString("N2") @kv.Key</span>
-            }
-        </div>
-    }
-
-    <table class="table table-sm table-bordered table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Tarih</th>
-                <th class="text-end">Tutar</th>
-                <th>PB</th>
-                <th>Açıklama</th>
-                <th>Sipariş</th>
-                <th>Çıkış İli</th>
-                <th>Varış İli</th>
-                <th>Fatura No</th>
-                <th>Notlar</th>
-                <th class="text-end">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.Gelirler?.Count > 0)
-            {
-                foreach (var g in Model.Gelirler)
-                {
-                    string? cikisIl = null;
-                    string? varisIl = null;
-
-                    if (g.IlgiliSiparisID is not null)
-                    {
-                        var sip = Model.Siparisler?.FirstOrDefault(x => x.SiparisID == g.IlgiliSiparisID);
-
-                        cikisIl =
-                        sip?.GetType().GetProperty("CikisIl")?.GetValue(sip)?.ToString()
-                        ?? sip?.GetType().GetProperty("YuklemeIl")?.GetValue(sip)?.ToString()
-                        ?? sip?.GetType().GetProperty("GonderenIl")?.GetValue(sip)?.ToString()
-                        ?? sip?.GetType().GetProperty("GonderenSehir")?.GetValue(sip)?.ToString();
-
-                        varisIl =
-                        sip?.GetType().GetProperty("VarisIl")?.GetValue(sip)?.ToString()
-                        ?? sip?.GetType().GetProperty("BosaltmaIl")?.GetValue(sip)?.ToString()
-                        ?? sip?.GetType().GetProperty("AliciIl")?.GetValue(sip)?.ToString()
-                        ?? sip?.AliciSehir; // sende kesin var
-                    }
-
-                    cikisIl ??= g.GetType().GetProperty("CikisIl")?.GetValue(g)?.ToString();
-                    varisIl ??= g.GetType().GetProperty("VarisIl")?.GetValue(g)?.ToString();
-
-                    cikisIl ??= Model.Data?.GetType().GetProperty("CikisIl")?.GetValue(Model.Data)?.ToString();
-                    varisIl ??= Model.Data?.GetType().GetProperty("VarisIl")?.GetValue(Model.Data)?.ToString();
-
-
-                    <tr>
-                        <td>@g.Tarih.ToString("dd.MM.yyyy")</td>
-                        <td class="text-end">@g.Tutar.ToString("N2")</td>
-                        <td>@g.ParaBirimi</td>
-                        <td>@g.Aciklama</td>
-                        <td>
-                            @if (g.IlgiliSiparisID is null)
-                            {
-                                <text>—</text>
-                            }
-                            else
-                            {
-                                <a asp-page="/Siparisler/Details" asp-route-id="@g.IlgiliSiparisID">@g.IlgiliSiparisID</a>
-                            }
-                        </td>
-                        <td>@(string.IsNullOrWhiteSpace(cikisIl) ? "—" : cikisIl)</td>
-                        <td>@(string.IsNullOrWhiteSpace(varisIl) ? "—" : varisIl)</td>
-                        <td>@(string.IsNullOrWhiteSpace(g.FaturaNo) ? "—" : g.FaturaNo)</td>
-                        <td>@g.Notlar</td>
-                        <td class="text-end">
-                            @if (g.IsCarilestirildi)
-                            {
-                                <span class="badge bg-success me-2">Carileştirildi</span>
-                                <span class="me-2">@(g.CariMusteriAdi ?? "—") (@(g.CariIslemTuru ?? "—"))</span>
-
-                                @if (isClosed)
-                                {
-                                    <button type="button"
-                                            class="btn btn-outline-danger btn-sm disabled"
-                                            aria-disabled="true"
-                                            tabindex="-1">
-                                        Cariye İşlemeyi Kaldır
-                                    </button>
-                                }
-                                else
-                                {
-                                    <form method="post"
-                                          asp-page-handler="GelirCariCikart"
-                                          asp-route-seferId="@Model.Data!.SeferID"
-                                          asp-route-gelirId="@g.SeferGelirID"
-                                          class="d-inline me-1"
-                                          onsubmit="return confirm('Bu gelire ait cari hareket silinsin mi?');">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            Cariye İşlemeyi Kaldır
-                                        </button>
-                                    </form>
-                                }
-                            }
-                            else
-                            {
-                                <button type="button"
-                                        class="btn btn-outline-secondary btn-sm me-1 @(isClosed ? "disabled" : "")"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#cariyeIsleModal"
-                                        data-gelir-id="@g.SeferGelirID"
-                                        data-pb="@g.ParaBirimi"
-                                        data-tutar="@g.Tutar.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-sefer-kodu="@(Model.Data!.SeferKodu ?? ("SF-" + Model.Data.SeferID))"
-                                        data-cekici-plaka="@(Model.Data?.AracPlaka ?? "")"
-                                        @(isClosed ? "disabled" : null)>
-                                    Cariye İşle
-                                </button>
-
-                            }
-
-                            <form method="post"
-                                  asp-page-handler="GelirSil"
-                                  asp-route-seferId="@Model.Data!.SeferID"
-                                  asp-route-id="@g.SeferGelirID"
-                                  class="d-inline"
-                                  onsubmit="return confirm('Bu geliri silmek istiyor musunuz?');">
-                                @Html.AntiForgeryToken()
-                                <button class="btn btn-danger btn-sm" @(isClosed ? "disabled" : null)>Sil</button>
-                            </form>
-                        </td>
-
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan="10" class="text-center text-muted">Bu sefere kayıtlı gelir yok.</td></tr>
-            }
-        </tbody>
-    </table>
+    @* ══════════════════════════════════════════════════════
+       CARİYE İŞLE MODAL
+    ══════════════════════════════════════════════════════ *@
     <div class="modal fade" id="cariyeIsleModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form method="post" asp-page-handler="GelirCariyeIsle">
                     @Html.AntiForgeryToken()
-
                     <div class="modal-header">
-                        <h5 class="modal-title">Cariye İşle</h5>
+                        <h5 class="modal-title">⇒ Cariye İşle</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-
                     <div class="modal-body">
-                        <input type="hidden" name="seferId" value="@Model.Data!.SeferID" />
+                        <input type="hidden" name="seferId" value="@Model.Data.SeferID" />
                         <input type="hidden" name="gelirId" id="modalGelirId" />
 
                         <div class="mb-3">
-                            <label class="form-label">Müşteri</label>
+                            <label class="form-label fw-semibold">Müşteri / Nakliyeci</label>
                             <select class="form-select" name="musteriId" required>
                                 <option value="">Seçiniz...</option>
                                 @foreach (var m in Model.MusteriOptions)
@@ -459,64 +872,80 @@
                                 }
                             </select>
                         </div>
-
-                        <div class="row g-2">
+                        <div class="row g-2 mb-3">
                             <div class="col-6">
-                                <label class="form-label">PB</label>
-                                <input class="form-control" id="modalPB" readonly />
+                                <label class="form-label fw-semibold">Para Birimi</label>
+                                <input class="form-control bg-light" id="modalPB" readonly />
                             </div>
                             <div class="col-6">
-                                <label class="form-label">Tutar</label>
-                                <input class="form-control" id="modalTutar" readonly />
+                                <label class="form-label fw-semibold">Tutar</label>
+                                <input class="form-control bg-light" id="modalTutar" readonly />
                             </div>
                         </div>
-
-                        <div class="mt-3">
-                            <label class="form-label">Açıklama</label>
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold">Açıklama</label>
                             <input class="form-control" name="aciklama" id="modalAciklama" />
-                            <div class="form-text">Otomatik: Sefer No: ...</div>
+                            <div class="form-text" id="modalOtomatikText">Otomatik: Sefer No: ...</div>
                         </div>
                     </div>
-
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
-                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                        <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-pastel-green">💾 Kaydet</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            var modalEl = document.getElementById('cariyeIsleModal');
-            if (!modalEl) return;
-
-            modalEl.addEventListener('show.bs.modal', function (event) {
-                var btn = event.relatedTarget;
-                if (!btn) return;
-
-                var gelirId = btn.getAttribute('data-gelir-id');
-                var pb = btn.getAttribute('data-pb');
-                var tutar = btn.getAttribute('data-tutar');
-                var seferKodu = btn.getAttribute('data-sefer-kodu');
-                var cekiciPlaka = btn.getAttribute('data-cekici-plaka');
-
-                document.getElementById('modalGelirId').value = gelirId || '';
-                document.getElementById('modalPB').value = pb || '';
-                document.getElementById('modalTutar').value = tutar || '';
-
-                var aciklama = 'Sefer No: ' + (seferKodu || '');
-                if (cekiciPlaka && cekiciPlaka.trim() !== '') {
-                    aciklama += ' - ' + cekiciPlaka;
-                }
-
-                document.getElementById('modalAciklama').value = aciklama;
-
-                var otomatikEl = document.getElementById('modalOtomatikText');
-                if (otomatikEl) otomatikEl.textContent = 'Otomatik: ' + aciklama;
-            });
-        });
-    </script>
-
-
 }
+
+@* ══════════════════════════════════════════════════════
+   DATA YOKSA
+══════════════════════════════════════════════════════ *@
+@if (Model.Data == null)
+{
+    <div class="alert alert-warning">Sefer bulunamadı.</div>
+    <a asp-page="./Index" class="btn btn-pastel-blue">← Listeye Dön</a>
+}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ── Özel Tab Yönetimi ─────────────────────────────────
+    var tabBtns = document.querySelectorAll('#sfTabsBar .sf-tab-btn');
+    tabBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            tabBtns.forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.sf-tab-pane').forEach(function (p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            var target = document.getElementById(btn.getAttribute('data-target'));
+            if (target) target.classList.add('active');
+        });
+    });
+
+    // ── Cariye İşle Modal ─────────────────────────────────
+    var modalEl = document.getElementById('cariyeIsleModal');
+    if (!modalEl) return;
+    modalEl.addEventListener('show.bs.modal', function (event) {
+        var btn = event.relatedTarget;
+        if (!btn) return;
+
+        var gelirId      = btn.getAttribute('data-gelir-id');
+        var pb           = btn.getAttribute('data-pb');
+        var tutar        = btn.getAttribute('data-tutar');
+        var seferKodu    = btn.getAttribute('data-sefer-kodu');
+        var cekiciPlaka  = btn.getAttribute('data-cekici-plaka');
+
+        document.getElementById('modalGelirId').value  = gelirId || '';
+        document.getElementById('modalPB').value       = pb || '';
+        document.getElementById('modalTutar').value    = tutar || '';
+
+        var aciklama = 'Sefer No: ' + (seferKodu || '');
+        if (cekiciPlaka && cekiciPlaka.trim() !== '') aciklama += ' - ' + cekiciPlaka;
+
+        document.getElementById('modalAciklama').value      = aciklama;
+        document.getElementById('modalOtomatikText').textContent = 'Otomatik: ' + aciklama;
+    });
+});
+</script>
+
+</div>@* /lj-page-compact *@

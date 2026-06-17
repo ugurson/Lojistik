@@ -12,6 +12,7 @@ namespace Lojistik.Pages.Kademeler
         public CreateModel(AppDbContext context) => _context = context;
 
         [BindProperty] public AracKademe Kademe { get; set; } = new(); // [YENİ]
+
         public string? Plaka { get; set; } // [YENİ]
 
         public async Task<IActionResult> OnGetAsync(int? aracId, string? plaka)

@@ -1,33 +1,54 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model Lojistik.Pages.Musteriler.DeleteModel
 @{
     ViewData["Title"] = "Müşteri Sil";
+    var m = Model.Musteri;
 }
 
-<h2>Müşteri Sil</h2>
-<hr />
+<div class="lj-page-compact">
 
-<h5>Bu kaydı silmek istediğinize emin misiniz?</h5>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0 text-danger">Müşteri Sil</h2>
+        <a class="btn btn-pastel-blue btn-sm" asp-page="./Index">← Liste</a>
+    </div>
 
-<dl class="row">
-    <dt class="col-sm-2">Müşteri Adı</dt>
-    <dd class="col-sm-10">@Model.Musteri.MusteriAdi</dd>
+    <div class="alert alert-danger py-2 mb-3">
+        Bu kaydı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+    </div>
 
-    <dt class="col-sm-2">Ülke</dt>
-    <dd class="col-sm-10">@Model.Musteri.Ulke?.UlkeAdi</dd>
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-6 col-md-4">
+                    <div class="text-muted small">Müşteri Adı</div>
+                    <div class="fw-semibold">@m.MusteriAdi</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Ülke</div>
+                    <div>@m.Ulke?.UlkeAdi</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Şehir</div>
+                    <div>@m.Sehir?.SehirAdi</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Telefon</div>
+                    <div>@m.Telefon</div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="text-muted small">E-posta</div>
+                    <div>@m.Email</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <dt class="col-sm-2">Şehir</dt>
-    <dd class="col-sm-10">@Model.Musteri.Sehir?.SehirAdi</dd>
+    <form method="post">
+        <input type="hidden" asp-for="Musteri.MusteriID" />
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-pastel-red">Evet, Sil</button>
+            <a asp-page="./Index" class="btn btn-pastel-blue">İptal</a>
+        </div>
+    </form>
 
-    <dt class="col-sm-2">Telefon</dt>
-    <dd class="col-sm-10">@Model.Musteri.Telefon</dd>
-
-    <dt class="col-sm-2">E-posta</dt>
-    <dd class="col-sm-10">@Model.Musteri.Email</dd>
-</dl>
-
-<form method="post">
-    <input type="hidden" asp-for="Musteri.MusteriID" />
-    <button type="submit" class="btn btn-danger btn-sm me-1">Sil</button>
-    <a asp-page="./Index" class="btn btn-secondary btn-sm">Vazgeç</a>
-</form>
+</div>

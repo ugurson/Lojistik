@@ -1,40 +1,171 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model Lojistik.Pages.Soforler.DetailsModel
 @{
     ViewData["Title"] = "Şoför Detayı";
+    var s = Model.Data;
+
+    string TarihBadge(DateTime? dt, string etiket)
+    {
+        if (dt == null) return "";
+        var days = (dt.Value.Date - DateTime.Today).TotalDays;
+        if (days < 0)   return "badge bg-danger";
+        if (days <= 30) return "badge bg-warning text-dark";
+        return "badge bg-success bg-opacity-75";
+    }
 }
-<h2 class="mb-3">Şoför Detayı</h2>
 
-<dl class="row">
-    <dt class="col-sm-3">Ad Soyad</dt>
-    <dd class="col-sm-9">@Model.Data.AdSoyad</dd>
-    <dt class="col-sm-3">Telefon</dt>
-    <dd class="col-sm-9">@Model.Data.Telefon</dd>
-    <dt class="col-sm-3">E-posta</dt>
-    <dd class="col-sm-9">@Model.Data.Eposta</dd>
-    <dt class="col-sm-3">TCKN</dt>
-    <dd class="col-sm-9">@Model.Data.TCKimlikNo</dd>
-    <dt class="col-sm-3">Ehliyet</dt>
-    <dd class="col-sm-9">@Model.Data.EhliyetNo (@Model.Data.EhliyetSinifi)</dd>
-    <dt class="col-sm-3">Ehliyet Geçer.</dt>
-    <dd class="col-sm-9">@Model.Data.EhliyetGecerlilikTarihi:dd.MM.yyyy</dd>
-    <dt class="col-sm-3">SRC</dt>
-    <dd class="col-sm-9">@Model.Data.SRCBelgeNo</dd>
-    <dt class="col-sm-3">Psikoteknik</dt>
-    <dd class="col-sm-9">@Model.Data.PsikoteknikNo</dd>
-    <dt class="col-sm-3">Pasaport</dt>
-    <dd class="col-sm-9">@Model.Data.PasaportNo / @Model.Data.PasaportBitisTarihi:dd.MM.yyyy</dd>
-    <dt class="col-sm-3">Vize Bitiş</dt>
-    <dd class="col-sm-9">@Model.Data.VizeBitisTarihi:dd.MM.yyyy</dd>
-    <dt class="col-sm-3">Takograf Kart</dt>
-    <dd class="col-sm-9">@Model.Data.SurucuKartNo</dd>
-    <dt class="col-sm-3">Durum</dt>
-    <dd class="col-sm-9">@(Model.Data.Durum == 1 ? "Aktif" : "Pasif")</dd>
-    <dt class="col-sm-3">Notlar</dt>
-    <dd class="col-sm-9">@Model.Data.Notlar</dd>
-</dl>
+<div class="lj-page-compact">
 
-<div class="mt-3 d-flex gap-2">
-    <a class="btn btn-secondary" asp-page="Index">Listeye Dön</a>
-    <a class="btn btn-primary" asp-page="Edit" asp-route-id="@Model.Data.SoforID">Düzenle</a>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">@s.AdSoyad</h2>
+        <div class="btn-group btn-group-sm">
+            <a class="btn btn-pastel-amber" asp-page="Edit"   asp-route-id="@s.SoforID">Düzenle</a>
+            <a class="btn btn-pastel-red"   asp-page="Delete" asp-route-id="@s.SoforID">Sil</a>
+            <a class="btn btn-pastel-blue"  asp-page="Index">← Liste</a>
+        </div>
+    </div>
+
+    @* ─── KİŞİSEL BİLGİLER ──────────────────────────────────────── *@
+    <div class="card mb-3">
+        <div class="card-header fw-semibold">Kişisel Bilgiler</div>
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Ad Soyad</div>
+                    <div class="fw-semibold">@s.AdSoyad</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Durum</div>
+                    <div>
+                        @if (s.Durum == 1)
+                        { <span class="badge bg-success bg-opacity-75">Aktif</span> }
+                        else
+                        { <span class="badge bg-secondary">Pasif</span> }
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Telefon</div>
+                    <div>@s.Telefon</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">E-posta</div>
+                    <div>@s.Eposta</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">TCKN</div>
+                    <div>@s.TCKimlikNo</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Uyruk</div>
+                    <div>@s.Uyruk</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Doğum Tarihi</div>
+                    <div>@s.DogumTarihi?.ToString("dd.MM.yyyy")</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Kan Grubu</div>
+                    <div>@s.KanGrubu</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">SGK No</div>
+                    <div>@s.SGKNo</div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="text-muted small">IBAN</div>
+                    <div>@s.IBAN</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(s.Notlar))
+                {
+                    <div class="col-12">
+                        <div class="text-muted small">Notlar</div>
+                        <div>@s.Notlar</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ─── EHLİYET & BELGELER ────────────────────────────────────── *@
+    <div class="card mb-3">
+        <div class="card-header fw-semibold">Ehliyet & Belgeler</div>
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Ehliyet No</div>
+                    <div class="fw-semibold">@s.EhliyetNo</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Ehliyet Sınıfı</div>
+                    <div>@s.EhliyetSinifi</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Ehliyet Veriliş</div>
+                    <div>@s.EhliyetVerilisTarihi?.ToString("dd.MM.yyyy")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Ehliyet Geçerlilik</div>
+                    <div>
+                        @if (s.EhliyetGecerlilikTarihi.HasValue)
+                        {
+                            <span class="@TarihBadge(s.EhliyetGecerlilikTarihi, "E")">
+                                @s.EhliyetGecerlilikTarihi.Value.ToString("dd.MM.yyyy")
+                            </span>
+                        }
+                        else { <span class="text-muted">—</span> }
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">SRC Belge No</div>
+                    <div>@s.SRCBelgeNo</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Psikoteknik No</div>
+                    <div>@s.PsikoteknikNo</div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="text-muted small">Takograf Kart No</div>
+                    <div>@s.SurucuKartNo</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ─── PASAPORT & VİZE ───────────────────────────────────────── *@
+    <div class="card">
+        <div class="card-header fw-semibold">Pasaport & Vize</div>
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Pasaport No</div>
+                    <div class="fw-semibold">@s.PasaportNo</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Pasaport Bitiş</div>
+                    <div>
+                        @if (s.PasaportBitisTarihi.HasValue)
+                        {
+                            <span class="@TarihBadge(s.PasaportBitisTarihi, "P")">
+                                @s.PasaportBitisTarihi.Value.ToString("dd.MM.yyyy")
+                            </span>
+                        }
+                        else { <span class="text-muted">—</span> }
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Vize Bitiş</div>
+                    <div>
+                        @if (s.VizeBitisTarihi.HasValue)
+                        {
+                            <span class="@TarihBadge(s.VizeBitisTarihi, "V")">
+                                @s.VizeBitisTarihi.Value.ToString("dd.MM.yyyy")
+                            </span>
+                        }
+                        else { <span class="text-muted">—</span> }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>

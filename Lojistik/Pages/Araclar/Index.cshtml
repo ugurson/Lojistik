@@ -1,220 +1,211 @@
-﻿@page
+@page
 @model Lojistik.Pages.Araclar.IndexModel
 @{
     ViewData["Title"] = "Araç Listesi";
 
+    string SortNext(string field) =>
+        Model.SortField == field && Model.SortDir == "asc" ? "desc" : "asc";
+    string SortIcon(string field) =>
+        Model.SortField != field ? "↕" : Model.SortDir == "asc" ? "↑" : "↓";
+    string SortCls(string field) =>
+        Model.SortField == field ? "" : "text-muted";
 
+    // Tüm filtre+sıralama parametrelerini Dictionary olarak tut
+    Dictionary<string,string?> PD(int pageIdx) => new() {
+        ["PageIndex"]  = pageIdx.ToString(),
+        ["PageSize"]   = Model.PageSize.ToString(),
+        ["SortField"]  = Model.SortField,
+        ["SortDir"]    = Model.SortDir,
+        ["Plaka"]      = Model.Plaka,
+        ["Marka"]      = Model.Marka,
+        ["ModelAdi"]   = Model.ModelAdi,
+        ["ModelYili"]  = Model.ModelYili?.ToString(),
+        ["AracTipi"]   = Model.AracTipi,
+        ["IsDorse"]    = Model.IsDorse?.ToString().ToLower(),
+        ["Durum"]      = Model.Durum,
+        ["Notlar"]     = Model.Notlar,
+        ["Ozmal"]      = Model.Ozmal?.ToString()
+    };
+
+    Dictionary<string,string?> SD(string field) => new() {
+        ["PageIndex"]  = "1",
+        ["PageSize"]   = Model.PageSize.ToString(),
+        ["SortField"]  = field,
+        ["SortDir"]    = SortNext(field),
+        ["Plaka"]      = Model.Plaka,
+        ["Marka"]      = Model.Marka,
+        ["ModelAdi"]   = Model.ModelAdi,
+        ["ModelYili"]  = Model.ModelYili?.ToString(),
+        ["AracTipi"]   = Model.AracTipi,
+        ["IsDorse"]    = Model.IsDorse?.ToString().ToLower(),
+        ["Durum"]      = Model.Durum,
+        ["Notlar"]     = Model.Notlar,
+        ["Ozmal"]      = Model.Ozmal?.ToString()
+    };
 }
 
-<h2>Araç Listesi</h2>
+<div class="lj-page-compact">
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <div>
-        <a asp-page="Create" class="btn btn-success">Yeni Araç</a>&nbsp;
-        <a asp-page="Index"
-           asp-route-Ozmal="0"
-           asp-route-PageIndex="1"
-           asp-route-PageSize="@Model.PageSize"
-           asp-route-SortField="@Model.SortField"
-           asp-route-SortDir="@Model.SortDir"
-           class="btn btn-outline-primary">Kiralık araçlar</a>&nbsp;
-        <a asp-page="Index"
-           asp-route-Ozmal="1"
-           asp-route-PageIndex="1"
-           asp-route-PageSize="@Model.PageSize"
-           asp-route-SortField="@Model.SortField"
-           asp-route-SortDir="@Model.SortDir"
-           class="btn btn-outline-secondary">Özmal araçlar</a>
-
-        <span class="ms-2 fw-bold small text-muted align-middle">
-            @(Model.Ozmal == 0
-                        ? "Kiralık araçlar gösteriliyor"
-                        : Model.Ozmal == 1
-                        ? "Özmal araçlar gösteriliyor"
-                        : "Tüm araçlar gösteriliyor")
-        </span>
+@* ─── BAŞLIK ────────────────────────────────────────────────── *@
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">Araç Listesi</h2>
+    <div class="d-flex gap-2">
+        <partial name="_DownloadActions"
+                 view-data='@(new ViewDataDictionary(ViewData) {
+                     ["FileBase"] = "araclar",
+                     ["TableSelector"] = ".lj-table"
+                 })' />
+        <a asp-page="Create" class="btn btn-pastel-green btn-sm">+ Yeni Araç</a>
+        <button type="button" class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal" data-bs-target="#yardimModal"
+                title="Bu sayfa hakkında yardım">
+            ❓ Yardım
+        </button>
     </div>
-
-    <!-- Sayfa boyutu seçimi -->
-    <form method="get" class="d-flex align-items-center gap-2">
-        <label class="me-2">Sayfa boyutu</label>
-        <select name="PageSize" class="form-select form-select-sm me-2" onchange="this.form.submit()">
-            @{
-                int[] sizes = new[] { 10, 20, 50, 100 };
-                foreach (var s in sizes)
-                {
-                    <option value="@s" selected="@(Model.PageSize == s)">@s</option>
-                }
-            }
-        </select>
-
-        <!-- Filtre ve sıralama parametrelerini koru -->
-        <input type="hidden" name="PageIndex" value="1" />
-        <input type="hidden" name="SortField" value="@Model.SortField" />
-        <input type="hidden" name="SortDir" value="@Model.SortDir" />
-        <input type="hidden" name="Plaka" value="@Model.Plaka" />
-        <input type="hidden" name="Marka" value="@Model.Marka" />
-        <input type="hidden" name="ModelAdi" value="@Model.ModelAdi" />
-        <input type="hidden" name="ModelYili" value="@Model.ModelYili" />
-        <input type="hidden" name="AracTipi" value="@Model.AracTipi" />
-        <input type="hidden" name="IsDorse" value="@(Model.IsDorse?.ToString().ToLower())" />
-        <input type="hidden" name="Durum" value="@Model.Durum" />
-        <input type="hidden" name="Notlar" value="@Model.Notlar" />
-        <input type="hidden" name="Ozmal" value="@Model.Ozmal" />
-    </form>
 </div>
 
-<form method="get">
-    <table class="table table-striped">
+@* ─── FİLTRE KARTI ──────────────────────────────────────────── *@
+<div class="card lj-filter-card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <input type="hidden" name="PageIndex" value="1" />
+            <input type="hidden" name="SortField"  value="@Model.SortField" />
+            <input type="hidden" name="SortDir"    value="@Model.SortDir" />
+
+            <div class="col-sm-4 col-md-2">
+                <label class="form-label">Plaka</label>
+                <input name="Plaka" value="@Model.Plaka" class="form-control" placeholder="Plaka..." />
+            </div>
+            <div class="col-sm-4 col-md-2">
+                <label class="form-label">Marka</label>
+                <input name="Marka" value="@Model.Marka" class="form-control" placeholder="Marka..." />
+            </div>
+            <div class="col-sm-4 col-md-2">
+                <label class="form-label">Model</label>
+                <input name="ModelAdi" value="@Model.ModelAdi" class="form-control" placeholder="Model..." />
+            </div>
+            <div class="col-sm-3 col-md-1">
+                <label class="form-label">Tür</label>
+                <select name="IsDorse" class="form-select">
+                    <option value="">Hepsi</option>
+                    <option value="false" selected="@(Model.IsDorse == false)">Çekici</option>
+                    <option value="true"  selected="@(Model.IsDorse == true)">Dorse</option>
+                </select>
+            </div>
+            <div class="col-sm-3 col-md-2">
+                <label class="form-label">Mülkiyet</label>
+                <select name="Ozmal" class="form-select">
+                    <option value="">Hepsi</option>
+                    <option value="1" selected="@(Model.Ozmal == 1)">Özmal</option>
+                    <option value="0" selected="@(Model.Ozmal == 0)">Kiralık</option>
+                </select>
+            </div>
+            <div class="col-sm-3 col-md-1">
+                <label class="form-label">Durum</label>
+                <select name="Durum" class="form-select">
+                    <option value="">Hepsi</option>
+                    <option value="Aktif" selected="@(Model.Durum == "Aktif")">Aktif</option>
+                    <option value="Pasif" selected="@(Model.Durum == "Pasif")">Pasif</option>
+                </select>
+            </div>
+            <div class="col-sm-2 col-md-1">
+                <label class="form-label">Sayfa</label>
+                <select name="PageSize" class="form-select" onchange="this.form.submit()">
+                    @foreach (var s in new[] { 10, 20, 40, 100 })
+                    {
+                        <option value="@s" selected="@(Model.PageSize == s)">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto d-flex gap-1">
+                <button class="btn btn-pastel-blue">Ara</button>
+                <a asp-page="./Index" class="btn btn-pastel-blue">Temizle</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ─── ÖZET BAR ───────────────────────────────────────────────── *@
+<div class="d-flex align-items-center gap-3 mb-2">
+    <small class="text-muted">
+        Toplam <strong>@Model.TotalCount</strong> kayıt —
+        Sayfa <strong>@Model.PageIndex</strong> / <strong>@Model.TotalPages</strong>
+    </small>
+    @{
+        var ozmalLabel = Model.Ozmal == 0 ? "Kiralık" : Model.Ozmal == 1 ? "Özmal" : "Tümü";
+    }
+    <small class="text-muted">Gösterilen: <span class="badge bg-secondary">@ozmalLabel</span></small>
+</div>
+
+@* ─── TABLO ─────────────────────────────────────────────────── *@
+<div class="lj-table-wrap">
+    <table class="table table-sm table-hover align-middle mb-0 lj-table lj-table-compact">
         <thead>
             <tr>
-                <th style="width:56px;">#</th>
+                <th style="width:42px">#</th>
                 <th>
-                    <a asp-page="./Index"
-                       class="text-dark text-decoration-none"
-                       asp-route-SortField="Plaka"
-                       asp-route-SortDir="@(Model.SortField == "Plaka" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-PageIndex="1" asp-route-PageSize="@Model.PageSize"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar">
-                        Plaka
-                    </a><br />
-                    <input type="text" name="Plaka" value="@Model.Plaka" class="form-control form-control-sm" />
-                </th>
-
-                <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="Marka"
-                       asp-route-SortDir="@(Model.SortField == "Marka" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Marka
-                    </a><br />
-                    <input type="text" name="Marka" value="@Model.Marka" class="form-control form-control-sm" />
+                    <a asp-page="./Index" asp-all-route-data="@SD("Plaka")"
+                       class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                        <span>Plaka</span><small class="@SortCls("Plaka")">@SortIcon("Plaka")</small>
+                    </a>
                 </th>
                 <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="Model"
-                       asp-route-SortDir="@(Model.SortField == "Model" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Model
-                    </a><br />
-                    <input type="text" name="ModelAdi" value="@Model.ModelAdi" class="form-control form-control-sm" />
+                    <a asp-page="./Index" asp-all-route-data="@SD("Marka")"
+                       class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                        <span>Marka / Model</span><small class="@SortCls("Marka")">@SortIcon("Marka")</small>
+                    </a>
                 </th>
                 <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="ModelYili"
-                       asp-route-SortDir="@(Model.SortField == "ModelYili" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Model Yılı
-                    </a><br />
-                    <input type="number" name="ModelYili" value="@Model.ModelYili" class="form-control form-control-sm" />
+                    <a asp-page="./Index" asp-all-route-data="@SD("ModelYili")"
+                       class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                        <span>Yıl</span><small class="@SortCls("ModelYili")">@SortIcon("ModelYili")</small>
+                    </a>
                 </th>
+                <th>Tür</th>
                 <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="AracTipi"
-                       asp-route-SortDir="@(Model.SortField == "AracTipi" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Araç Tipi
-                    </a><br />
-                    <input type="text" name="AracTipi" value="@Model.AracTipi" class="form-control form-control-sm" />
+                    <a asp-page="./Index" asp-all-route-data="@SD("Durum")"
+                       class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                        <span>Durum</span><small class="@SortCls("Durum")">@SortIcon("Durum")</small>
+                    </a>
                 </th>
-                <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="IsDorse"
-                       asp-route-SortDir="@(Model.SortField == "IsDorse" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Dorse ise
-                    </a><br />
-                    <select name="IsDorse" class="form-control form-control-sm">
-                        <option value="">Hepsi</option>
-                        <option value="true" selected="@(Model.IsDorse == true)">Evet</option>
-                        <option value="false" selected="@(Model.IsDorse == false)">Hayır</option>
-                    </select>
-                </th>
-                <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="Durum"
-                       asp-route-SortDir="@(Model.SortField == "Durum" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Durum
-                    </a><br />
-                    <select name="Durum" class="form-control form-control-sm">
-                        <option value="">Hepsi</option>
-                        <option value="Aktif" selected="@(Model.Durum == "Aktif")">Aktif</option>
-                        <option value="Pasif" selected="@(Model.Durum == "Pasif")">Pasif</option>
-                    </select>
-                </th>
-                <th>
-                    <a asp-page="./Index"
-                       asp-route-SortField="Notlar"
-                       asp-route-SortDir="@(Model.SortField == "Notlar" && string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc")"
-                       asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                       asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                       asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                       asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar"
-                       class="text-dark text-decoration-none">
-                        Notlar
-                    </a><br />
-                    <input type="text" name="Notlar" value="@Model.Notlar" class="form-control form-control-sm" />
-                </th>
-                <th>
-                    <br />
-                    <button type="submit" class="btn btn-primary btn-sm">Filtrele</button>
-                </th>
+                <th>Notlar</th>
+                <th class="text-end" style="width:150px">İşlemler</th>
             </tr>
         </thead>
         <tbody>
-            @{
-                var sira = (Model.PageIndex - 1) * Model.PageSize + 1;
+            @{ var sira = (Model.PageIndex - 1) * Model.PageSize + 1; }
+            @if (!Model.Araclar.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-4">
+                    <div class="fs-4 mb-1">📭</div>Kayıt bulunamadı.
+                </td></tr>
             }
- <!-- numaralandırma paging ile doğru başlar -->
             @foreach (var item in Model.Araclar)
             {
-                <tr>
-                    <td>@sira</td>
-                    <td>@item.Plaka</td>
-                    <td>@item.Marka</td>
-                    <td>@item.Model</td>
+                var detayUrl   = Url.Page("./Details", new { id = item.AracID });
+                var durumBadge = item.Durum == "Aktif" ? "badge bg-success bg-opacity-75" : "badge bg-secondary";
+
+                <tr class="rowlink" data-href="@detayUrl">
+                    <td class="text-muted">@sira</td>
+                    <td class="fw-semibold">
+                        <span class="badge bg-light text-dark border">@item.Plaka</span>
+                    </td>
+                    <td>@item.Marka @item.Model</td>
                     <td>@item.ModelYili</td>
-                    <td>@item.AracTipi</td>
-                    <td>@(item.IsDorse ? "Evet" : "Hayır")</td>
-                    <td>@item.Durum</td>
-                    <td>@item.Notlar</td>
                     <td>
-                        <div class="btn-group" role="group">
-                        <a asp-page="Details" asp-route-id="@item.AracID" class="btn btn-secondary btn-sm me-1">Belgeler</a>
-                        <a asp-page="Edit" asp-route-id="@item.AracID" class="btn btn-primary btn-sm me-1">Düzenle</a>                      
-                            <a class="btn btn-secondary btn-sm me-1"
-                               asp-page="/Kademeler/Index"
-                               asp-route-aracId="@item.AracID"
-                               asp-route-plaka="@item.Plaka">Kademe</a> <!-- [YENİ] -->
-                        <a asp-page="Delete" asp-route-id="@item.AracID" class="btn btn-danger btn-sm me-1">Sil</a>
+                        <span class="badge @(item.IsDorse ? "bg-info text-dark" : "bg-primary bg-opacity-75")">
+                            @(item.IsDorse ? "Dorse" : "Çekici")
+                        </span>
+                    </td>
+                    <td><span class="@durumBadge">@item.Durum</span></td>
+                    <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        @item.Notlar
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a asp-page="Details" asp-route-id="@item.AracID" class="btn btn-pastel-blue">Detay</a>
+                            <a asp-page="Edit"    asp-route-id="@item.AracID" class="btn btn-pastel-amber">Düzenle</a>
+                            <a asp-page="Delete"  asp-route-id="@item.AracID" class="btn btn-pastel-red">Sil</a>
                         </div>
                     </td>
                 </tr>
@@ -222,86 +213,101 @@
             }
         </tbody>
     </table>
-</form>
+</div>
 
-<!-- Pager -->
+@* ─── SAYFALAMA ──────────────────────────────────────────────── *@
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Sayfalama">
-        <ul class="pagination">
-            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
-                <a class="page-link"
-                   asp-page="./Index"
-                   asp-route-PageIndex="1"
-                   asp-route-PageSize="@Model.PageSize"
-                   asp-route-SortField="@Model.SortField" asp-route-SortDir="@Model.SortDir"
-                   asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                   asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                   asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                   asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar">İlk</a>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">
+            Toplam <strong>@Model.TotalCount</strong> — Sayfa <strong>@Model.PageIndex</strong> / <strong>@Model.TotalPages</strong>
+        </small>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(Model.PageIndex <= 1 ? "disabled" : null)">
+                <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.PageIndex - 1)">‹ Önceki</a>
             </li>
-
-            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
-                <a class="page-link"
-                   asp-page="./Index"
-                   asp-route-PageIndex="@(Model.PageIndex - 1)"
-                   asp-route-PageSize="@Model.PageSize"
-                   asp-route-SortField="@Model.SortField" asp-route-SortDir="@Model.SortDir"
-                   asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                   asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                   asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                   asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar">Önceki</a>
-            </li>
-
-            <!-- İsteğe bağlı: 5’lik pencere -->
             @{
-                int start = Math.Max(1, Model.PageIndex - 2);
-                int end = Math.Min(Model.TotalPages, Model.PageIndex + 2);
-                for (int i = start; i <= end; i++)
-                {
-                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                        <a class="page-link"
-                           asp-page="./Index"
-                           asp-route-PageIndex="@i"
-                           asp-route-PageSize="@Model.PageSize"
-                           asp-route-SortField="@Model.SortField" asp-route-SortDir="@Model.SortDir"
-                           asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                           asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                           asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                           asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar">@i</a>
-                    </li>
-                }
+                int pgStart = Math.Max(1, Model.PageIndex - 2);
+                int pgEnd   = Math.Min(Model.TotalPages, Model.PageIndex + 2);
             }
-
-            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link"
-                   asp-page="./Index"
-                   asp-route-PageIndex="@(Model.PageIndex + 1)"
-                   asp-route-PageSize="@Model.PageSize"
-                   asp-route-SortField="@Model.SortField" asp-route-SortDir="@Model.SortDir"
-                   asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                   asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                   asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                   asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar">Sonraki</a>
-            </li>
-
-            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link"
-                   asp-page="./Index"
-                   asp-route-PageIndex="@Model.TotalPages"
-                   asp-route-PageSize="@Model.PageSize"
-                   asp-route-SortField="@Model.SortField" asp-route-SortDir="@Model.SortDir"
-                   asp-route-Plaka="@Model.Plaka" asp-route-Marka="@Model.Marka"
-                   asp-route-ModelAdi="@Model.ModelAdi" asp-route-ModelYili="@Model.ModelYili"
-                   asp-route-AracTipi="@Model.AracTipi" asp-route-IsDorse="@Model.IsDorse"
-                   asp-route-Durum="@Model.Durum" asp-route-Notlar="@Model.Notlar">Son</a>
+            @if (pgStart > 1)
+            {
+                <li class="page-item"><a class="page-link" asp-page="./Index" asp-all-route-data="@PD(1)">1</a></li>
+                @if (pgStart > 2) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+            }
+            @for (int pg = pgStart; pg <= pgEnd; pg++)
+            {
+                <li class="page-item @(pg == Model.PageIndex ? "active" : null)">
+                    <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(pg)">@pg</a>
+                </li>
+            }
+            @if (pgEnd < Model.TotalPages)
+            {
+                @if (pgEnd < Model.TotalPages - 1) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+                <li class="page-item"><a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.TotalPages)">@Model.TotalPages</a></li>
+            }
+            <li class="page-item @(Model.PageIndex >= Model.TotalPages ? "disabled" : null)">
+                <a class="page-link" asp-page="./Index" asp-all-route-data="@PD(Model.PageIndex + 1)">Sonraki ›</a>
             </li>
         </ul>
-    </nav>
-
-    <div class="text-muted">
-        Toplam @Model.TotalCount kayıt — Sayfa @Model.PageIndex / @Model.TotalPages
     </div>
 }
 
+<div class="modal fade" id="yardimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f0f7ff;border-bottom:1px solid #cce0ff;">
+                <h5 class="modal-title fw-bold">❓ Araç Listesi — Kullanım Kılavuzu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:14px;line-height:1.7;">
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">📋 Genel Bakış</h6>
+                    <p class="text-muted mb-2">Bu sayfa, filoya ait tüm araçları (çekici ve dorse) listeler. Araç bilgilerini görüntüleyebilir, filtreleyebilir ve yönetebilirsiniz.</p>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">🔍 Filtreleme</h6>
+                    <ul class="mb-0">
+                        <li><strong>Plaka</strong> — Araç plakasına göre arama yapın.</li>
+                        <li><strong>Marka / Model</strong> — Araç markası veya modeline göre filtreleyin.</li>
+                        <li><strong>Tür</strong> — Çekici veya Dorse olarak filtreleyin.</li>
+                        <li><strong>Mülkiyet</strong> — Özmal veya Kiralık araçları ayrı görün.</li>
+                        <li><strong>Durum</strong> — Aktif veya Pasif araçları filtreleyin.</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">⚙️ İşlemler</h6>
+                    <ul class="mb-0">
+                        <li><strong>Detay</strong> — Aracın tüm bilgilerini, belgelerini ve kademe geçmişini görün.</li>
+                        <li><strong>Düzenle</strong> — Araç bilgilerini güncelleyin.</li>
+                        <li><strong>Sil</strong> — Aracı sistemden kaldırın (dikkatli kullanın).</li>
+                        <li><strong>+ Yeni Araç</strong> — Sisteme yeni bir araç ekleyin.</li>
+                    </ul>
+                </div>
+                <div class="mb-0">
+                    <h6 class="fw-bold border-bottom pb-1 mb-2" style="color:#1d4ed8;">💡 İpuçları</h6>
+                    <ul class="mb-0">
+                        <li>Satıra tıklayarak doğrudan araç detay sayfasına gidebilirsiniz.</li>
+                        <li>Sütun başlıklarına tıklayarak sıralama yapabilirsiniz.</li>
+                        <li>Belge takibi için araç detay sayfasını kullanın.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>@* /lj-page-compact *@
+
+<script>
+    document.querySelectorAll('tr.rowlink').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (e.target.closest('a, button, form')) return;
+            window.location = row.dataset.href;
+        });
+    });
+</script>
 

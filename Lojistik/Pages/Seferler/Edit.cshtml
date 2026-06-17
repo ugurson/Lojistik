@@ -1,82 +1,142 @@
-﻿@* Pages/Seferler/Edit.cshtml *@
+@* Pages/Seferler/Edit.cshtml *@
 @page "{id:int}"
 @model Lojistik.Pages.Seferler.EditModel
+@using Lojistik.Models.Enums
 @{
     ViewData["Title"] = "Sefer Düzenle";
 }
-<h2 class="mb-3">Sefer Düzenle</h2>
 
-<form method="post" class="row g-3">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <input type="hidden" asp-for="Input.SeferID" />
+<style>
+    .lj-card-hdr { font-size: 0.82rem; letter-spacing: .04em; text-transform: uppercase; }
+    .lj-lbl      { font-size: 0.78rem; margin-bottom: 2px; color: #6c757d; }
+</style>
 
-    <div class="col-md-4">
-        <label asp-for="Input.SeferKodu" class="form-label">Sefer Kodu</label>
-        <input asp-for="Input.SeferKodu" class="form-control" />
-        <span asp-validation-for="Input.SeferKodu" class="text-danger"></span>
-    </div>
+<div class="lj-page-compact">
 
-    <div class="col-md-4">
-        <label asp-for="Input.AracID" class="form-label">Çekici</label>
-        <select asp-for="Input.AracID" asp-items="Model.CekicilerSelect" class="form-select"></select>
-        <span asp-validation-for="Input.AracID" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-4">
-        <label asp-for="Input.DorseID" class="form-label">Dorse</label>
-        <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select">
-            <option value="">(Yok)</option>
-        </select>
-        <span asp-validation-for="Input.DorseID" class="text-danger"></span>
+    @* ─── BAŞLIK ─────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sefer Düzenle</h2>
+        <div class="d-flex gap-2">
+            <button type="submit" form="mainForm" class="btn btn-pastel-green btn-sm">Kaydet</button>
+            <a asp-page="./Details" asp-route-id="@Model.Input.SeferID" class="btn btn-pastel-blue btn-sm">← Detay</a>
+        </div>
     </div>
 
-    <div class="col-md-6">
-        <label asp-for="Input.SurucuAdi" class="form-label">Sürücü Adı</label>
-        <input asp-for="Input.SurucuAdi" class="form-control" />
-        <span asp-validation-for="Input.SurucuAdi" class="text-danger"></span>
-    </div>
-    <div class="col-md-6 d-none">
-        <label asp-for="Input.SurucuID" class="form-label">Sürücü ID</label>
-        <input asp-for="Input.SurucuID" class="form-control" />
-        <span asp-validation-for="Input.SurucuID" class="text-danger"></span>
-    </div>
+    <form id="mainForm" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-2 small"></div>
+        <input type="hidden" asp-for="Input.SeferID" />
 
-    <div class="col-md-6">
-        <label asp-for="Input.CikisTarihi" class="form-label">Çıkış</label>
-        <input asp-for="Input.CikisTarihi" type="datetime-local" class="form-control" />
-        <span asp-validation-for="Input.CikisTarihi" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="Input.DonusTarihi" class="form-label">Dönüş</label>
-        <input asp-for="Input.DonusTarihi" type="datetime-local" class="form-control" />
-        <span asp-validation-for="Input.DonusTarihi" class="text-danger"></span>
-    </div>
+        @* ─── ARAÇ & SÜRÜCÜ ──────────────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Araç & Sürücü</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <label asp-for="Input.SeferKodu" class="form-label lj-lbl">Sefer Kodu</label>
+                        <input asp-for="Input.SeferKodu" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.SeferKodu" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.AracID" class="form-label lj-lbl">Çekici</label>
+                        <select asp-for="Input.AracID" asp-items="Model.CekicilerSelect" class="form-select form-select-sm"></select>
+                        <span asp-validation-for="Input.AracID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.DorseID" class="form-label lj-lbl">Dorse</label>
+                        <select asp-for="Input.DorseID" asp-items="Model.DorselerSelect" class="form-select form-select-sm">
+                            <option value="">(Yok)</option>
+                        </select>
+                        <span asp-validation-for="Input.DorseID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.SurucuAdi" class="form-label lj-lbl">Sürücü Adı</label>
+                        <input asp-for="Input.SurucuAdi" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.SurucuAdi" class="text-danger small"></span>
+                    </div>
+                    <input asp-for="Input.SurucuID" type="hidden" />
+                </div>
+            </div>
+        </div>
 
-    <div class="col-md-3">
-        <label asp-for="Input.Durum" class="form-label">Durum</label>
-        <select asp-for="Input.Durum" class="form-select">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-        </select>
-        <span asp-validation-for="Input.Durum" class="text-danger"></span>
-    </div>
+        @* ─── TARİHLER, KM & DURUM ───────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Tarihler, KM & Durum</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label asp-for="Input.CikisTarihi" class="form-label lj-lbl">Çıkış</label>
+                        <input asp-for="Input.CikisTarihi" type="datetime-local" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.CikisTarihi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.DonusTarihi" class="form-label lj-lbl">Dönüş</label>
+                        <input asp-for="Input.DonusTarihi" type="datetime-local" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.DonusTarihi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.BaslangicKm" class="form-label lj-lbl">Başlangıç KM</label>
+                        <div class="input-group input-group-sm">
+                            <input asp-for="Input.BaslangicKm" id="baslangicKm" type="number" min="0"
+                                   class="form-control form-control-sm" placeholder="Çıkış" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.BitisKm" class="form-label lj-lbl">Bitiş KM</label>
+                        <div class="input-group input-group-sm">
+                            <input asp-for="Input.BitisKm" id="bitisKm" type="number" min="0"
+                                   class="form-control form-control-sm" placeholder="Dönüş" oninput="hesaplaKm()" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.KmMesafe" class="form-label lj-lbl">
+                            Mesafe <span class="text-muted" style="font-size:0.72rem;">(oto)</span>
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <input asp-for="Input.KmMesafe" id="kmMesafe" type="number" min="0"
+                                   class="form-control form-control-sm" placeholder="Toplam" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
 
-    <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
-        <textarea asp-for="Input.Notlar" rows="3" class="form-control"></textarea>
-        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
-    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.Durum" class="form-label lj-lbl">Durum</label>
+                        <select asp-for="Input.Durum" class="form-select form-select-sm">
+                            @foreach (SeferDurum d in Enum.GetValues(typeof(SeferDurum)))
+                            {
+                                <option value="@((byte)d)">@((byte)d) – @(d.ToAd())</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Input.Durum" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-10">
+                        <label asp-for="Input.Notlar" class="form-label lj-lbl">Notlar</label>
+                        <textarea asp-for="Input.Notlar" rows="2" class="form-control form-control-sm"></textarea>
+                        <span asp-validation-for="Input.Notlar" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="col-12 d-flex gap-2">
-        <button class="btn btn-primary" type="submit">Kaydet</button>
-        <a asp-page="./Details" asp-route-id="@Model.Input.SeferID" class="btn btn-outline-secondary">İptal</a>
-        <a asp-page="./Delete" asp-route-id="@Model.Input.SeferID" class="btn btn-outline-danger">Sil</a>
-    </div>
-</form>
+        <div class="d-flex gap-2">
+            <button class="btn btn-pastel-green btn-sm" type="submit">Kaydet</button>
+            <a asp-page="./Details" asp-route-id="@Model.Input.SeferID" class="btn btn-pastel-blue btn-sm">İptal</a>
+            <a asp-page="./Delete" asp-route-id="@Model.Input.SeferID" class="btn btn-pastel-red btn-sm ms-auto">Sil</a>
+        </div>
+    </form>
+
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function hesaplaKm() {
+            var b = parseInt(document.getElementById('baslangicKm').value) || 0;
+            var e = parseInt(document.getElementById('bitisKm').value) || 0;
+            if (b > 0 && e > b) {
+                document.getElementById('kmMesafe').value = e - b;
+            }
+        }
+    </script>
 }

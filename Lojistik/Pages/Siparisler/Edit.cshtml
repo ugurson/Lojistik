@@ -1,141 +1,157 @@
-﻿@* Pages/Siparisler/Edit.cshtml *@
+@* Pages/Siparisler/Edit.cshtml *@
 @page "{id:int}"
 @model Lojistik.Pages.Siparisler.EditModel
 @{
     ViewData["Title"] = "Sipariş Düzenle";
 }
 
-<h2 class="mb-3">Sipariş Düzenle</h2>
+<style>
+    .lj-card-hdr { font-size: 0.82rem; letter-spacing: .04em; text-transform: uppercase; }
+    .lj-lbl      { font-size: 0.78rem; margin-bottom: 2px; color: #6c757d; }
+</style>
 
-<form method="post" class="row g-3" autocomplete="off">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <input type="hidden" asp-for="Input.SiparisID" />
+<div class="lj-page-compact">
 
-    <div class="col-md-3">
-        <label asp-for="Input.SiparisTarihi" class="form-label">Sipariş Tarihi</label>
-        <input asp-for="Input.SiparisTarihi" type="date" class="form-control" />
-        <span asp-validation-for="Input.SiparisTarihi" class="text-danger"></span>
+    @* ─── BAŞLIK ─────────────────────────────────────────────────── *@
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">Sipariş Düzenle</h2>
+        <div class="d-flex gap-2">
+            <button type="submit" form="mainForm" class="btn btn-pastel-green btn-sm">Kaydet</button>
+            <a asp-page="./Details" asp-route-id="@Model.Input.SiparisID" class="btn btn-pastel-blue btn-sm">← Detay</a>
+        </div>
     </div>
 
-    <div class="col-12"><hr /></div>
+    <form id="mainForm" method="post" autocomplete="off">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-2 small"></div>
+        <input type="hidden" asp-for="Input.SiparisID" />
 
-    <div class="col-md-4">
-        <label asp-for="Input.GonderenMusteriID" class="form-label">Gönderen</label>
-        <select asp-for="Input.GonderenMusteriID" asp-items="Model.MusterilerSelect" class="form-select">
-            <option value="">-- Seçiniz --</option>
-        </select>
-        <span asp-validation-for="Input.GonderenMusteriID" class="text-danger"></span>
-    </div>
+        @* ─── GENEL ──────────────────────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Genel</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="Input.SiparisTarihi" class="form-label lj-lbl">Sipariş Tarihi</label>
+                        <input asp-for="Input.SiparisTarihi" type="date" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.SiparisTarihi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Durum" class="form-label lj-lbl">Durum</label>
+                        <select asp-for="Input.Durum" class="form-select form-select-sm">
+                            <option value="0">0 – Taslak</option>
+                            <option value="1">1 – Onaylandı</option>
+                            <option value="2">2 – Yükleme</option>
+                            <option value="3">3 – Tamamlandı</option>
+                            <option value="4">4 – İptal</option>
+                        </select>
+                        <span asp-validation-for="Input.Durum" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.AliciMusteriID" class="form-label">Alıcı</label>
-        <select asp-for="Input.AliciMusteriID" asp-items="Model.MusterilerSelect" class="form-select">
-            <option value="">-- Seçiniz --</option>
-        </select>
-        <span asp-validation-for="Input.AliciMusteriID" class="text-danger"></span>
-    </div>
+        @* ─── TARAFLAR ───────────────────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Taraflar</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label asp-for="Input.GonderenMusteriID" class="form-label lj-lbl">Gönderen</label>
+                        <select asp-for="Input.GonderenMusteriID" asp-items="Model.MusterilerSelect" class="form-select form-select-sm">
+                            <option value="">-- Seçiniz --</option>
+                        </select>
+                        <span asp-validation-for="Input.GonderenMusteriID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.AliciMusteriID" class="form-label lj-lbl">Alıcı</label>
+                        <select asp-for="Input.AliciMusteriID" asp-items="Model.MusterilerSelect" class="form-select form-select-sm">
+                            <option value="">-- Seçiniz --</option>
+                        </select>
+                        <span asp-validation-for="Input.AliciMusteriID" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.AraTedarikciMusteriID" class="form-label lj-lbl">Ara Tedarikçi</label>
+                        <select asp-for="Input.AraTedarikciMusteriID" asp-items="Model.AraTedarikciSelect" class="form-select form-select-sm">
+                            <option value="">(Yok)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="col-md-4">
-        <label asp-for="Input.AraTedarikciMusteriID" class="form-label">Ara Tedarikçi</label>
-        <select asp-for="Input.AraTedarikciMusteriID" asp-items="Model.AraTedarikciSelect" class="form-select">
-            <option value="">(Yok)</option>
-        </select>
-        <span asp-validation-for="Input.AraTedarikciMusteriID" class="text-danger"></span>
-    </div>
+        @* ─── YÜK & FATURA ───────────────────────────────────────── *@
+        <div class="card mb-2">
+            <div class="card-header py-1 px-3 fw-semibold lj-card-hdr">Yük & Fatura</div>
+            <div class="card-body py-2 px-3">
+                <div class="row g-2">
+                    <div class="col-md-1">
+                        <label asp-for="Input.Adet" class="form-label lj-lbl">Adet</label>
+                        <input asp-for="Input.Adet" class="form-control form-control-sm" />
+                        <span asp-validation-for="Input.Adet" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.AdetCinsi" class="form-label lj-lbl">Adet Cinsi</label>
+                        <input asp-for="Input.AdetCinsi" class="form-control form-control-sm" placeholder="Palet / Koli" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.Kilo" class="form-label lj-lbl">Kilo (kg)</label>
+                        <input asp-for="Input.Kilo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.YukAciklamasi" class="form-label lj-lbl">
+                            Yük Açıklaması <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Input.YukAciklamasi" class="form-control form-control-sm" placeholder="Hammadde / 1 parti" />
+                        <span asp-validation-for="Input.YukAciklamasi" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.Tutar" class="form-label lj-lbl">Tutar</label>
+                        <input asp-for="Input.Tutar" class="form-control form-control-sm"
+                               type="text" inputmode="decimal" autocomplete="off" />
+                        <span asp-validation-for="Input.Tutar" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-1">
+                        <label asp-for="Input.ParaBirimi" class="form-label lj-lbl">Döviz</label>
+                        <select asp-for="Input.ParaBirimi" asp-items="Model.ParaBirimleriSelect" class="form-select form-select-sm">
+                            <option value="">(Seç)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.FaturaNo" class="form-label lj-lbl">Fatura No</label>
+                        <input asp-for="Input.FaturaNo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-9">
+                        <label asp-for="Input.Notlar" class="form-label lj-lbl">Notlar</label>
+                        <textarea asp-for="Input.Notlar" rows="2" class="form-control form-control-sm" placeholder="İsteğe bağlı..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="col-12"><hr /></div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-pastel-green btn-sm" type="submit">Kaydet</button>
+            <a asp-page="./Details" asp-route-id="@Model.Input.SiparisID" class="btn btn-pastel-blue btn-sm">İptal</a>
+            <a asp-page="./Delete" asp-route-id="@Model.Input.SiparisID" class="btn btn-pastel-red btn-sm ms-auto">Sil</a>
+        </div>
+    </form>
 
-    <div class="col-md-2">
-        <label asp-for="Input.Adet" class="form-label">Adet</label>
-        <input asp-for="Input.Adet" class="form-control" />
-        <span asp-validation-for="Input.Adet" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-3">
-        <label asp-for="Input.AdetCinsi" class="form-label">Adet Cinsi</label>
-        <input asp-for="Input.AdetCinsi" class="form-control" placeholder="Palet / Koli / Parti" />
-        <span asp-validation-for="Input.AdetCinsi" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-2">
-        <label asp-for="Input.Kilo" class="form-label">Kilo (kg)</label>
-        <input asp-for="Input.Kilo" class="form-control" />
-        <span asp-validation-for="Input.Kilo" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-5">
-        <label asp-for="Input.YukAciklamasi" class="form-label">Yük Açıklaması</label>
-        <input asp-for="Input.YukAciklamasi" class="form-control" placeholder="Örn: Hammadde / 1 parti" />
-        <span asp-validation-for="Input.YukAciklamasi" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-3">
-        <label asp-for="Input.Tutar" class="form-label">Tutar</label>
-        <input asp-for="Input.Tutar"
-               class="form-control"
-               type="text"
-               inputmode="decimal"
-               autocomplete="off" />
-        <span asp-validation-for="Input.Tutar" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-2">
-        <label asp-for="Input.ParaBirimi" class="form-label">Para Birimi</label>
-        <select asp-for="Input.ParaBirimi" asp-items="Model.ParaBirimleriSelect" class="form-select">
-            <option value="">(Seç)</option>
-        </select>
-        <span asp-validation-for="Input.ParaBirimi" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-3">
-        <label asp-for="Input.FaturaNo" class="form-label">Fatura No</label>
-        <input asp-for="Input.FaturaNo" class="form-control" />
-        <span asp-validation-for="Input.FaturaNo" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-3">
-        <label asp-for="Input.Durum" class="form-label">Durum</label>
-        <select asp-for="Input.Durum" class="form-select">
-            <option value="0">0 - Taslak</option>
-            <option value="1">1 - Onaylandı</option>
-            <option value="2">2 - Yükleme</option>
-            <option value="3">3 - Tamamlandı</option>
-            <option value="4">4 - İptal</option>
-        </select>
-        <span asp-validation-for="Input.Durum" class="text-danger"></span>
-    </div>
-
-    <div class="col-12">
-        <label asp-for="Input.Notlar" class="form-label">Notlar</label>
-        <textarea asp-for="Input.Notlar" rows="3" class="form-control" placeholder="İsteğe bağlı..."></textarea>
-        <span asp-validation-for="Input.Notlar" class="text-danger"></span>
-    </div>
-
-    <div class="col-12 d-flex gap-2">
-        <button class="btn btn-primary" type="submit">Kaydet</button>
-        <a asp-page="./Details" asp-route-id="@Model.Input.SiparisID" class="btn btn-outline-secondary">İptal</a>
-        <a asp-page="./Delete" asp-route-id="@Model.Input.SiparisID" class="btn btn-outline-danger">Sil</a>
-    </div>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        if (window.jQuery && $.validator && $.validator.methods) {
-          // , veya . ondalık kabul et
-          $.validator.methods.number = function (value, element) {
-            return this.optional(element) || /^-?\d+(?:[.,]\d+)?$/.test(value);
-          };
-          // Range kontrolünü de TR uyumlu yap
-          $.validator.methods.range = function (value, element, param) {
-            if (this.optional(element)) return true;
-            const toNum = v => parseFloat(String(v).replace(',', '.'));
-            const val = toNum(value);
-            const min = toNum(param[0]);
-            const max = toNum(param[1]);
-            return !isNaN(val) && val >= min && val <= max;
-          };
-        }
+        (function () {
+            if (window.jQuery && $.validator && $.validator.methods) {
+                $.validator.methods.number = function (value, element) {
+                    return this.optional(element) || /^-?\d+(?:[.,]\d+)?$/.test(value);
+                };
+                $.validator.methods.range = function (value, element, param) {
+                    if (this.optional(element)) return true;
+                    const toNum = v => parseFloat(String(v).replace(',', '.'));
+                    const val = toNum(value), min = toNum(param[0]), max = toNum(param[1]);
+                    return !isNaN(val) && val >= min && val <= max;
+                };
+            }
+        })();
     </script>
-
 }
