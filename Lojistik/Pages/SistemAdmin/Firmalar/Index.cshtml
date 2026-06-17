@@ -1,0 +1,190 @@
+@page
+@model Lojistik.Pages.SistemAdmin.Firmalar.IndexModel
+@{
+    ViewData["Title"] = "Firma Listesi";
+}
+
+<style>
+    .filter-bar { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px 18px; margin-bottom:20px; }
+    .firm-table { background:white; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; }
+    .firm-table table { margin:0; }
+    .toggle-btn { border:none; background:none; padding:0; cursor:pointer; }
+    .sa-badge { font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; display:inline-block; }
+</style>
+
+<!-- Başlık -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h5 class="mb-0" style="color:#1e293b;font-weight:700;">🏢 Firma Listesi</h5>
+        <small style="color:#64748b;">@Model.Firmalar.Count firma listeleniyor</small>
+    </div>
+    <a href="/SistemAdmin/Firmalar/Create" class="btn btn-primary btn-sm px-3">
+        + Yeni Firma
+    </a>
+</div>
+
+<!-- Filtre -->
+<div class="filter-bar">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-sm-4">
+            <label class="form-label mb-1" style="font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Ara</label>
+            <input type="text" name="Arama" value="@Model.Arama" class="form-control form-control-sm"
+                   placeholder="Firma adı veya kodu..." />
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label mb-1" style="font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Durum</label>
+            <select name="Durum" class="form-select form-select-sm">
+                @{ var _durum = Model.Durum ?? ""; }
+                @if (_durum == "")     { <option value="" selected>Tümü</option> }     else { <option value="">Tümü</option> }
+                @if (_durum == "aktif") { <option value="aktif" selected>Aktif</option> } else { <option value="aktif">Aktif</option> }
+                @if (_durum == "pasif") { <option value="pasif" selected>Pasif</option> } else { <option value="pasif">Pasif</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label mb-1" style="font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Tip</label>
+            <select name="DemoFiltre" class="form-select form-select-sm">
+                @{ var _demo = Model.DemoFiltre ?? ""; }
+                @if (_demo == "")    { <option value="" selected>Tümü</option> }          else { <option value="">Tümü</option> }
+                @if (_demo == "demo") { <option value="demo" selected>Yalnız Demo</option> } else { <option value="demo">Yalnız Demo</option> }
+            </select>
+        </div>
+        <div class="col-sm-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-fill">Filtrele</button>
+            <a href="/SistemAdmin/Firmalar" class="btn btn-outline-secondary btn-sm">✕</a>
+        </div>
+    </form>
+</div>
+
+<!-- Tablo -->
+<div class="firm-table">
+    @if (!Model.Firmalar.Any())
+    {
+        <div style="padding:48px;text-align:center;color:#94a3b8;">
+            <div style="font-size:32px;margin-bottom:8px;">🏢</div>
+            <div>Firma bulunamadı.</div>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="sa-table w-100">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">#ID</th>
+                        <th>Firma Adı</th>
+                        <th>Kodu</th>
+                        <th>Paket</th>
+                        <th style="text-align:center;">Kull. Limit</th>
+                        <th style="text-align:center;">Aktif Kull.</th>
+                        <th>Aylık Ücret</th>
+                        <th>Başlangıç</th>
+                        <th>Bitiş</th>
+                        <th style="text-align:center;">Demo</th>
+                        <th style="text-align:center;">Durum</th>
+                        <th style="text-align:center;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.Firmalar)
+                    {
+                        var today = DateOnly.FromDateTime(DateTime.Today);
+                        var bitisGun = f.BitisTarihi.HasValue
+                            ? (int?)(f.BitisTarihi.Value.DayNumber - today.DayNumber)
+                            : null;
+                        bool limitDoldu = f.AktifKullaniciSayisi >= f.KullaniciLimiti;
+
+                        <tr>
+                            <td style="color:#94a3b8;font-size:11px;">@f.FirmaID</td>
+                            <td>
+                                <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID"
+                                   style="color:#1e293b;font-weight:600;text-decoration:none;">
+                                    @f.FirmaAdi
+                                </a>
+                            </td>
+                            <td><code style="font-size:12px;color:#475569;">@f.FirmaKodu</code></td>
+                            <td style="color:#64748b;font-size:12px;">
+                                @if (!string.IsNullOrEmpty(f.PaketAdi)) { <text>@f.PaketAdi</text> }
+                                else { <span style="color:#cbd5e1;">—</span> }
+                            </td>
+                            <td style="text-align:center;font-weight:600;">@f.KullaniciLimiti</td>
+                            <td style="text-align:center;">
+                                <span style="color:@(limitDoldu ? "#dc2626" : "#16a34a");font-weight:@(limitDoldu ? "700" : "400");">
+                                    @f.AktifKullaniciSayisi
+                                </span>
+                                @if (limitDoldu)
+                                {
+                                    <span class="sa-badge sa-badge-pasif ms-1">Dolu</span>
+                                }
+                            </td>
+                            <td style="font-size:12px;color:#374151;">
+                                @if (f.AylikUcret.HasValue)
+                                {
+                                    <span>@f.AylikUcret.Value.ToString("N2") @f.ParaBirimi</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#cbd5e1;">—</span>
+                                }
+                            </td>
+                            <td style="font-size:12px;color:#64748b;">@f.BaslamaTarihi.ToString("dd.MM.yyyy")</td>
+                            <td style="font-size:12px;">
+                                @if (f.BitisTarihi.HasValue)
+                                {
+                                    var renk = bitisGun < 0 ? "#dc2626" : bitisGun <= 30 ? "#d97706" : "#64748b";
+                                    <span style="color:@renk;">@f.BitisTarihi.Value.ToString("dd.MM.yyyy")</span>
+                                    @if (bitisGun < 0)       { <small style="color:#dc2626;"> (dolmuş)</small> }
+                                    else if (bitisGun <= 30) { <small style="color:#d97706;"> (@bitisGun g)</small> }
+                                }
+                                else
+                                {
+                                    <span style="color:#94a3b8;">Süresiz</span>
+                                }
+                            </td>
+                            <td style="text-align:center;">
+                                @if (f.DemoMu)
+                                {
+                                    <span class="sa-badge sa-badge-demo">Demo</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#cbd5e1;font-size:12px;">—</span>
+                                }
+                            </td>
+                            <td style="text-align:center;">
+                                @if (f.IsActive)
+                                {
+                                    <span class="sa-badge sa-badge-aktif">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="sa-badge sa-badge-pasif">Pasif</span>
+                                }
+                            </td>
+                            <td style="text-align:center;white-space:nowrap;">
+                                <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID"
+                                   class="btn btn-sm btn-outline-primary" style="font-size:11px;padding:2px 8px;">
+                                    Detay
+                                </a>
+                                <a href="/SistemAdmin/Firmalar/Edit?id=@f.FirmaID"
+                                   class="btn btn-sm btn-outline-secondary" style="font-size:11px;padding:2px 8px;">
+                                    Düzenle
+                                </a>
+                                <!-- Pasif/Aktif toggle -->
+                                <form method="post" asp-page-handler="ToggleAktif"
+                                      style="display:inline;" asp-route-id="@f.FirmaID">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="btn btn-sm @(f.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                            style="font-size:11px;padding:2px 8px;"
+                                            onclick="return confirm('@(f.IsActive ? "Bu firmayı pasife almak istediğinize emin misiniz?" : "Bu firmayı aktifleştirmek istiyor musunuz?")')">
+                                        @(f.IsActive ? "Pasife Al" : "Aktife Al")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

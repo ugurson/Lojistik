@@ -1,0 +1,139 @@
+@page
+@model Lojistik.Pages.FirmaPanel.LogoModel
+@{
+    ViewData["Title"] = "Firma Logosu";
+    var mevcutLogo = !string.IsNullOrEmpty(Model.Firma?.LogoYolu);
+}
+
+<style>
+    .logo-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 28px 32px;
+        max-width: 560px;
+    }
+    .logo-preview {
+        background: #f8fafc;
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 24px;
+        text-align: center;
+        margin-bottom: 20px;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .logo-preview img {
+        max-width: 300px;
+        max-height: 150px;
+        object-fit: contain;
+    }
+    .logo-hint {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 8px;
+        line-height: 1.6;
+    }
+    .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: #94a3b8;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+</style>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/FirmaPanel" class="btn btn-sm btn-outline-secondary">← Geri</a>
+    <div>
+        <h5 class="mb-0 fw-bold">🖼 Firma Logosu</h5>
+        <small class="text-muted">@(Model.Firma?.FirmaAdi ?? "")</small>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Hata))
+{
+    <div class="alert alert-danger mb-3" style="font-size:13px; max-width:560px;">
+        ⚠ @Model.Hata
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.Basari))
+{
+    <div class="alert alert-success mb-3" style="font-size:13px; max-width:560px;">
+        ✅ @Model.Basari
+    </div>
+}
+
+@if (Model.Firma != null)
+{
+    <div class="logo-card">
+        <div class="section-title">Mevcut Logo</div>
+
+        <div class="logo-preview">
+            @if (mevcutLogo)
+            {
+                <img src="@Model.Firma.LogoYolu?@DateTime.Now.Ticks"
+                     alt="Firma logosu"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+                <span style="display:none; color:#94a3b8; font-size:13px;">Logo yüklenemedi.</span>
+            }
+            else
+            {
+                <span style="color:#94a3b8; font-size:13px;">Henüz logo yüklenmemiş.</span>
+            }
+        </div>
+
+        <div class="section-title">Logo Yükle / Değiştir</div>
+
+        <form method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <input type="file"
+                       name="LogoDosya"
+                       id="LogoDosya"
+                       class="form-control"
+                       accept=".png,.jpg,.jpeg,.webp"
+                       onchange="onLogoSecildi(this)" />
+                <div class="logo-hint">
+                    Önerilen logo ölçüsü: <strong>300×120 px</strong>.
+                    Maksimum: 600×300 px &nbsp;·&nbsp; Maksimum dosya boyutu: <strong>500 KB</strong>.<br />
+                    İzin verilen formatlar: PNG, JPG, JPEG, WEBP.
+                </div>
+            </div>
+
+            <!-- Seçilen dosyanın anlık önizlemesi -->
+            <div id="onizlemeKutu" style="display:none;" class="logo-preview mb-3">
+                <img id="onizlemeImg" src="" alt="Önizleme" style="max-width:300px; max-height:150px; object-fit:contain;" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">💾 Kaydet</button>
+                <a href="/FirmaPanel" class="btn btn-outline-secondary px-4">İptal</a>
+            </div>
+        </form>
+    </div>
+}
+
+<script>
+    function onLogoSecildi(input) {
+        var kutu = document.getElementById('onizlemeKutu');
+        var img  = document.getElementById('onizlemeImg');
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                img.src = e.target.result;
+                kutu.style.display = 'flex';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            kutu.style.display = 'none';
+            img.src = '';
+        }
+    }
+</script>

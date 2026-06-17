@@ -1,0 +1,164 @@
+@page
+@model Lojistik.Pages.FirmaPanel.Kullanicilar.IndexModel
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+    var loginId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var lid) ? lid : 0;
+    bool limitDoldu = Model.AktifSayisi >= Model.KullaniciLimiti;
+}
+
+<style>
+    .fp-card  { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:0; overflow:hidden; }
+    .fp-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .fp-table thead tr { background:#f8fafc; }
+    .fp-table th { padding:10px 12px; font-size:11px; font-weight:700; text-transform:uppercase;
+                   letter-spacing:.5px; color:#94a3b8; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+    .fp-table td { padding:10px 12px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+    .fp-table tbody tr:last-child td { border-bottom:none; }
+    .fp-table tbody tr:hover { background:#fafafa; }
+    .badge-aktif  { background:#dcfce7; color:#16a34a; font-size:11px; font-weight:600;
+                    padding:2px 9px; border-radius:20px; display:inline-block; }
+    .badge-pasif  { background:#fee2e2; color:#dc2626; font-size:11px; font-weight:600;
+                    padding:2px 9px; border-radius:20px; display:inline-block; }
+    .badge-admin  { background:#dbeafe; color:#1d4ed8; font-size:11px; font-weight:600;
+                    padding:2px 9px; border-radius:20px; display:inline-block; }
+    .y-tam  { color:#16a34a; font-weight:700; font-size:12px; }
+    .y-gor  { color:#2563eb; font-size:12px; }
+    .y-yok  { color:#cbd5e1; font-size:12px; }
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/FirmaPanel" class="btn btn-sm btn-outline-secondary">← Geri</a>
+        <div>
+            <h5 class="mb-0 fw-bold">👥 Kullanıcı Yönetimi</h5>
+            <small class="text-muted">
+                Aktif: <strong style="color:@(limitDoldu ? "#dc2626" : "#16a34a");">@Model.AktifSayisi</strong>
+                / Limit: <strong>@Model.KullaniciLimiti</strong>
+                &nbsp;·&nbsp; Toplam: @Model.ToplamSayisi
+                @if (limitDoldu)
+                {
+                    <span class="badge-pasif ms-1">Limit Dolu</span>
+                }
+            </small>
+        </div>
+    </div>
+    <a href="/FirmaPanel/Kullanicilar/Create"
+       class="btn btn-primary btn-sm px-3 @(limitDoldu ? "disabled" : "")"
+       title="@(limitDoldu ? "Kullanıcı limiti dolu" : "")">
+        + Yeni Kullanıcı
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Hata))
+{
+    <div class="alert alert-danger mb-3" style="font-size:13px;">⚠ @Model.Hata</div>
+}
+@if (!string.IsNullOrEmpty(Model.Basari))
+{
+    <div class="alert alert-success mb-3" style="font-size:13px;">✅ @Model.Basari</div>
+}
+
+@if (!Model.Kullanicilar.Any())
+{
+    <div class="fp-card">
+        <div style="padding:48px; text-align:center; color:#94a3b8;">
+            <div style="font-size:2.5rem;">👥</div>
+            <div class="mt-2">Henüz kullanıcı eklenmemiş.</div>
+            <a href="/FirmaPanel/Kullanicilar/Create" class="btn btn-primary btn-sm mt-3">
+                + İlk Kullanıcıyı Ekle
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="fp-card">
+        <div style="overflow-x:auto;">
+            <table class="fp-table">
+                <thead>
+                    <tr>
+                        <th>Ad Soyad</th>
+                        <th>Kullanıcı Adı</th>
+                        <th style="text-align:center;">Durum</th>
+                        <th style="text-align:center;">Admin</th>
+                        <th style="text-align:center;" title="Sipariş">Sip.</th>
+                        <th style="text-align:center;" title="Forwarding">Fwd.</th>
+                        <th style="text-align:center;" title="Araç">Araç</th>
+                        <th style="text-align:center;" title="Sefer">Sef.</th>
+                        <th style="text-align:center;" title="Müşteri">Müş.</th>
+                        <th style="text-align:center;" title="Cari">Cari</th>
+                        <th style="text-align:center;" title="Rapor">Rap.</th>
+                        <th style="text-align:right;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var k in Model.Kullanicilar)
+                    {
+                        bool benimHesabim = (k.KullaniciID == loginId);
+
+                        <tr>
+                            <td>
+                                <span style="font-weight:600;color:#1e293b;">@(k.KullaniciAdi ?? "—")</span>
+                                @if (benimHesabim)
+                                {
+                                    <small class="text-muted ms-1">(sen)</small>
+                                }
+                            </td>
+                            <td style="color:#475569;font-family:monospace;font-size:12px;">@k.Username</td>
+                            <td style="text-align:center;">
+                                @if (k.IsActive)
+                                { <span class="badge-aktif">Aktif</span> }
+                                else
+                                { <span class="badge-pasif">Pasif</span> }
+                            </td>
+                            <td style="text-align:center;">
+                                @if (k.IsFirmaAdmin)
+                                { <span class="badge-admin">Admin</span> }
+                                else
+                                { <span class="y-yok">—</span> }
+                            </td>
+                            @{ string Y(byte v) => v == 1 ? "Tam" : v == 2 ? "Gör" : "—";
+                               string C(byte v) => v == 1 ? "y-tam" : v == 2 ? "y-gor" : "y-yok"; }
+                            <td style="text-align:center;"><span class="@C(k.SiparisYetkisi)">@Y(k.SiparisYetkisi)</span></td>
+                            <td style="text-align:center;"><span class="@C(k.ForwardingYetkisi)">@Y(k.ForwardingYetkisi)</span></td>
+                            <td style="text-align:center;"><span class="@C(k.AracYetkisi)">@Y(k.AracYetkisi)</span></td>
+                            <td style="text-align:center;"><span class="@C(k.SeferYetkisi)">@Y(k.SeferYetkisi)</span></td>
+                            <td style="text-align:center;"><span class="@C(k.MusteriYetkisi)">@Y(k.MusteriYetkisi)</span></td>
+                            <td style="text-align:center;"><span class="@C(k.CariYetkisi)">@Y(k.CariYetkisi)</span></td>
+                            <td style="text-align:center;"><span class="@C(k.RaporYetkisi)">@Y(k.RaporYetkisi)</span></td>
+                            <td style="text-align:right; white-space:nowrap;">
+                                <a href="/FirmaPanel/Kullanicilar/Edit?id=@k.KullaniciID"
+                                   class="btn btn-sm btn-outline-primary"
+                                   style="font-size:11px; padding:2px 8px;">Düzenle</a>
+
+                                @if (!benimHesabim)
+                                {
+                                    <form method="post" asp-page-handler="ToggleAktif"
+                                          style="display:inline;"
+                                          onsubmit="return confirm('@(k.IsActive ? "Kullanıcı pasife alınacak. Emin misiniz?" : "Kullanıcı aktifleştirilecek. Emin misiniz?")')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="kullaniciId" value="@k.KullaniciID" />
+                                        <button type="submit"
+                                                class="btn btn-sm @(k.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                style="font-size:11px; padding:2px 8px;">
+                                            @(k.IsActive ? "Pasifleştir" : "Aktif Yap")
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary disabled"
+                                            style="font-size:11px; padding:2px 8px;"
+                                            title="Kendi hesabınızı pasif yapamazsınız.">
+                                        Pasifleştir
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

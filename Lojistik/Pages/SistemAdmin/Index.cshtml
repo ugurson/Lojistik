@@ -1,0 +1,168 @@
+@page
+@model Lojistik.Pages.SistemAdmin.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-0" style="color:#1e293b;font-weight:700;">📊 Sistem Dashboard</h4>
+        <small style="color:#64748b;">Program firmalarının genel özeti</small>
+    </div>
+    <span style="font-size:12px;color:#94a3b8;">📅 @DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+</div>
+
+<!-- ── KPI KARTLARI ─────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="sa-kpi">
+            <div class="sa-kpi-label">Toplam Firma</div>
+            <div class="sa-kpi-value">@Model.ToplamFirmaSayisi</div>
+            <div class="sa-kpi-sub">kayıtlı firma</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="sa-kpi" style="border-left-color:#22c55e;">
+            <div class="sa-kpi-label">Aktif Firma</div>
+            <div class="sa-kpi-value" style="color:#16a34a;">@Model.AktifFirmaSayisi</div>
+            <div class="sa-kpi-sub">lisanslı &amp; aktif</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="sa-kpi" style="border-left-color:#ef4444;">
+            <div class="sa-kpi-label">Pasif Firma</div>
+            <div class="sa-kpi-value" style="color:#dc2626;">@Model.PasifFirmaSayisi</div>
+            <div class="sa-kpi-sub">pasifleştirilmiş</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="sa-kpi" style="border-left-color:#f59e0b;">
+            <div class="sa-kpi-label">Demo Firma</div>
+            <div class="sa-kpi-value" style="color:#d97706;">@Model.DemoFirmaSayisi</div>
+            <div class="sa-kpi-sub">deneme sürümü</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="sa-kpi" style="border-left-color:#3b82f6;">
+            <div class="sa-kpi-label">Aktif Kullanıcı</div>
+            <div class="sa-kpi-value" style="color:#2563eb;">@Model.ToplamAktifKullanici</div>
+            <div class="sa-kpi-sub">tüm firmalarda</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="sa-kpi" style="border-left-color:@(Model.LimitDolmusFirma > 0 ? "#ef4444" : "#e2e8f0");">
+            <div class="sa-kpi-label">Limit Dolan</div>
+            <div class="sa-kpi-value" style="color:@(Model.LimitDolmusFirma > 0 ? "#dc2626" : "#94a3b8");">
+                @Model.LimitDolmusFirma
+            </div>
+            <div class="sa-kpi-sub">kullanıcı limitine ulaşmış</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── UYARI BANDLARI ───────────────────────────────────────────────────── -->
+@if (Model.LimitDolmusFirma > 0)
+{
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" style="font-size:13px;" role="alert">
+        ⚠️ <strong>@Model.LimitDolmusFirma firma</strong>&nbsp;kullanıcı limitine ulaşmış.
+        <a href="/SistemAdmin/Firmalar" class="alert-link ms-1">Firmalar sayfasına git →</a>
+    </div>
+}
+@if (Model.DemoFirmaSayisi > 0)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="font-size:13px;" role="alert">
+        🧪 <strong>@Model.DemoFirmaSayisi demo firma</strong>&nbsp;sistemde kayıtlı.
+    </div>
+}
+
+<!-- ── SON FİRMALAR TABLOSU ─────────────────────────────────────────────── -->
+<div class="bg-white rounded-3 border" style="border-color:#e2e8f0!important;overflow:hidden;">
+
+    <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom" style="background:#f8fafc;">
+        <span style="font-size:13px;font-weight:700;color:#374151;">🏢 Son Eklenen Firmalar</span>
+        <a href="/SistemAdmin/Firmalar" style="font-size:12px;color:#3b82f6;text-decoration:none;">Tümünü Gör →</a>
+    </div>
+
+    @if (!Model.SonFirmalar.Any())
+    {
+        <div style="padding:40px;text-align:center;color:#94a3b8;font-size:14px;">
+            Henüz kayıtlı firma yok.
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="sa-table w-100">
+                <thead>
+                    <tr>
+                        <th>Firma Kodu</th>
+                        <th>Firma Adı</th>
+                        <th>Paket</th>
+                        <th>Kullanıcı</th>
+                        <th>Bitiş</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.SonFirmalar)
+                    {
+                        var today = DateOnly.FromDateTime(DateTime.Today);
+                        <tr>
+                            <td><code style="font-size:12px;color:#64748b;">@f.FirmaKodu</code></td>
+                            <td style="font-weight:600;color:#1e293b;">@f.FirmaAdi</td>
+                            <td style="color:#64748b;font-size:12px;">@(f.PaketAdi ?? "—")</td>
+                            <td>
+                                @{
+                                    bool limitDoldu = f.AktifKullaniciSayisi >= f.KullaniciLimiti;
+                                }
+                                <span style="color:@(limitDoldu ? "#dc2626" : "#374151");font-weight:@(limitDoldu ? "700" : "400");">
+                                    @f.AktifKullaniciSayisi / @f.KullaniciLimiti
+                                </span>
+                                @if (limitDoldu)
+                                {
+                                    <span class="sa-badge-pasif ms-1" style="font-size:10px;padding:1px 6px;border-radius:4px;">Dolu</span>
+                                }
+                            </td>
+                            <td style="font-size:12px;">
+                                @if (f.BitisTarihi.HasValue)
+                                {
+                                    var gun = f.BitisTarihi.Value.DayNumber - today.DayNumber;
+                                    <span style="color:@(gun < 0 ? "#dc2626" : gun <= 30 ? "#d97706" : "#64748b");">
+                                        @f.BitisTarihi.Value.ToString("dd.MM.yyyy")
+                                        @if (gun < 0)        { <small style="color:#dc2626;"> (süresi dolmuş)</small> }
+                                        else if (gun <= 30)  { <small style="color:#d97706;"> (@gun gün kaldı)</small> }
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color:#94a3b8;">Süresiz</span>
+                                }
+                            </td>
+                            <td>
+                                @if (f.DemoMu)
+                                {
+                                    <span class="sa-badge-demo" style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Demo</span>
+                                }
+                                else if (f.IsActive)
+                                {
+                                    <span class="sa-badge-aktif" style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="sa-badge-pasif" style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Pasif</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

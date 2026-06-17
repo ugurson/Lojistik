@@ -1,7 +1,25 @@
-﻿@page
+@page
 @model Microsoft.AspNetCore.Mvc.RazorPages.PageModel
 @{
-    ViewData["Title"] = "Yetkisiz";
+    ViewData["Title"] = "Yetkisiz Erişim";
 }
-<h3>Erişim yetkiniz yok.</h3>
-<p>Gerekli izniniz yoksa yöneticinizle iletişime geçin.</p>
+
+<div class="lj-page-compact" style="max-width:480px;margin-top:4rem;">
+    <div class="text-center mb-4">
+        <div style="font-size:1.4rem;font-weight:700;letter-spacing:.03em;color:#1e293b;">
+            <span style="color:#e53e3e;">Taşımacılık</span>&nbsp;Sistemi
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <div style="font-size:3rem;margin-bottom:1rem;">🚫</div>
+            <h4 class="mb-2" style="color:#1e293b;">Erişim Yetkiniz Yok</h4>
+            <p class="text-muted mb-4">
+                Bu sayfayı görüntülemek için gerekli izniniz bulunmuyor.<br />
+                Daha fazla bilgi için yöneticinizle iletişime geçin.
+            </p>
+            <a asp-page="/Index" class="btn btn-pastel-blue">Ana Sayfaya Dön</a>
+        </div>
+    </div>
+</div>

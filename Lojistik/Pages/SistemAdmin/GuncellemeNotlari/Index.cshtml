@@ -1,0 +1,180 @@
+@page
+@model Lojistik.Pages.SistemAdmin.GuncellemeNotlari.IndexModel
+@{
+    ViewData["Title"] = "Güncelleme Notları";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-0" style="color:#1e293b;font-weight:700;">📋 Güncelleme Notları</h4>
+        <small style="color:#64748b;">Kullanıcılara gösterilecek program güncelleme notları</small>
+    </div>
+    <button class="btn btn-success btn-sm px-3" onclick="modalAc(0)">+ Yeni Not Ekle</button>
+</div>
+
+<div class="bg-white rounded-3 border" style="border-color:#e2e8f0!important;overflow:hidden;">
+
+    <div class="px-3 py-2 border-bottom" style="background:#f8fafc;">
+        <span style="font-size:13px;font-weight:700;color:#374151;">Tüm Notlar (@Model.Notlar.Count)</span>
+    </div>
+
+    @if (!Model.Notlar.Any())
+    {
+        <div style="padding:48px;text-align:center;color:#94a3b8;font-size:14px;">
+            <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+            Henüz güncelleme notu eklenmemiş.
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="sa-table w-100">
+                <thead>
+                    <tr>
+                        <th style="width:100px;">Tarih</th>
+                        <th style="width:80px;">Sürüm</th>
+                        <th style="width:120px;">Bölüm</th>
+                        <th>Başlık / Açıklama</th>
+                        <th style="width:70px;text-align:center;">Durum</th>
+                        <th style="width:120px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in Model.Notlar)
+                    {
+                        <tr>
+                            <td style="color:#64748b;font-size:12px;">@n.Tarih.ToString("dd.MM.yyyy")</td>
+                            <td><code style="font-size:12px;color:#6d28d9;">@(n.Surum ?? "—")</code></td>
+                            <td><span style="font-size:12px;color:#64748b;">@(n.Bolum ?? "—")</span></td>
+                            <td>
+                                <div style="font-weight:600;color:#1e293b;">@n.Baslik</div>
+                                @if (!string.IsNullOrEmpty(n.Aciklama))
+                                {
+                                    <div style="font-size:12px;color:#64748b;white-space:pre-wrap;margin-top:2px;">@(n.Aciklama.Length > 100 ? n.Aciklama[..100] + "…" : n.Aciklama)</div>
+                                }
+                            </td>
+                            <td style="text-align:center;">
+                                @if (n.IsActive)
+                                { <span class="sa-badge-aktif" style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Aktif</span> }
+                                else
+                                { <span class="sa-badge-pasif" style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Pasif</span> }
+                            </td>
+                            <td style="text-align:right;white-space:nowrap;">
+                                <button class="btn btn-sm btn-outline-primary" style="font-size:11px;padding:2px 8px;"
+                                        onclick="modalAc(@n.GuncellemeNotuID)">Düzenle</button>
+                                <form method="post" asp-page-handler="Sil" style="display:inline;"
+                                      onsubmit="return confirm('Bu not silinecek. Emin misiniz?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@n.GuncellemeNotuID" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:11px;padding:2px 8px;">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@* ─── EKLE / DÜZENLE MODAL ─── *@
+<div class="modal fade" id="notModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:560px;">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold mb-0" id="notModalBaslik">Yeni Not</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Kaydet">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="f_id" value="0" />
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:12px;">Başlık <span class="text-danger">*</span></label>
+                            <input name="baslik" id="f_baslik" type="text" class="form-control form-control-sm" maxlength="200" />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold" style="font-size:12px;">Bölüm</label>
+                            <input name="bolum" id="f_bolum" type="text" class="form-control form-control-sm"
+                                   placeholder="Siparişler, Seferler, Genel…" maxlength="100" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:12px;">Sürüm</label>
+                            <input name="surum" id="f_surum" type="text" class="form-control form-control-sm"
+                                   placeholder="v1.2.0" maxlength="20" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" style="font-size:12px;">Tarih</label>
+                            <input name="tarih" id="f_tarih" type="date" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:12px;">Açıklama</label>
+                            <textarea name="aciklama" id="f_aciklama" rows="5" class="form-control form-control-sm"
+                                      placeholder="Yapılan değişiklikler, yeni özellikler…" maxlength="4000"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isActive" value="true" id="f_isActive" />
+                                <label class="form-check-label" for="f_isActive" style="font-size:13px;">
+                                    Aktif — kullanıcılara göster
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    var _notModal;
+    document.addEventListener('DOMContentLoaded', function () {
+        _notModal = new bootstrap.Modal(document.getElementById('notModal'));
+
+        @if (TempData["StatusMessage"] != null)
+        {
+            <text>
+            // TempData mesajı zaten global toast ile gösterilir
+            </text>
+        }
+    });
+
+    function modalAc(id) {
+        if (id === 0) {
+            document.getElementById('notModalBaslik').textContent = 'Yeni Not Ekle';
+            document.getElementById('f_id').value       = '0';
+            document.getElementById('f_baslik').value   = '';
+            document.getElementById('f_bolum').value    = '';
+            document.getElementById('f_surum').value    = '';
+            document.getElementById('f_aciklama').value = '';
+            document.getElementById('f_isActive').checked = true;
+            var today = new Date();
+            var pad = n => String(n).padStart(2, '0');
+            document.getElementById('f_tarih').value =
+                today.getFullYear() + '-' + pad(today.getMonth()+1) + '-' + pad(today.getDate());
+            _notModal.show();
+        } else {
+            fetch('?handler=Get&id=' + id)
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('notModalBaslik').textContent = 'Not Düzenle';
+                    document.getElementById('f_id').value       = d.guncellemeNotuID;
+                    document.getElementById('f_baslik').value   = d.baslik  || '';
+                    document.getElementById('f_bolum').value    = d.bolum   || '';
+                    document.getElementById('f_surum').value    = d.surum   || '';
+                    document.getElementById('f_aciklama').value = d.aciklama || '';
+                    document.getElementById('f_tarih').value    = d.tarih   || '';
+                    document.getElementById('f_isActive').checked = d.isActive;
+                    _notModal.show();
+                });
+        }
+    }
+</script>
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Sistem Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css"  asp-append-version="true" />
+    <style>
+        body { background: #0f172a; min-height: 100vh; }
+
+        .sa-sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: #1e293b;
+            position: fixed;
+            top: 0; left: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .sa-brand {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid #334155;
+        }
+        .sa-brand-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+        .sa-brand-sub {
+            font-size: 18px;
+            font-weight: 800;
+            color: #f1f5f9;
+            line-height: 1.2;
+        }
+        .sa-brand-badge {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: 4px;
+        }
+        .sa-nav { padding: 12px 0; flex: 1; }
+        .sa-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all .15s;
+        }
+        .sa-nav-item:hover {
+            background: #334155;
+            color: #f1f5f9;
+        }
+        .sa-nav-item.active {
+            background: #1d4ed820;
+            color: #60a5fa;
+            border-left-color: #3b82f6;
+        }
+        .sa-nav-section {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #475569;
+            padding: 12px 20px 4px;
+        }
+        .sa-footer {
+            padding: 14px 20px;
+            border-top: 1px solid #334155;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .sa-main {
+            margin-left: 240px;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+        .sa-topbar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sa-topbar-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .sa-topbar-user {
+            font-size: 13px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sa-content { padding: 28px; }
+        .sa-kpi {
+            background: white;
+            border-radius: 10px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #3b82f6;
+        }
+        .sa-kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: #94a3b8; }
+        .sa-kpi-value { font-size: 32px; font-weight: 800; color: #1e293b; line-height: 1.1; margin: 6px 0 0; }
+        .sa-kpi-sub   { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+        .sa-table thead th {
+            background: #f8fafc;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: #64748b;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 10px 12px;
+        }
+        .sa-table tbody td { padding: 10px 12px; font-size: 13px; vertical-align: middle; }
+        .sa-table tbody tr:hover { background: #f8fafc; }
+
+        .sa-badge-aktif  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .sa-badge-pasif  { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .sa-badge-demo   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    </style>
+</head>
+<body>
+
+@{
+    var saUser = User.FindFirst("KullaniciAdi")?.Value ?? User.FindFirst("Username")?.Value ?? "Admin";
+    string saPath = Context.Request.Path.Value ?? "";
+    bool saActive(string seg) => saPath.Contains(seg, StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="sa-sidebar">
+    <div class="sa-brand">
+        <div class="sa-brand-title">Lojistik</div>
+        <div class="sa-brand-sub">Sistem Admin</div>
+        <span class="sa-brand-badge">🔐 Admin Panel</span>
+    </div>
+
+    <nav class="sa-nav">
+        <div class="sa-nav-section">Genel</div>
+        <a href="/SistemAdmin" class="sa-nav-item @(saPath == "/SistemAdmin" ? "active" : "")">
+            📊 Dashboard
+        </a>
+
+        <div class="sa-nav-section">Firmalar</div>
+        <a href="/SistemAdmin/Firmalar" class="sa-nav-item @(saActive("/SistemAdmin/Firmalar") ? "active" : "")">
+            🏢 Firma Listesi
+        </a>
+
+        <div class="sa-nav-section">Sistem</div>
+        <a href="/SistemAdmin/GuncellemeNotlari" class="sa-nav-item @(saActive("/SistemAdmin/GuncellemeNotlari") ? "active" : "")">
+            📋 Güncelleme Notları
+        </a>
+    </nav>
+
+    <div class="sa-footer">
+        <div>@saUser</div>
+        <a href="/SistemAdmin/Cikis" class="text-danger text-decoration-none" style="font-size:12px;">
+            → Çıkış Yap
+        </a>
+    </div>
+</div>
+
+<div class="sa-main">
+    <div class="sa-topbar">
+        <div class="sa-topbar-title">@(ViewData["Title"] ?? "Sistem Admin")</div>
+        <div class="sa-topbar-user">
+            <span>👤 @saUser</span>
+            <a href="/SistemAdmin/Cikis" class="btn btn-sm btn-outline-danger ms-2">Çıkış</a>
+        </div>
+    </div>
+
+    <div class="sa-content">
+        @RenderBody()
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

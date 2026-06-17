@@ -1,0 +1,68 @@
+﻿@page "/_admin/firma-logo"
+@model Lojistik.Pages.AdminV1.FirmaLogoModel
+@{
+    ViewData["Title"] = "Firma Logo Yükleme";
+}
+
+<h2 class="mb-3">Firma Logo Yükleme</h2>
+@if (!string.IsNullOrWhiteSpace(Model.ErrorText))
+{
+    <div class="alert alert-danger">@Model.ErrorText</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.OkText))
+{
+    <div class="alert alert-success">@Model.OkText</div>
+}
+
+
+<form method="get" class="mb-3 d-flex gap-2 align-items-end">
+    <div>
+        <label class="form-label">Firma</label>
+        <select class="form-select" name="FirmaId" onchange="this.form.submit()">
+            <option value="">Firma seçiniz</option>
+            @foreach (var f in Model.Firmalar)
+            {
+                <option value="@f.FirmaID" selected="@(Model.FirmaId == f.FirmaID)">
+                    @f.FirmaKodu - @f.FirmaAdi
+                </option>
+            }
+        </select>
+    </div>
+    <noscript>
+        <button class="btn btn-secondary" type="submit">Getir</button>
+    </noscript>
+</form>
+
+@if (Model.FirmaId is null)
+{
+    <div class="alert alert-info">Logo yüklemek için firma seçiniz.</div>
+}
+else
+{
+    <div class="mb-3 text-muted">Seçili FirmaID: @Model.FirmaId</div>
+<div class="mb-3">
+    <div class="text-muted mb-2">Mevcut logo:</div>
+    <img src="@Url.Page("/Firmalar/Logo", new { id = Model.FirmaId })?v=@Model.CacheBuster"
+         style="max-height:120px; max-width:320px;" />
+</div>
+
+
+    <form method="post" enctype="multipart/form-data" class="card shadow-sm">
+        @Html.AntiForgeryToken()
+
+        <div class="card-body">
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+            <!-- FirmaId'nin POST'a kesin gitmesi için -->
+            <input type="hidden" name="FirmaId" value="@Model.FirmaId" />
+
+            <label class="form-label">Yeni logo seç</label>
+            <input asp-for="Logo" type="file" class="form-control" accept=".png,.jpg,.jpeg,.webp" />
+
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-primary">Kaydet</button>
+                <a class="btn btn-outline-secondary" href="/_admin/firma-logo">Temizle</a>
+            </div>
+        </div>
+    </form>
+}

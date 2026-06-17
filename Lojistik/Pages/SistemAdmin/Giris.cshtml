@@ -1,0 +1,139 @@
+@page
+@model Lojistik.Pages.SistemAdmin.GirisModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Sistem Admin Girişi";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Admin — Giriş</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .login-box {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 40px 44px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px rgba(0,0,0,.5);
+        }
+        .login-icon {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .login-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #f1f5f9;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .login-sub {
+            font-size: 13px;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .login-badge {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 16px;
+        }
+        .form-label { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        .form-control {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+        }
+        .form-control:focus {
+            background: #0f172a;
+            border-color: #3b82f6;
+            color: #f1f5f9;
+            box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+        }
+        .form-control::placeholder { color: #475569; }
+        .btn-login {
+            width: 100%;
+            background: #3b82f6;
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+            transition: background .15s;
+        }
+        .btn-login:hover { background: #2563eb; }
+        .alert-danger-dark {
+            background: #450a0a;
+            border: 1px solid #7f1d1d;
+            color: #fca5a5;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .login-footer { text-align: center; margin-top: 24px; font-size: 11px; color: #334155; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <div style="text-align:center;">
+            <span class="login-badge">🔐 Yetkili Giriş</span>
+        </div>
+        <div class="login-icon">⚙️</div>
+        <div class="login-title">Sistem Yönetici</div>
+        <div class="login-sub">Lojistik Admin Paneli</div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Hata))
+        {
+            <div class="alert-danger-dark">⚠ @Model.Hata</div>
+        }
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label class="form-label">Kullanıcı Adı</label>
+                <input type="text" name="Username" class="form-control"
+                       placeholder="admin kullanıcı adı" autocomplete="username"
+                       value="@Model.Username" required autofocus />
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Şifre</label>
+                <input type="password" name="Password" class="form-control"
+                       placeholder="••••••••" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="btn-login">Giriş Yap →</button>
+        </form>
+
+        <div class="login-footer">Bu sayfa yalnızca sistem yöneticileri içindir.</div>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

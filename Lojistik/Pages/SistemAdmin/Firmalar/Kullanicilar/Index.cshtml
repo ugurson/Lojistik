@@ -1,0 +1,171 @@
+@page
+@model Lojistik.Pages.SistemAdmin.Firmalar.Kullanicilar.IndexModel
+@using Microsoft.AspNetCore.Html
+@{
+    ViewData["Title"] = "Kullanıcılar — " + Model.Firma?.FirmaAdi;
+    var f = Model.Firma!;
+    bool limitDoldu = Model.AktifSayisi >= f.KullaniciLimiti;
+}
+
+<style>
+    .kul-table { background:white; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; }
+    .sa-badge   { font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; display:inline-block; }
+    .yetki-pill { font-size:10px; font-weight:600; padding:1px 7px; border-radius:12px; display:inline-block; }
+    .yetki-tam  { background:#dbeafe; color:#1d4ed8; }
+    .yetki-goruntule { background:#f0fdf4; color:#15803d; }
+    .yetki-yok  { background:#f1f5f9; color:#94a3b8; }
+</style>
+
+<!-- Breadcrumb + Başlık -->
+<div class="mb-3">
+    <nav style="font-size:12px;color:#94a3b8;">
+        <a href="/SistemAdmin/Firmalar" style="color:#64748b;text-decoration:none;">Firmalar</a>
+        <span class="mx-1">›</span>
+        <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID" style="color:#64748b;text-decoration:none;">@f.FirmaAdi</a>
+        <span class="mx-1">›</span>
+        <span>Kullanıcılar</span>
+    </nav>
+</div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h5 class="mb-0" style="color:#1e293b;font-weight:700;">👤 Kullanıcı Yönetimi</h5>
+        <small style="color:#64748b;">
+            <code>@f.FirmaKodu</code> · @f.FirmaAdi ·
+            <span style="color:@(limitDoldu ? "#dc2626" : "#16a34a");font-weight:600;">
+                @Model.AktifSayisi / @f.KullaniciLimiti aktif
+            </span>
+            · Toplam @Model.ToplamSayisi kullanıcı
+        </small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID"
+           class="btn btn-sm btn-outline-secondary">← Firmaya Dön</a>
+        <a href="/SistemAdmin/Firmalar/Kullanicilar/Create?firmaId=@f.FirmaID"
+           class="btn btn-sm btn-primary">+ Yeni Kullanıcı</a>
+    </div>
+</div>
+
+<!-- Uyarılar -->
+@if (TempData["Hata"] is string hataMsg)
+{
+    <div class="alert alert-danger mb-3" style="font-size:13px;">⚠ @hataMsg</div>
+}
+@if (limitDoldu)
+{
+    <div class="alert alert-warning mb-3" style="font-size:13px;">
+        ⚠️ Kullanıcı limiti dolmuş (<strong>@f.KullaniciLimiti</strong>). Yeni aktif kullanıcı eklenemez.
+        Pasif kullanıcı eklenebilir.
+    </div>
+}
+
+<!-- Tablo -->
+<div class="kul-table">
+    @if (!Model.Kullanicilar.Any())
+    {
+        <div style="padding:48px;text-align:center;color:#94a3b8;">
+            <div style="font-size:32px;margin-bottom:8px;">👤</div>
+            <div>Henüz kullanıcı yok.</div>
+            <a href="/SistemAdmin/Firmalar/Kullanicilar/Create?firmaId=@f.FirmaID"
+               class="btn btn-primary btn-sm mt-3">+ İlk Kullanıcıyı Ekle</a>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="sa-table w-100">
+                <thead>
+                    <tr>
+                        <th>Ad Soyad</th>
+                        <th>Kullanıcı Adı</th>
+                        <th style="text-align:center;">Durum</th>
+                        <th style="text-align:center;">Firma Admin</th>
+                        <th style="text-align:center;">Sistem Admin</th>
+                        <th style="text-align:center;">Sipariş</th>
+                        <th style="text-align:center;">Forwarding</th>
+                        <th style="text-align:center;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var k in Model.Kullanicilar)
+                    {
+                        <tr>
+                            <td style="font-weight:600;color:#1e293b;">
+                                @(k.KullaniciAdi ?? "—")
+                            </td>
+                            <td>
+                                <code style="font-size:12px;color:#475569;">@k.Username</code>
+                            </td>
+                            <td style="text-align:center;">
+                                @if (k.IsActive)
+                                {
+                                    <span class="sa-badge sa-badge-aktif">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="sa-badge sa-badge-pasif">Pasif</span>
+                                }
+                            </td>
+                            <td style="text-align:center;">
+                                @if (k.IsFirmaAdmin)
+                                {
+                                    <span style="color:#7c3aed;font-size:13px;">✔ Admin</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#cbd5e1;font-size:12px;">—</span>
+                                }
+                            </td>
+                            <td style="text-align:center;">
+                                @if (k.IsSistemAdmin)
+                                {
+                                    <span style="color:#ef4444;font-size:13px;">✔ SysAdmin</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#cbd5e1;font-size:12px;">—</span>
+                                }
+                            </td>
+                            <td style="text-align:center;">
+                                @YetkiPill(k.SiparisYetkisi)
+                            </td>
+                            <td style="text-align:center;">
+                                @YetkiPill(k.ForwardingYetkisi)
+                            </td>
+                            <td style="text-align:center;white-space:nowrap;">
+                                <a href="/SistemAdmin/Firmalar/Kullanicilar/Edit?id=@k.KullaniciID&firmaId=@f.FirmaID"
+                                   class="btn btn-sm btn-outline-primary"
+                                   style="font-size:11px;padding:2px 8px;">Düzenle</a>
+
+                                <form method="post" asp-page-handler="ToggleAktif"
+                                      asp-route-kullaniciId="@k.KullaniciID"
+                                      asp-route-firmaId="@f.FirmaID"
+                                      style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="btn btn-sm @(k.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                            style="font-size:11px;padding:2px 8px;"
+                                            onclick="return confirm('@(k.IsActive ? "Kullanıcıyı pasife almak istiyor musunuz?" : "Kullanıcıyı aktifleştirmek istiyor musunuz?")')">
+                                        @(k.IsActive ? "Pasife Al" : "Aktife Al")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@functions {
+    IHtmlContent YetkiPill(byte yetki)
+    {
+        return yetki switch
+        {
+            1 => new HtmlString("<span class=\"yetki-pill yetki-tam\">Tam</span>"),
+            2 => new HtmlString("<span class=\"yetki-pill yetki-goruntule\">Görüntüle</span>"),
+            _ => new HtmlString("<span class=\"yetki-pill yetki-yok\">Yok</span>")
+        };
+    }
+}

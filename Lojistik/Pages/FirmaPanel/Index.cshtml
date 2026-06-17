@@ -1,0 +1,37 @@
+@page
+@model Lojistik.Pages.FirmaPanel.IndexModel
+@{
+    ViewData["Title"] = "Firma Paneli";
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <div>
+        <h4 class="mb-0 fw-bold">⚙ Firma Paneli</h4>
+        <small class="text-muted">Kendi firma ayarlarınızı buradan yönetebilirsiniz.</small>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-sm-6 col-md-4">
+        <a href="/FirmaPanel/Logo" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div style="font-size:2rem;">🖼</div>
+                    <div class="fw-semibold mt-2">Logo</div>
+                    <small class="text-muted">Firma logonuzu yükleyin veya değiştirin.</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-md-4">
+        <a href="/FirmaPanel/Kullanicilar" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div style="font-size:2rem;">👥</div>
+                    <div class="fw-semibold mt-2">Kullanıcılar</div>
+                    <small class="text-muted">Kullanıcılarınızı yönetin ve yetkilendirin.</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>

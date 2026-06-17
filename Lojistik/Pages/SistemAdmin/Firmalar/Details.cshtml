@@ -1,0 +1,343 @@
+@page
+@model Lojistik.Pages.SistemAdmin.Firmalar.DetailsModel
+@{
+    ViewData["Title"] = Model.Firma?.FirmaAdi ?? "Firma Detayı";
+    var f = Model.Firma!;
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var bitisGun = f.BitisTarihi.HasValue ? (int?)(f.BitisTarihi.Value.DayNumber - today.DayNumber) : null;
+    bool limitDoldu = Model.AktifKullaniciSayisi >= f.KullaniciLimiti;
+}
+
+<style>
+    .detail-card { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:24px 28px; margin-bottom:16px; }
+    .detail-section { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+                      color:#94a3b8; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; }
+    .detail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px 24px; }
+    .detail-item label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+                         color:#94a3b8; display:block; margin-bottom:3px; }
+    .detail-item span  { font-size:14px; font-weight:600; color:#1e293b; }
+    .sa-badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; display:inline-block; }
+</style>
+
+<!-- Başlık -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/SistemAdmin/Firmalar" class="btn btn-sm btn-outline-secondary">← Liste</a>
+        <div>
+            <h5 class="mb-0" style="color:#1e293b;font-weight:700;">
+                🏢 @f.FirmaAdi
+            </h5>
+            <small style="color:#64748b;">
+                <code>@f.FirmaKodu</code> · #@f.FirmaID ·
+                Oluşturuldu: @f.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                @if (f.UpdatedAt.HasValue)
+                {
+                    <span> · Güncellendi: @f.UpdatedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                }
+            </small>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/SistemAdmin/Firmalar/Edit?id=@f.FirmaID"
+           class="btn btn-sm btn-primary px-3">✏️ Düzenle</a>
+        <a href="/SistemAdmin/Firmalar/Moduller?firmaId=@f.FirmaID"
+           class="btn btn-sm btn-outline-primary px-3">🧩 Modüller</a>
+    </div>
+</div>
+
+<!-- Durum banner -->
+@if (!f.IsActive)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="font-size:13px;">
+        ⚠️ Bu firma <strong>pasif</strong> durumdadır.
+        <a href="/SistemAdmin/Firmalar/Edit?id=@f.FirmaID" class="alert-link ms-1">Aktifleştir →</a>
+    </div>
+}
+@if (bitisGun.HasValue && bitisGun < 0)
+{
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" style="font-size:13px;">
+        ❌ Bu firmanın lisans süresi <strong>dolmuş</strong> (@f.BitisTarihi!.Value.ToString("dd.MM.yyyy")).
+    </div>
+}
+else if (bitisGun.HasValue && bitisGun <= 30)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="font-size:13px;">
+        ⚠️ Lisans bitiş tarihine <strong>@bitisGun gün</strong> kaldı (@f.BitisTarihi!.Value.ToString("dd.MM.yyyy")).
+    </div>
+}
+
+<!-- Temel Bilgiler -->
+<div class="detail-card">
+    <div class="detail-section">🏢 Temel Bilgiler</div>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <label>Firma ID</label>
+            <span>#@f.FirmaID</span>
+        </div>
+        <div class="detail-item">
+            <label>Firma Kodu</label>
+            <span><code style="font-size:14px;color:#475569;">@f.FirmaKodu</code></span>
+        </div>
+        <div class="detail-item">
+            <label>Firma Adı</label>
+            <span>@f.FirmaAdi</span>
+        </div>
+        <div class="detail-item">
+            <label>Paket</label>
+            <span>@(f.PaketAdi ?? "—")</span>
+        </div>
+        <div class="detail-item">
+            <label>Durum</label>
+            <span>
+                @if (f.IsActive)
+                {
+                    <span class="sa-badge sa-badge-aktif">Aktif</span>
+                }
+                else
+                {
+                    <span class="sa-badge sa-badge-pasif">Pasif</span>
+                }
+            </span>
+        </div>
+        <div class="detail-item">
+            <label>Tip</label>
+            <span>
+                @if (f.DemoMu)
+                {
+                    <span class="sa-badge sa-badge-demo">Demo</span>
+                    if (f.DemoKayitLimiti.HasValue)
+                    {
+                        <small class="text-muted ms-1" style="font-size:12px;">(Limit: @f.DemoKayitLimiti kayıt)</small>
+                    }
+                }
+                else
+                {
+                    <span style="color:#64748b;font-size:13px;">Canlı</span>
+                }
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Kullanıcı & Ücret -->
+<div class="detail-card">
+    <div class="detail-section">👥 Kullanıcı & Ücret</div>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <label>Kullanıcı Limiti</label>
+            <span>@f.KullaniciLimiti</span>
+        </div>
+        <div class="detail-item">
+            <label>Aktif Kullanıcı</label>
+            <span style="color:@(limitDoldu ? "#dc2626" : "#16a34a");">
+                @Model.AktifKullaniciSayisi
+                @if (limitDoldu)
+                {
+                    <span class="sa-badge sa-badge-pasif ms-1" style="font-size:10px;padding:1px 6px;">Dolu</span>
+                }
+            </span>
+        </div>
+        <div class="detail-item">
+            <label>Aylık Ücret</label>
+            <span>
+                @if (f.AylikUcret.HasValue)
+                {
+                    <text>@f.AylikUcret.Value.ToString("N2") @f.ParaBirimi</text>
+                }
+                else
+                {
+                    <span style="color:#94a3b8;">—</span>
+                }
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Tarihler -->
+<div class="detail-card">
+    <div class="detail-section">📅 Tarihler</div>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <label>Başlama Tarihi</label>
+            <span>@f.BaslamaTarihi.ToString("dd.MM.yyyy")</span>
+        </div>
+        <div class="detail-item">
+            <label>Bitiş Tarihi</label>
+            <span>
+                @if (f.BitisTarihi.HasValue)
+                {
+                    var renk = bitisGun < 0 ? "#dc2626" : bitisGun <= 30 ? "#d97706" : "#1e293b";
+                    <span style="color:@renk;">@f.BitisTarihi.Value.ToString("dd.MM.yyyy")</span>
+                    if (bitisGun < 0)        { <small style="color:#dc2626;"> (süresi dolmuş)</small> }
+                    else if (bitisGun <= 30) { <small style="color:#d97706;"> (@bitisGun gün kaldı)</small> }
+                }
+                else
+                {
+                    <span style="color:#94a3b8;">Süresiz</span>
+                }
+            </span>
+        </div>
+        <div class="detail-item">
+            <label>Kayıt Tarihi</label>
+            <span style="font-size:13px;color:#64748b;">@f.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+        </div>
+        @if (f.UpdatedAt.HasValue)
+        {
+            <div class="detail-item">
+                <label>Son Güncelleme</label>
+                <span style="font-size:13px;color:#64748b;">@f.UpdatedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Notlar -->
+@if (!string.IsNullOrWhiteSpace(f.Notlar))
+{
+    <div class="detail-card">
+        <div class="detail-section">📝 Notlar</div>
+        <p style="color:#374151;font-size:13px;margin:0;white-space:pre-line;">@f.Notlar</p>
+    </div>
+}
+
+<!-- Modüller -->
+<div class="detail-card">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="detail-section mb-0">🧩 Modüller (@Model.Moduller.Count)</div>
+        <a href="/SistemAdmin/Firmalar/Moduller?firmaId=@f.FirmaID"
+           class="btn btn-sm btn-outline-primary" style="font-size:12px;padding:3px 10px;">
+            ⚙️ Modülleri Yönet
+        </a>
+    </div>
+
+    @if (!Model.Moduller.Any())
+    {
+        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;">
+            Sistemde tanımlı modül yok.
+        </div>
+    }
+    else
+    {
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+            @foreach (var m in Model.Moduller)
+            {
+                var modulToday = DateOnly.FromDateTime(DateTime.Today);
+                var modulBitisGun = m.BitisTarihi.HasValue
+                    ? (int?)(m.BitisTarihi.Value.DayNumber - modulToday.DayNumber)
+                    : null;
+
+                <div style="border:1px solid @(m.IsActive ? "#bbf7d0" : "#e2e8f0");
+                            border-left:4px solid @(m.IsActive ? "#22c55e" : m.AtanmisVar ? "#f87171" : "#cbd5e1");
+                            border-radius:8px; padding:12px 14px; background:@(m.IsActive ? "#f0fdf4" : "white");">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div>
+                            <span style="font-size:13px;font-weight:700;color:#1e293b;">@m.ModulAdi</span>
+                            <code style="font-size:10px;color:#94a3b8;margin-left:6px;">@m.ModulKodu</code>
+                        </div>
+                        @if (m.IsActive)
+                        {
+                            <span class="sa-badge sa-badge-aktif" style="font-size:10px;padding:2px 8px;">Aktif</span>
+                        }
+                        else if (m.AtanmisVar)
+                        {
+                            <span class="sa-badge sa-badge-pasif" style="font-size:10px;padding:2px 8px;">Pasif</span>
+                        }
+                        else
+                        {
+                            <span class="sa-badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;padding:2px 8px;">Atanmamış</span>
+                        }
+                    </div>
+                    @if (m.BaslamaTarihi.HasValue || m.BitisTarihi.HasValue)
+                    {
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+                            @if (m.BaslamaTarihi.HasValue)
+                            {
+                                <span>▶ @m.BaslamaTarihi.Value.ToString("dd.MM.yyyy")</span>
+                            }
+                            @if (m.BitisTarihi.HasValue)
+                            {
+                                <span style="margin-left:8px;color:@(modulBitisGun < 0 ? "#dc2626" : modulBitisGun <= 30 ? "#d97706" : "#94a3b8");">
+                                    ■ @m.BitisTarihi.Value.ToString("dd.MM.yyyy")
+                                    @if (modulBitisGun < 0)       { <small>(dolmuş)</small> }
+                                    else if (modulBitisGun <= 30) { <small>(@modulBitisGun g)</small> }
+                                </span>
+                            }
+                        </div>
+                    }
+                    else if (m.IsActive)
+                    {
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Süresiz</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Kullanıcılar -->
+<div class="detail-card">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="detail-section mb-0">👤 Kullanıcılar (@Model.Kullanicilar.Count)</div>
+
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-size:12px;color:#94a3b8;">
+                @Model.AktifKullaniciSayisi aktif / @f.KullaniciLimiti limit
+            </span>
+            <a href="/SistemAdmin/Firmalar/Kullanicilar?firmaId=@f.FirmaID"
+               class="btn btn-sm btn-outline-primary" style="font-size:12px;padding:3px 10px;">
+                👤 Kullanıcıları Yönet
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Kullanicilar.Any())
+    {
+        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;">
+            Bu firmaya kayıtlı kullanıcı bulunamadı.
+        </div>
+    }
+    else
+    {
+        <table class="sa-table w-100">
+            <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Kullanıcı Adı</th>
+                    <th>Ad Soyad</th>
+                    <th style="text-align:center;">Durum</th>
+                    <th style="text-align:center;">Sistem Admin</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var k in Model.Kullanicilar)
+                {
+                    <tr>
+                        <td style="color:#94a3b8;font-size:11px;">@k.KullaniciID</td>
+                        <td style="font-weight:600;color:#1e293b;">@k.Username</td>
+                        <td style="color:#475569;">@(k.KullaniciAdi ?? "—")</td>
+                        <td style="text-align:center;">
+                            @if (k.IsActive)
+                            {
+                                <span class="sa-badge sa-badge-aktif" style="font-size:10px;padding:2px 8px;">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="sa-badge sa-badge-pasif" style="font-size:10px;padding:2px 8px;">Pasif</span>
+                            }
+                        </td>
+                        <td style="text-align:center;">
+                            @if (k.IsSistemAdmin)
+                            {
+                                <span style="color:#3b82f6;font-size:13px;">✔ Admin</span>
+                            }
+                            else
+                            {
+                                <span style="color:#cbd5e1;font-size:12px;">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

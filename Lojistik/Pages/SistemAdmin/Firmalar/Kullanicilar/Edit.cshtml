@@ -1,0 +1,142 @@
+@page
+@model Lojistik.Pages.SistemAdmin.Firmalar.Kullanicilar.EditModel
+@{
+    ViewData["Title"] = "Kullanıcı Düzenle";
+    var f = Model.Firma!;
+}
+
+<style>
+    .form-card { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:24px 28px; margin-bottom:14px; }
+    .section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+                     color:#94a3b8; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; }
+    .form-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:4px; }
+    .required::after { content:" *"; color:#ef4444; }
+    .yetki-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px 20px; }
+    .yetki-item label { font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:4px; }
+</style>
+
+<!-- Breadcrumb -->
+<div class="mb-3" style="font-size:12px;color:#94a3b8;">
+    <a href="/SistemAdmin/Firmalar" style="color:#64748b;text-decoration:none;">Firmalar</a> ›
+    <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID" style="color:#64748b;text-decoration:none;">@f.FirmaAdi</a> ›
+    <a href="/SistemAdmin/Firmalar/Kullanicilar?firmaId=@f.FirmaID" style="color:#64748b;text-decoration:none;">Kullanıcılar</a> ›
+    <span>Düzenle</span>
+</div>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/SistemAdmin/Firmalar/Kullanicilar?firmaId=@f.FirmaID" class="btn btn-sm btn-outline-secondary">← Geri</a>
+    <div>
+        <h5 class="mb-0" style="color:#1e293b;font-weight:700;">✏️ Kullanıcı Düzenle</h5>
+        <small style="color:#64748b;">
+            #@Model.KullaniciID ·
+            <code>@f.FirmaKodu</code> — @f.FirmaAdi
+            @if (Model.CreatedAt.HasValue)
+            {
+                <span> · Oluşturuldu: @Model.CreatedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+            }
+        </small>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Hata))
+{
+    <div class="alert alert-danger mb-3" style="font-size:13px;">⚠ @Model.Hata</div>
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="KullaniciID" value="@Model.KullaniciID" />
+    <input type="hidden" name="FirmaID"     value="@f.FirmaID" />
+
+    <!-- Kullanıcı Bilgileri -->
+    <div class="form-card">
+        <div class="section-title">👤 Kullanıcı Bilgileri</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label required">Ad Soyad</label>
+                <input type="text" name="KullaniciAdi" value="@Model.KullaniciAdi"
+                       class="form-control form-control-sm" maxlength="150" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label required">Kullanıcı Adı</label>
+                <input type="text" name="Username" value="@Model.Username"
+                       class="form-control form-control-sm" maxlength="100" required />
+                <small class="text-muted" style="font-size:11px;">Firma içinde benzersiz</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label required">Şifre</label>
+                <input type="text" name="Password" value="@Model.Password"
+                       class="form-control form-control-sm" maxlength="256" required />
+            </div>
+            <div class="col-md-2 d-flex align-items-end pb-1">
+                <div>
+                    <div class="form-check">
+                        <input type="checkbox" name="IsActive" value="true" id="chkActive"
+                               class="form-check-input" @(Model.IsActive ? "checked" : "") />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="chkActive" style="font-size:13px;">Aktif</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roller -->
+    <div class="form-card">
+        <div class="section-title">🔑 Roller</div>
+        <div class="d-flex gap-4 flex-wrap">
+            <div class="form-check">
+                <input type="checkbox" name="IsFirmaAdmin" value="true" id="chkFirmaAdmin"
+                       class="form-check-input" @(Model.IsFirmaAdmin ? "checked" : "") />
+                <input type="hidden" name="IsFirmaAdmin" value="false" />
+                <label class="form-check-label" for="chkFirmaAdmin" style="font-size:13px;">
+                    <span style="color:#7c3aed;font-weight:700;">●</span> Firma Admin
+                    <small class="text-muted d-block" style="font-size:11px;">Firma içi tüm yetkiler</small>
+                </label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="IsSistemAdmin" value="true" id="chkSistemAdmin"
+                       class="form-check-input" @(Model.IsSistemAdmin ? "checked" : "") />
+                <input type="hidden" name="IsSistemAdmin" value="false" />
+                <label class="form-check-label" for="chkSistemAdmin" style="font-size:13px;">
+                    <span style="color:#ef4444;font-weight:700;">●</span> Sistem Admin
+                    <small class="text-muted d-block" style="font-size:11px;">Admin panele erişim</small>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yetkiler -->
+    <div class="form-card">
+        <div class="section-title">⚙️ Modül Yetkileri</div>
+        <div class="yetki-grid">
+            @{ var yetkiler = new[] {
+                ("SiparisYetkisi",    "📦 Sipariş",     Model.SiparisYetkisi),
+                ("SeferYetkisi",      "🚛 Sefer",        Model.SeferYetkisi),
+                ("MusteriYetkisi",    "👥 Müşteri",      Model.MusteriYetkisi),
+                ("CariYetkisi",       "💰 Cari",         Model.CariYetkisi),
+                ("RaporYetkisi",      "📊 Rapor",        Model.RaporYetkisi),
+                ("ForwardingYetkisi", "✈️ Forwarding",   Model.ForwardingYetkisi),
+                ("AracYetkisi",       "🚗 Araç",         Model.AracYetkisi),
+            }; }
+            @foreach (var (ad, etiket, deger) in yetkiler)
+            {
+                <div class="yetki-item">
+                    <label>@etiket</label>
+                    <select name="@ad" class="form-select form-select-sm">
+                        @{ byte _d = deger; }
+                        @if (_d == 0) { <option value="0" selected>0 — Göremez</option> }           else { <option value="0">0 — Göremez</option> }
+                        @if (_d == 1) { <option value="1" selected>1 — Tam Yetki</option> }         else { <option value="1">1 — Tam Yetki</option> }
+                        @if (_d == 2) { <option value="2" selected>2 — Sadece Görüntüleme</option> } else { <option value="2">2 — Sadece Görüntüleme</option> }
+                    </select>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">💾 Kaydet</button>
+        <a href="/SistemAdmin/Firmalar/Kullanicilar?firmaId=@f.FirmaID"
+           class="btn btn-outline-secondary px-4">İptal</a>
+    </div>
+</form>

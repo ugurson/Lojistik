@@ -1,0 +1,204 @@
+@page
+@model Lojistik.Pages.SistemAdmin.Firmalar.Moduller.IndexModel
+@{
+    ViewData["Title"] = "Modüller — " + Model.Firma?.FirmaAdi;
+    var f = Model.Firma!;
+}
+
+<style>
+    .modul-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+    .modul-card-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 12px 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: #94a3b8;
+    }
+    .modul-row {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 16px;
+        transition: background .1s;
+    }
+    .modul-row:last-child { border-bottom: none; }
+    .modul-row:hover { background: #fafafa; }
+    .modul-toggle {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+    .modul-toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: #e2e8f0;
+        border-radius: 24px;
+        cursor: pointer;
+        transition: background .2s;
+    }
+    .toggle-slider::before {
+        content: "";
+        position: absolute;
+        width: 18px; height: 18px;
+        left: 3px; top: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: transform .2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .modul-toggle input:checked + .toggle-slider { background: #22c55e; }
+    .modul-toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .modul-info { flex: 1; }
+    .modul-name { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .modul-kodu { font-size: 11px; color: #94a3b8; font-family: monospace; }
+    .modul-acik { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .modul-tarih { font-size: 11px; color: #94a3b8; text-align: right; line-height: 1.6; }
+    .sa-badge { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; display: inline-block; }
+</style>
+
+<!-- Breadcrumb -->
+<div class="mb-3" style="font-size:12px;color:#94a3b8;">
+    <a href="/SistemAdmin/Firmalar" style="color:#64748b;text-decoration:none;">Firmalar</a> ›
+    <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID" style="color:#64748b;text-decoration:none;">@f.FirmaAdi</a> ›
+    <span>Modüller</span>
+</div>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID" class="btn btn-sm btn-outline-secondary">← Geri</a>
+    <div>
+        <h5 class="mb-0" style="color:#1e293b;font-weight:700;">🧩 Modül Yönetimi</h5>
+        <small style="color:#64748b;"><code>@f.FirmaKodu</code> — @f.FirmaAdi</small>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Basari))
+{
+    <div class="alert alert-success mb-3" style="font-size:13px;">✅ @Model.Basari</div>
+}
+
+@if (!Model.Moduller.Any())
+{
+    <div class="modul-card">
+        <div style="padding:48px;text-align:center;color:#94a3b8;">
+            <div style="font-size:32px;margin-bottom:8px;">🧩</div>
+            <div>Sistemde tanımlı modül bulunamadı.</div>
+            <small class="d-block mt-1">
+                SQL ile <code>ProgramModulleri</code> tablosuna modül ekleyin.
+            </small>
+        </div>
+    </div>
+}
+else
+{
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="FirmaID" value="@f.FirmaID" />
+
+        <div class="modul-card">
+            <div class="modul-card-header">
+                🧩 Mevcut Modüller — toggle ile açıp kapatın
+            </div>
+
+            @for (int i = 0; i < Model.Moduller.Count; i++)
+            {
+                var m = Model.Moduller[i];
+                string chkId = $"modul_{m.ModulID}";
+                <input type="hidden" name="ModulForms[@i].ModulID" value="@m.ModulID" />
+
+                <div class="modul-row">
+                    <!-- Toggle switch -->
+                    <label class="modul-toggle" title="@(m.FirmaAktif ? "Kapat" : "Aç")">
+                        <input type="checkbox"
+                               id="@chkId"
+                               name="ModulForms[@i].IsActive"
+                               value="true"
+                               @(m.FirmaAktif ? "checked" : "") />
+                        <span class="toggle-slider"></span>
+                    </label>
+
+                    <!-- Modül bilgisi -->
+                    <div class="modul-info">
+                        <div class="modul-name">@m.ModulAdi</div>
+                        <div class="modul-kodu">@m.ModulKodu</div>
+                        @if (!string.IsNullOrWhiteSpace(m.Aciklama))
+                        {
+                            <div class="modul-acik">@m.Aciklama</div>
+                        }
+                    </div>
+
+                    <!-- Durum badge -->
+                    <div style="min-width:80px;text-align:center;">
+                        @if (m.FirmaAktif)
+                        {
+                            <span class="sa-badge sa-badge-aktif">Aktif</span>
+                        }
+                        else if (m.AtanmisVar)
+                        {
+                            <span class="sa-badge sa-badge-pasif">Pasif</span>
+                        }
+                        else
+                        {
+                            <span class="sa-badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;">Atanmamış</span>
+                        }
+                    </div>
+
+                    <!-- Tarihler -->
+                    <div class="modul-tarih" style="min-width:130px;">
+                        @if (m.BaslamaTarihi.HasValue)
+                        {
+                            <div>▶ @m.BaslamaTarihi.Value.ToString("dd.MM.yyyy")</div>
+                        }
+                        @if (m.BitisTarihi.HasValue)
+                        {
+                            var gun = m.BitisTarihi.Value.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
+                            <div style="color:@(gun < 0 ? "#dc2626" : gun <= 30 ? "#d97706" : "#94a3b8");">
+                                ■ @m.BitisTarihi.Value.ToString("dd.MM.yyyy")
+                                @if (gun < 0)        { <small>(dolmuş)</small> }
+                                else if (gun <= 30)  { <small>(@gun g)</small> }
+                            </div>
+                        }
+                        @if (!m.BaslamaTarihi.HasValue && !m.BitisTarihi.HasValue && m.FirmaAktif)
+                        {
+                            <span style="color:#94a3b8;font-size:11px;">Süresiz</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex gap-2 mt-2">
+            <button type="submit" class="btn btn-primary px-4">💾 Kaydet</button>
+            <a href="/SistemAdmin/Firmalar/Details?id=@f.FirmaID"
+               class="btn btn-outline-secondary px-4">İptal</a>
+        </div>
+    </form>
+}
+
+<script>
+    // Toggle değişince badge'i anlık güncelle
+    document.querySelectorAll('.modul-toggle input').forEach(function(chk) {
+        chk.addEventListener('change', function() {
+            var row    = this.closest('.modul-row');
+            var badge  = row.querySelector('[class*="sa-badge"]');
+            if (this.checked) {
+                badge.className = 'sa-badge sa-badge-aktif';
+                badge.textContent = 'Aktif';
+            } else {
+                badge.className = 'sa-badge sa-badge-pasif';
+                badge.textContent = 'Pasif';
+            }
+        });
+    });
+</script>

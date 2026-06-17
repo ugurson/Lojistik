@@ -18,5 +18,11 @@ namespace Lojistik.Extensions  // klasör adına göre namespace
         public static int GetUserId(this ClaimsPrincipal user)
             => int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0;
 
+        public static string? GetAltSubeKodu(this ClaimsPrincipal user)
+        {
+            var v = user.FindFirst("AltSubeKodu")?.Value;
+            return string.IsNullOrWhiteSpace(v) ? null : v.Trim();
+        }
+
     }
 }

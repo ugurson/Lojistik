@@ -1,0 +1,157 @@
+@page
+@model Lojistik.Pages.FirmaPanel.Kullanicilar.EditModel
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Kullanıcı Düzenle";
+    var loginId   = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var lid) ? lid : 0;
+    bool editingSelf = (Model.KullaniciID == loginId);
+    bool limitDoldu  = Model.AktifSayisi >= Model.KullaniciLimiti;
+}
+
+<style>
+    .fp-form-card { background:white; border:1px solid #e2e8f0; border-radius:12px;
+                    padding:28px 32px; max-width:680px; }
+    .fp-section   { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+                    color:#94a3b8; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; }
+    .form-label   { font-size:12px; font-weight:600; color:#374151; margin-bottom:4px; }
+    .required::after { content:" *"; color:#ef4444; }
+</style>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/FirmaPanel/Kullanicilar" class="btn btn-sm btn-outline-secondary">← Geri</a>
+    <div>
+        <h5 class="mb-0 fw-bold">✏️ Kullanıcı Düzenle</h5>
+        <small class="text-muted">
+            #@Model.KullaniciID
+            @if (Model.CreatedAt.HasValue)
+            {
+                <span> · Oluşturuldu: @Model.CreatedAt.Value.ToString("dd.MM.yyyy")</span>
+            }
+            @if (editingSelf)
+            {
+                <span style="color:#2563eb; font-weight:600;"> · Kendi hesabınız</span>
+            }
+        </small>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Hata))
+{
+    <div class="alert alert-danger mb-3" style="font-size:13px; max-width:680px;">⚠ @Model.Hata</div>
+}
+
+@if (editingSelf)
+{
+    <div class="alert alert-info mb-3" style="font-size:13px; max-width:680px;">
+        ℹ️ Kendi hesabınızı düzenliyorsunuz. Aktiflik durumunuzu veya yönetici yetkinizi değiştiremezsiniz.
+    </div>
+}
+
+<div class="fp-form-card">
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="KullaniciID" value="@Model.KullaniciID" />
+
+        <!-- Temel Bilgiler -->
+        <div class="fp-section">Temel Bilgiler</div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label required">Ad Soyad</label>
+                <input name="KullaniciAdi" value="@Model.KullaniciAdi"
+                       class="form-control form-control-sm" maxlength="100" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label required">Kullanıcı Adı</label>
+                <input name="Username" value="@Model.Username"
+                       class="form-control form-control-sm" maxlength="50"
+                       autocomplete="off" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">
+                    Şifre
+                    <small class="text-muted fw-normal ms-1">(boş bırakılırsa değişmez)</small>
+                </label>
+                <input name="Password" type="password" value=""
+                       class="form-control form-control-sm"
+                       autocomplete="new-password" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Durum</label>
+                <div class="form-check mt-2">
+                    @if (editingSelf)
+                    {
+                        <!-- Kendi aktiflik durumunu değiştiremez -->
+                        <input class="form-check-input" type="checkbox" disabled
+                               @(Model.IsActive ? "checked" : "") id="IsActive_dis" />
+                        <input type="hidden" name="IsActive" value="@Model.IsActive.ToString().ToLower()" />
+                        <label class="form-check-label text-muted" for="IsActive_dis" style="font-size:13px;">
+                            Aktif
+                        </label>
+                    }
+                    else
+                    {
+                        <input class="form-check-input" type="checkbox"
+                               name="IsActive" value="true"
+                               @(Model.IsActive ? "checked" : "") id="IsActive" />
+                        <label class="form-check-label" for="IsActive" style="font-size:13px;">Aktif</label>
+                    }
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Yönetici</label>
+                <div class="form-check mt-2">
+                    @if (editingSelf)
+                    {
+                        <!-- Kendi admin yetkisini kaldıramaz -->
+                        <input class="form-check-input" type="checkbox" disabled
+                               @(Model.IsFirmaAdmin ? "checked" : "") id="IsFirmaAdmin_dis" />
+                        <input type="hidden" name="IsFirmaAdmin" value="@Model.IsFirmaAdmin.ToString().ToLower()" />
+                        <label class="form-check-label text-muted" for="IsFirmaAdmin_dis" style="font-size:13px;">
+                            Firma Admin
+                        </label>
+                    }
+                    else
+                    {
+                        <input class="form-check-input" type="checkbox"
+                               name="IsFirmaAdmin" value="true"
+                               @(Model.IsFirmaAdmin ? "checked" : "") id="IsFirmaAdmin" />
+                        <label class="form-check-label" for="IsFirmaAdmin" style="font-size:13px;">Firma Admin</label>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Yetkiler -->
+        <div class="fp-section">Modül Yetkileri</div>
+        <div class="row g-2 mb-4">
+            @{
+                (string label, string name, byte val)[] yetkiler = {
+                    ("Siparişler",   "SiparisYetkisi",    Model.SiparisYetkisi),
+                    ("Forwarding",   "ForwardingYetkisi", Model.ForwardingYetkisi),
+                    ("Araçlar",      "AracYetkisi",       Model.AracYetkisi),
+                    ("Seferler",     "SeferYetkisi",      Model.SeferYetkisi),
+                    ("Müşteriler",   "MusteriYetkisi",    Model.MusteriYetkisi),
+                    ("Cari",         "CariYetkisi",       Model.CariYetkisi),
+                    ("Raporlar",     "RaporYetkisi",      Model.RaporYetkisi),
+                };
+            }
+            @foreach (var (label, name, val) in yetkiler)
+            {
+                var _v = val;
+                <div class="col-6 col-md-4 col-lg-3">
+                    <label class="form-label">@label</label>
+                    <select name="@name" class="form-select form-select-sm">
+                        @if (_v == 0) { <option value="0" selected>0 — Göremez</option> }          else { <option value="0">0 — Göremez</option> }
+                        @if (_v == 1) { <option value="1" selected>1 — Tam Yetki</option> }         else { <option value="1">1 — Tam Yetki</option> }
+                        @if (_v == 2) { <option value="2" selected>2 — Sadece Görüntüleme</option> } else { <option value="2">2 — Sadece Görüntüleme</option> }
+                    </select>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">💾 Kaydet</button>
+            <a href="/FirmaPanel/Kullanicilar" class="btn btn-outline-secondary px-4">İptal</a>
+        </div>
+    </form>
+</div>
