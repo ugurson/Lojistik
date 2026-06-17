@@ -83,6 +83,10 @@ namespace Lojistik.Pages.SeferGelirleri
 
             if (g == null) return RedirectToPage("/Seferler/Index");
 
+            var seferAit = await _context.Seferler
+                .AnyAsync(s => s.FirmaID == firmaId && s.SeferID == Input.SeferID);
+            if (!seferAit) return Forbid();
+
             g.SeferID = Input.SeferID;
             g.Tarih = Input.Tarih.Date;
             g.Aciklama = Input.Aciklama?.Trim();
