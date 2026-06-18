@@ -11,7 +11,7 @@ public class CreateModel : PageModel
     private readonly AppDbContext _context;
     public CreateModel(AppDbContext context) => _context = context;
 
-    public ProgramFirma? Firma { get; set; }
+    public Firma? Firma { get; set; }
 
     [BindProperty] public int     FirmaID           { get; set; }
     [BindProperty] public string  KullaniciAdi      { get; set; } = "";
@@ -32,7 +32,7 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int firmaId)
     {
-        Firma = await _context.ProgramFirmalar.AsNoTracking()
+        Firma = await _context.Firmalar.AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == firmaId);
         if (Firma == null) return NotFound();
 
@@ -42,22 +42,12 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        // ── ProgramFirma kaydını bul ──────────────────────────────────────
-        Firma = await _context.ProgramFirmalar.AsNoTracking()
+        // ── Kanonik Firma kaydını bul (Kullanicilar.FirmaID buna bağlı) ───
+        Firma = await _context.Firmalar.AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == FirmaID);
         if (Firma == null) return NotFound();
 
-        // ── Firmalar tablosundaki karşılık gelen kayıt (gerçek FK hedefi) ─
-        // Kullanicilar.FirmaID → Firmalar.FirmaID (ProgramFirmalar.FirmaID değil)
-        var operasyonFirma = await _context.Firmalar.AsNoTracking()
-            .FirstOrDefaultAsync(f => f.FirmaKodu == Firma.FirmaKodu);
-
-        if (operasyonFirma == null)
-        {
-            Hata = "Bu program firması için operasyon firma kaydı bulunamadı. " +
-                   "Önce firma senkronunu kontrol edin.";
-            return Page();
-        }
+        var operasyonFirma = Firma;   // kanonik tablo = operasyon FK hedefi
 
         // ── Zorunlu alan kontrolü ─────────────────────────────────────────
         if (string.IsNullOrWhiteSpace(KullaniciAdi) ||
@@ -79,7 +69,7 @@ public class CreateModel : PageModel
         }
 
         // ── Aktif kullanıcı limit kontrolü ───────────────────────────────
-        // Limit ProgramFirma'dan alınır; sayım Firmalar.FirmaID üzerinden yapılır.
+        // Limit kanonik Firma'dan alınır; sayım Firmalar.FirmaID üzerinden yapılır.
         // IsSistemAdmin kullanıcılar limite dahil değildir.
         if (IsActive)
         {
@@ -87,7 +77,7 @@ public class CreateModel : PageModel
                 .CountAsync(k => k.FirmaID == operasyonFirma.FirmaID
                               && k.IsActive
                               && !k.IsSistemAdmin);
-            if (aktifSayi >= Firma.KullaniciLimiti)
+            if (aktifSayi >= (Firma.KullaniciLimiti ?? 0))
             {
                 Hata = $"Kullanıcı limiti dolu ({Firma.KullaniciLimiti} aktif kullanıcı). " +
                        "Yeni aktif kullanıcı eklenemez. Pasif olarak ekleyebilirsiniz.";

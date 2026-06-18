@@ -11,7 +11,7 @@ public class DetailsModel : PageModel
     private readonly AppDbContext _context;
     public DetailsModel(AppDbContext context) => _context = context;
 
-    public ProgramFirma? Firma { get; set; }
+    public Firma? Firma { get; set; }
 
     public record ModulDurum(
         int      ModulID,
@@ -38,7 +38,7 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Firma = await _context.ProgramFirmalar
+        Firma = await _context.Firmalar
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == id);
 

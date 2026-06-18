@@ -11,7 +11,7 @@ public class EditModel : PageModel
     private readonly AppDbContext _context;
     public EditModel(AppDbContext context) => _context = context;
 
-    public ProgramFirma? Firma { get; set; }
+    public Firma? Firma { get; set; }
 
     [BindProperty] public int     KullaniciID      { get; set; }
     [BindProperty] public int     FirmaID          { get; set; }
@@ -39,7 +39,7 @@ public class EditModel : PageModel
             .FirstOrDefaultAsync(x => x.KullaniciID == id && x.FirmaID == firmaId);
         if (k == null) return NotFound();
 
-        Firma = await _context.ProgramFirmalar.AsNoTracking()
+        Firma = await _context.Firmalar.AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == firmaId);
         if (Firma == null) return NotFound();
 
@@ -66,7 +66,7 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Firma = await _context.ProgramFirmalar.AsNoTracking()
+        Firma = await _context.Firmalar.AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == FirmaID);
         if (Firma == null) return NotFound();
 
@@ -104,7 +104,7 @@ public class EditModel : PageModel
         {
             int aktifSayi = await _context.Kullanicilar
                 .CountAsync(k => k.FirmaID == FirmaID && k.IsActive && !k.IsSistemAdmin);
-            if (aktifSayi >= Firma.KullaniciLimiti)
+            if (aktifSayi >= (Firma.KullaniciLimiti ?? 0))
             {
                 Hata = $"Kullanıcı limiti dolu ({Firma.KullaniciLimiti} aktif kullanıcı). " +
                        "Bu kullanıcı aktifleştirilemez.";

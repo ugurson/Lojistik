@@ -42,21 +42,13 @@ public class GirisModel : PageModel
         // Temizle/normalize
         Input.FirmaKodu = (Input.FirmaKodu ?? "").Trim();
 
-        // 1) Firmalar tablosunda firma kodu var mı?
+        // 1) Firmalar tablosunda firma kodu var mı + aktif mi?
+        //    Lisans/aktiflik artık kanonik Firmalar tablosundan okunur (eski 2. ProgramFirmalar
+        //    sorgusu kaldırıldı). SistemAdmin panelinden firma pasife alınmışsa (Firmalar.IsActive=0)
+        //    giriş aynı şekilde engellenir; tek satır hem firmayı hem aktiflik durumunu verir.
         var firma = await _db.Firmalar.AsNoTracking()
                        .FirstOrDefaultAsync(f => f.FirmaKodu == Input.FirmaKodu);
-        if (firma is null)
-        {
-            ModelState.AddModelError(string.Empty, "Kullanıcı adı, şifre, firma kodu veya yetki durumu hatalı.");
-            return Page();
-        }
-
-        // 2) ProgramFirmalar'da bu firma aktif mi?
-        //    SistemAdmin panelinden firma pasife alınmışsa giriş engellenir.
-        var programFirma = await _db.ProgramFirmalar.AsNoTracking()
-                               .FirstOrDefaultAsync(f => f.FirmaKodu == Input.FirmaKodu
-                                                      && f.IsActive);
-        if (programFirma is null)
+        if (firma is null || !firma.IsActive)
         {
             ModelState.AddModelError(string.Empty, "Kullanıcı adı, şifre, firma kodu veya yetki durumu hatalı.");
             return Page();

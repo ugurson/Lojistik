@@ -37,14 +37,14 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var firmalar = await _context.ProgramFirmalar
+        var firmalar = await _context.Firmalar
             .AsNoTracking()
             .ToListAsync();
 
         ToplamFirmaSayisi = firmalar.Count;
         AktifFirmaSayisi  = firmalar.Count(f => f.IsActive);
         PasifFirmaSayisi  = firmalar.Count(f => !f.IsActive);
-        DemoFirmaSayisi   = firmalar.Count(f => f.DemoMu);
+        DemoFirmaSayisi   = firmalar.Count(f => f.DemoMu == true);
 
         // Firma başına aktif kullanıcı sayısı (Kullanicilar tablosundan)
         var kullaniciSayilari = await _context.Kullanicilar
@@ -57,7 +57,7 @@ public class IndexModel : PageModel
         ToplamAktifKullanici = kullaniciSayilari.Values.Sum();
 
         LimitDolmusFirma = firmalar.Count(f =>
-            kullaniciSayilari.TryGetValue(f.FirmaID, out var s) && s >= f.KullaniciLimiti);
+            kullaniciSayilari.TryGetValue(f.FirmaID, out var s) && s >= (f.KullaniciLimiti ?? 0));
 
         // Son eklenen 10 firma
         SonFirmalar = firmalar
@@ -69,8 +69,8 @@ public class IndexModel : PageModel
                 f.FirmaAdi,
                 f.PaketAdi,
                 f.IsActive,
-                f.DemoMu,
-                f.KullaniciLimiti,
+                f.DemoMu ?? false,
+                f.KullaniciLimiti ?? 0,
                 kullaniciSayilari.GetValueOrDefault(f.FirmaID, 0),
                 f.BitisTarihi
             ))

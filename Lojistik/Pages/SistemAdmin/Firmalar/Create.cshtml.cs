@@ -44,52 +44,36 @@ public class CreateModel : PageModel
 
         var kodTemiz = FirmaKodu.Trim().ToUpper();
 
-        // ── Benzersizlik: her iki tablo da kontrol edilir ─────────────────
-        if (await _context.ProgramFirmalar.AnyAsync(f => f.FirmaKodu == kodTemiz))
-        {
-            Hata = $"'{kodTemiz}' firma kodu zaten kullanılıyor.";
-            return Page();
-        }
+        // ── Benzersizlik: kanonik Firmalar tablosu ────────────────────────
         if (await _context.Firmalar.AnyAsync(f => f.FirmaKodu == kodTemiz))
         {
-            Hata = $"'{kodTemiz}' firma kodu operasyon tablosunda zaten kullanılıyor.";
+            Hata = $"'{kodTemiz}' firma kodu zaten kullanılıyor.";
             return Page();
         }
 
         var now = DateTime.Now;
 
-        // ── SaaS / lisans tablosu ─────────────────────────────────────────
-        var programFirma = new ProgramFirma
+        // ── Tek kanonik Firma kaydı (lisans alanları dahil) ───────────────
+        // Eski çift-insert kaldırıldı: artık tek satır + DB-garantili FirmaID.
+        // Kullanicilar/AltSube/Modul FK'leri zaten Firmalar'a bağlı (Faz 2).
+        var firma = new Firma
         {
             FirmaKodu       = kodTemiz,
             FirmaAdi        = FirmaAdi.Trim(),
+            IsActive        = IsActive,
+            CreatedAt       = now,
             PaketAdi        = PaketAdi?.Trim(),
             KullaniciLimiti = KullaniciLimiti,
             AylikUcret      = AylikUcret,
             ParaBirimi      = ParaBirimi.Trim(),
             BaslamaTarihi   = BaslamaTarihi,
             BitisTarihi     = BitisTarihi,
-            IsActive        = IsActive,
             DemoMu          = DemoMu,
             DemoKayitLimiti = DemoMu ? DemoKayitLimiti : null,
-            Notlar          = Notlar?.Trim(),
-            CreatedAt       = now
+            Notlar          = Notlar?.Trim()
         };
 
-        // ── Operasyon tablosu (Kullanicilar.FirmaID bu tabloya bağlı) ─────
-        // Not: Firma modeli Telefon/Adres alanı içermiyor; mevcut alanlar senkronize edilir.
-        var operasyonFirma = new Firma
-        {
-            FirmaKodu = kodTemiz,
-            FirmaAdi  = FirmaAdi.Trim(),
-            IsActive  = IsActive,
-            CreatedAt = now
-        };
-
-        // EF Core tek SaveChangesAsync çağrısını otomatik olarak tek transaction'a sarar.
-        // ProgramFirmalar veya Firmalar'dan biri başarısız olursa her ikisi de geri alınır.
-        _context.ProgramFirmalar.Add(programFirma);
-        _context.Firmalar.Add(operasyonFirma);
+        _context.Firmalar.Add(firma);
         await _context.SaveChangesAsync();
 
         return RedirectToPage("Index");

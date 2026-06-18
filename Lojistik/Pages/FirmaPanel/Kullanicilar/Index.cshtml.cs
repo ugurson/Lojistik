@@ -137,18 +137,12 @@ public class IndexModel : PageModel
         KullaniciLimiti = await GetKullaniciLimitiAsync(firmaId);
     }
 
-    // FirmaKodu köprüsü üzerinden ProgramFirmalar.KullaniciLimiti'ni al
+    // KullaniciLimiti artık kanonik Firmalar tablosundan okunur (FirmaKodu köprüsü kaldırıldı).
     private async Task<int> GetKullaniciLimitiAsync(int firmaId)
     {
-        var firmaKodu = await _context.Firmalar.AsNoTracking()
+        return await _context.Firmalar.AsNoTracking()
             .Where(f => f.FirmaID == firmaId)
-            .Select(f => f.FirmaKodu)
-            .FirstOrDefaultAsync();
-        if (firmaKodu == null) return 0;
-
-        return await _context.ProgramFirmalar.AsNoTracking()
-            .Where(p => p.FirmaKodu == firmaKodu)
-            .Select(p => p.KullaniciLimiti)
+            .Select(f => f.KullaniciLimiti ?? 0)
             .FirstOrDefaultAsync();
     }
 }

@@ -20,5 +20,5 @@ public class ProgramFirmaModul
 
     // Navigation
     public ProgramModul?  Modul { get; set; }
-    public ProgramFirma?  Firma { get; set; }
+    public Firma?         Firma { get; set; }   // FK artık kanonik Firmalar tablosuna (Faz 2)
 }
