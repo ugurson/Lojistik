@@ -23,7 +23,6 @@ namespace Lojistik.Data
         public DbSet<KademeFirma> KademeFirmalari { get; set; } = default!;
 
         public DbSet<ProgramAltSube>   ProgramAltSubeler   { get; set; } = null!;
-        public DbSet<ProgramFirma>     ProgramFirmalar     { get; set; } = null!;
         public DbSet<ProgramModul>     ProgramModulleri    { get; set; } = null!;
         public DbSet<ProgramFirmaModul> ProgramFirmaModulleri { get; set; } = null!;
 
@@ -48,7 +47,7 @@ namespace Lojistik.Data
                     .WithMany()
                     .HasForeignKey(x => x.FirmaID)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK_ProgramFirmaModulleri_ProgramFirmalar");
+                    .HasConstraintName("FK_ProgramFirmaModulleri_Firmalar");
 
                 e.HasOne(x => x.Modul)
                     .WithMany()

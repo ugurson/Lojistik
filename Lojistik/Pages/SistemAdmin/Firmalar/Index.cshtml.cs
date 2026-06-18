@@ -35,14 +35,14 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var q = _context.ProgramFirmalar.AsNoTracking();
+        var q = _context.Firmalar.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(Arama))
             q = q.Where(f => f.FirmaAdi.Contains(Arama) || f.FirmaKodu.Contains(Arama));
 
         if (Durum == "aktif") q = q.Where(f => f.IsActive);
         if (Durum == "pasif") q = q.Where(f => !f.IsActive);
-        if (DemoFiltre == "demo") q = q.Where(f => f.DemoMu);
+        if (DemoFiltre == "demo") q = q.Where(f => f.DemoMu == true);
 
         var firmalar = await q.OrderBy(f => f.FirmaAdi).ToListAsync();
 
@@ -60,12 +60,12 @@ public class IndexModel : PageModel
             f.FirmaAdi,
             f.PaketAdi,
             f.IsActive,
-            f.DemoMu,
-            f.KullaniciLimiti,
+            f.DemoMu ?? false,
+            f.KullaniciLimiti ?? 0,
             aktifSayilari.GetValueOrDefault(f.FirmaID, 0),
             f.AylikUcret,
-            f.ParaBirimi,
-            f.BaslamaTarihi,
+            f.ParaBirimi ?? "TL",
+            f.BaslamaTarihi ?? default,
             f.BitisTarihi
         )).ToList();
     }
@@ -73,7 +73,7 @@ public class IndexModel : PageModel
     // ── Pasife / Aktife Al (inline POST) ─────────────────────────────────
     public async Task<IActionResult> OnPostToggleAktifAsync(int id)
     {
-        var firma = await _context.ProgramFirmalar.FindAsync(id);
+        var firma = await _context.Firmalar.FindAsync(id);
         if (firma == null) return NotFound();
 
         firma.IsActive  = !firma.IsActive;

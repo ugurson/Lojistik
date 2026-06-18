@@ -11,7 +11,7 @@ public class IndexModel : PageModel
     private readonly AppDbContext _context;
     public IndexModel(AppDbContext context) => _context = context;
 
-    public ProgramFirma? Firma { get; set; }
+    public Firma? Firma { get; set; }
 
     public record KullaniciSatir(
         int     KullaniciID,
@@ -30,7 +30,7 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int firmaId)
     {
-        Firma = await _context.ProgramFirmalar
+        Firma = await _context.Firmalar
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == firmaId);
 
@@ -67,13 +67,13 @@ public class IndexModel : PageModel
         // Pasiften aktife geçerken limit kontrolü
         if (!k.IsActive)
         {
-            var firma = await _context.ProgramFirmalar.AsNoTracking()
+            var firma = await _context.Firmalar.AsNoTracking()
                 .FirstOrDefaultAsync(f => f.FirmaID == firmaId);
             if (firma != null)
             {
                 var aktifSayi = await _context.Kullanicilar
                     .CountAsync(x => x.FirmaID == firmaId && x.IsActive && !x.IsSistemAdmin);
-                if (aktifSayi >= firma.KullaniciLimiti)
+                if (aktifSayi >= (firma.KullaniciLimiti ?? 0))
                 {
                     TempData["Hata"] = $"Kullanıcı limiti dolu ({firma.KullaniciLimiti}). Aktifleştirilemez.";
                     return RedirectToPage(new { firmaId });

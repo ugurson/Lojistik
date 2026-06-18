@@ -102,7 +102,7 @@ else if (bitisGun.HasValue && bitisGun <= 30)
         <div class="detail-item">
             <label>Tip</label>
             <span>
-                @if (f.DemoMu)
+                @if (f.DemoMu == true)
                 {
                     <span class="sa-badge sa-badge-demo">Demo</span>
                     if (f.DemoKayitLimiti.HasValue)
@@ -159,7 +159,7 @@ else if (bitisGun.HasValue && bitisGun <= 30)
     <div class="detail-grid">
         <div class="detail-item">
             <label>Başlama Tarihi</label>
-            <span>@f.BaslamaTarihi.ToString("dd.MM.yyyy")</span>
+            <span>@(f.BaslamaTarihi?.ToString("dd.MM.yyyy") ?? "—")</span>
         </div>
         <div class="detail-item">
             <label>Bitiş Tarihi</label>

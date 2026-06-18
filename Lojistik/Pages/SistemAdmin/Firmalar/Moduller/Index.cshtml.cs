@@ -11,7 +11,7 @@ public class IndexModel : PageModel
     private readonly AppDbContext _context;
     public IndexModel(AppDbContext context) => _context = context;
 
-    public ProgramFirma? Firma { get; set; }
+    public Firma? Firma { get; set; }
 
     // Tüm sistem modülleri + firma bazlı durum
     public record ModulSatir(
@@ -43,7 +43,7 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int firmaId)
     {
-        Firma = await _context.ProgramFirmalar.AsNoTracking()
+        Firma = await _context.Firmalar.AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == firmaId);
         if (Firma == null) return NotFound();
 
@@ -54,7 +54,7 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Firma = await _context.ProgramFirmalar.AsNoTracking()
+        Firma = await _context.Firmalar.AsNoTracking()
             .FirstOrDefaultAsync(f => f.FirmaID == FirmaID);
         if (Firma == null) return NotFound();
 
