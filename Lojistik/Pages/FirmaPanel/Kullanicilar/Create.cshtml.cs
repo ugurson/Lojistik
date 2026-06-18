@@ -105,21 +105,13 @@ public class CreateModel : PageModel
         return RedirectToPage("Index");
     }
 
-    // ProgramFirmalar.KullaniciLimiti + aktif kullanıcı sayısı
+    // KullaniciLimiti (kanonik Firmalar tablosundan) + aktif kullanıcı sayısı
     private async Task YukleLimitAsync(int firmaId)
     {
-        var firmaKodu = await _context.Firmalar.AsNoTracking()
+        KullaniciLimiti = await _context.Firmalar.AsNoTracking()
             .Where(f => f.FirmaID == firmaId)
-            .Select(f => f.FirmaKodu)
+            .Select(f => f.KullaniciLimiti ?? 0)
             .FirstOrDefaultAsync();
-
-        if (firmaKodu != null)
-        {
-            KullaniciLimiti = await _context.ProgramFirmalar.AsNoTracking()
-                .Where(p => p.FirmaKodu == firmaKodu)
-                .Select(p => p.KullaniciLimiti)
-                .FirstOrDefaultAsync();
-        }
 
         AktifSayisi = await _context.Kullanicilar
             .CountAsync(k => k.FirmaID  == firmaId
