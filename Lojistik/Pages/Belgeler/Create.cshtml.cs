@@ -1,4 +1,5 @@
 ﻿using Lojistik.Data;
+using Lojistik.Extensions; // User.GetFirmaId()
 using Lojistik.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -25,8 +26,10 @@ public class CreateModel : PageModel
     {
         if (aracId is null) return BadRequest();
 
+        // Araç bu firmaya ait mi? Başka firmanın plakası sızmasın.
+        var firmaId = User.GetFirmaId();
         var arac = await _context.Araclar.AsNoTracking()
-                         .FirstOrDefaultAsync(a => a.AracID == aracId.Value);
+                         .FirstOrDefaultAsync(a => a.AracID == aracId.Value && a.FirmaID == firmaId);
         if (arac is null) return NotFound("Araç bulunamadı.");
 
         // Formda AracID otomatik dolsun
@@ -40,6 +43,12 @@ public class CreateModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
+
+        // AracID formdan geliyor — bu firmaya ait olduğunu insert'ten ÖNCE doğrula
+        var firmaId = User.GetFirmaId();
+        var aracAit = await _context.Araclar
+            .AnyAsync(a => a.AracID == AracBelgesi.AracID && a.FirmaID == firmaId);
+        if (!aracAit) return Forbid();
 
         // Eğer dosya yüklendiyse kaydet
         if (Dosya is not null && Dosya.Length > 0)
