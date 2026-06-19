@@ -60,6 +60,12 @@ namespace Lojistik.Pages.Belgeler
                 .AnyAsync(b => b.BelgeID == AracBelgesi.BelgeID && b.Arac!.FirmaID == firmaId);
             if (!sahiplik) return NotFound();
 
+            // Hedef AracID formdan geliyor — re-parenting'i engelle:
+            // belgenin tasinacagi arac da bu firmaya ait olmali.
+            var hedefAracAit = await _context.Araclar
+                .AnyAsync(a => a.AracID == AracBelgesi.AracID && a.FirmaID == firmaId);
+            if (!hedefAracAit) return Forbid();
+
             _context.Attach(AracBelgesi).State = EntityState.Modified;
 
             try
