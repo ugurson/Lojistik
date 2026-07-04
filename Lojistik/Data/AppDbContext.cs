@@ -31,6 +31,7 @@ namespace Lojistik.Data
         public DbSet<ForwardingFiyat> ForwardingFiyatlar { get; set; } = default!;
         public DbSet<ForwardingKalem> ForwardingKalemler { get; set; } = default!;
         public DbSet<GuncellemeNotu> GuncellemeNotlari { get; set; } = default!;
+        public DbSet<MasrafTipi> MasrafTipleri { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

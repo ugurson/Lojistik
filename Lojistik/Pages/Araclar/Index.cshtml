@@ -84,12 +84,15 @@
                 <label class="form-label">Model</label>
                 <input name="ModelAdi" value="@Model.ModelAdi" class="form-control" placeholder="Model..." />
             </div>
-            <div class="col-sm-3 col-md-1">
-                <label class="form-label">Tür</label>
-                <select name="IsDorse" class="form-select">
+            <div class="col-sm-3 col-md-2">
+                <label class="form-label">Araç Tipi</label>
+                <select name="AracTipi" class="form-select">
                     <option value="">Hepsi</option>
-                    <option value="false" selected="@(Model.IsDorse == false)">Çekici</option>
-                    <option value="true"  selected="@(Model.IsDorse == true)">Dorse</option>
+                    <option value="Tır"      selected="@(Model.AracTipi == "Tır")">Tır (Çekici)</option>
+                    <option value="Kamyon"   selected="@(Model.AracTipi == "Kamyon")">Kamyon</option>
+                    <option value="Kamyonet" selected="@(Model.AracTipi == "Kamyonet")">Kamyonet</option>
+                    <option value="Dorse"    selected="@(Model.AracTipi == "Dorse")">Dorse</option>
+                    <option value="Araç"     selected="@(Model.AracTipi == "Araç")">Araç</option>
                 </select>
             </div>
             <div class="col-sm-3 col-md-2">
@@ -161,7 +164,12 @@
                         <span>Yıl</span><small class="@SortCls("ModelYili")">@SortIcon("ModelYili")</small>
                     </a>
                 </th>
-                <th>Tür</th>
+                <th>
+                    <a asp-page="./Index" asp-all-route-data="@SD("AracTipi")"
+                       class="text-decoration-none text-reset d-flex align-items-center gap-1">
+                        <span>Araç Tipi</span><small class="@SortCls("AracTipi")">@SortIcon("AracTipi")</small>
+                    </a>
+                </th>
                 <th>
                     <a asp-page="./Index" asp-all-route-data="@SD("Durum")"
                        class="text-decoration-none text-reset d-flex align-items-center gap-1">
@@ -192,11 +200,7 @@
                     </td>
                     <td>@item.Marka @item.Model</td>
                     <td>@item.ModelYili</td>
-                    <td>
-                        <span class="badge @(item.IsDorse ? "bg-info text-dark" : "bg-primary bg-opacity-75")">
-                            @(item.IsDorse ? "Dorse" : "Çekici")
-                        </span>
-                    </td>
+                    <td>@item.AracTipi</td>
                     <td><span class="@durumBadge">@item.Durum</span></td>
                     <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                         @item.Notlar
@@ -270,7 +274,7 @@
                     <ul class="mb-0">
                         <li><strong>Plaka</strong> — Araç plakasına göre arama yapın.</li>
                         <li><strong>Marka / Model</strong> — Araç markası veya modeline göre filtreleyin.</li>
-                        <li><strong>Tür</strong> — Çekici veya Dorse olarak filtreleyin.</li>
+                        <li><strong>Araç Tipi</strong> — Tır, Kamyon, Kamyonet, Dorse vb. tipe göre filtreleyin.</li>
                         <li><strong>Mülkiyet</strong> — Özmal veya Kiralık araçları ayrı görün.</li>
                         <li><strong>Durum</strong> — Aktif veya Pasif araçları filtreleyin.</li>
                     </ul>

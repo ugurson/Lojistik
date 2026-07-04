@@ -52,12 +52,16 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label lj-lbl">Araç Tipi</label>
-                        <input class="form-control form-control-sm" asp-for="Arac.AracTipi" />
+                        <select class="form-select form-select-sm" asp-for="Arac.AracTipi" asp-items="Model.AracTipleri">
+                            <option value="">Seçiniz…</option>
+                        </select>
                         <span class="text-danger small" asp-validation-for="Arac.AracTipi"></span>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label lj-lbl">Durum</label>
-                        <input class="form-control form-control-sm" asp-for="Arac.Durum" />
+                        <select class="form-select form-select-sm" asp-for="Arac.Durum" asp-items="Model.Durumlar">
+                            <option value="">Seçiniz…</option>
+                        </select>
                         <span class="text-danger small" asp-validation-for="Arac.Durum"></span>
                     </div>
 

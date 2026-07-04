@@ -37,18 +37,14 @@ namespace Lojistik.Pages.SeferMasraflari
 
         }
 
-        public IActionResult OnGet(int seferId)
+        public async Task<IActionResult> OnGetAsync(int seferId)
         {
             if (seferId <= 0) return RedirectToPage("/Seferler/Index");
 
             Input.SeferID = seferId;
 
             ParaBirimleri = new SelectList(new[] { "TL", "EUR", "USD"  });
-            MasrafTipleri = new SelectList(new[]
-            {
-                "Yakıt","Yakıt-Kapı","Şöför Fiks","Masraflar","Otoyol/Geçiş","Konaklama","Yemek","Bakım/Servis","Lastik",
-                "Gümrük","Sigorta","Belge/Harç","Park","Diğer"
-            });
+            await LoadMasrafTipleriAsync();
 
             return Page();
         }
@@ -70,7 +66,7 @@ namespace Lojistik.Pages.SeferMasraflari
             if (!ModelState.IsValid)
             {
                 ParaBirimleri = new SelectList(new[] { "TL", "EUR", "USD" });
-                MasrafTipleri = new SelectList(new[] { "Yakıt", "Yakıt-Kapı", "Şöför Fiks","Masraflar", "Otoyol/Geçiş", "Konaklama", "Yemek", "Bakım/Servis", "Lastik", "Gümrük", "Sigorta", "Belge/Harç", "Park", "Diğer" });
+                await LoadMasrafTipleriAsync();
                 return Page();
             }
 
@@ -101,6 +97,19 @@ namespace Lojistik.Pages.SeferMasraflari
             await _context.SaveChangesAsync();
 
             return RedirectToPage("/Seferler/Details", new { id = Input.SeferID });
+        }
+
+        // Masraf tipleri artık DB'den (global MasrafTipleri lookup tablosu) okunur.
+        private async Task LoadMasrafTipleriAsync()
+        {
+            var tipler = await _context.MasrafTipleri
+                .AsNoTracking()
+                .Where(t => t.IsActive)
+                .OrderBy(t => t.SiraNo).ThenBy(t => t.Ad)
+                .Select(t => t.Ad)
+                .ToListAsync();
+
+            MasrafTipleri = new SelectList(tipler, Input.MasrafTipi);
         }
     }
 }
