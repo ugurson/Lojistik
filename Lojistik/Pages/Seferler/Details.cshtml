@@ -495,8 +495,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var m in Model.Masraflar)
+                            @foreach (var grup in Model.Masraflar.GroupBy(x => x.MasrafTipi).OrderBy(g => g.Key))
                             {
+                                <tr class="table-secondary">
+                                    <td colspan="@(isReadOnly ? 7 : 8)">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="fw-semibold">@grup.Key</span>
+                                            <span class="text-muted small">(@grup.Count() kayıt)</span>
+                                            <span class="ms-auto d-flex gap-1 flex-wrap">
+                                                @foreach (var pbg in grup.GroupBy(x => x.ParaBirimi))
+                                                {
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" style="font-size:12px;">
+                                                        💸 @pbg.Sum(x => x.Tutar).ToString("N2") @pbg.Key
+                                                    </span>
+                                                }
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @foreach (var m in grup)
+                                {
                                 string masrafBadge = m.MasrafTipi?.ToLower() switch {
                                     var t when t != null && (t.Contains("yakıt") || t.Contains("yakit")) => "bg-warning text-dark",
                                     var t when t != null && (t.Contains("şöfor") || t.Contains("sofor") || t.Contains("şoför")) => "bg-info text-dark",
@@ -538,6 +556,7 @@
                                         </td>
                                     }
                                 </tr>
+                                }
                             }
                         </tbody>
                     </table>

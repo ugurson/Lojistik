@@ -73,8 +73,10 @@
                 <tr>
                     <th>Müşteri</th>
                     <th>PB</th>
+                    @* Borç/Alacak kolonları geçici gizlendi — ileride tekrar açılabilir
                     <th class="text-end">Borç</th>
                     <th class="text-end">Alacak</th>
+                    *@
                     <th class="text-end">Net</th>
                     <th class="text-center" style="width:95px;">Son İşlem</th>
                     <th class="text-end">İşlemler</th>
@@ -89,7 +91,7 @@
 
                 @if (!groups.Any())
                 {
-                    <tr><td colspan="7" class="text-center text-muted py-4">
+                    <tr><td colspan="5" class="text-center text-muted py-4">
                         <div class="fs-4 mb-1">📭</div>Kayıt yok.
                     </td></tr>
                 }
@@ -101,18 +103,6 @@
                         var subAlacak  = g.Sum(x => x.AlacakPB);
                         var subNet     = subBorc - subAlacak;
                         var subNetClass = subNet > 0 ? "text-success" : subNet < 0 ? "text-danger" : "text-secondary";
-
-                        @* Grup başlığı *@
-                        <tr style="background:var(--bs-gray-100,#f8f9fa);">
-                            <td colspan="2" class="fw-semibold py-1 ps-2" style="font-size:0.82rem;color:#555;">
-                                📌 @g.Key
-                            </td>
-                            <td class="text-end fw-semibold text-success py-1" style="font-size:0.82rem;">@subBorc.ToString("N2")</td>
-                            <td class="text-end fw-semibold text-danger py-1" style="font-size:0.82rem;">@subAlacak.ToString("N2")</td>
-                            <td class="text-end fw-bold py-1 @subNetClass" style="font-size:0.85rem;">@subNet.ToString("N2")</td>
-                            <td></td>
-                            <td></td>
-                        </tr>
 
                         @* Satırlar *@
                         foreach (var r in g.OrderByDescending(x => Math.Abs(x.NetPB)).ThenBy(x => x.MusteriAdi))
@@ -154,12 +144,14 @@
                                     }
                                 </td>
                                 <td><span class="badge bg-light text-dark border">@r.ParaBirimi</span></td>
+                                @* Borç/Alacak kolonları geçici gizlendi — ileride tekrar açılabilir
                                 <td class="text-end text-success">
                                     @if (r.BorcPB > 0) { @r.BorcPB.ToString("N2") } else { <span class="text-muted">–</span> }
                                 </td>
                                 <td class="text-end text-danger">
                                     @if (r.AlacakPB > 0) { @r.AlacakPB.ToString("N2") } else { <span class="text-muted">–</span> }
                                 </td>
+                                *@
                                 <td class="text-end" style="@netStyle">@netLabel</td>
                                 @* Item 3: Son işlem *@
                                 <td class="text-center @sonIslemCls" style="font-size:0.78rem;">@sonIslemStr</td>
@@ -182,6 +174,20 @@
                                 </td>
                             </tr>
                         }
+
+                        @* Grup toplamı — raptiyeli para birimi etiketi her grubun ALTINDA *@
+                        <tr style="background:var(--bs-gray-100,#f8f9fa);border-top:2px solid #dee2e6;">
+                            <td colspan="2" class="fw-semibold py-1 ps-2" style="font-size:0.82rem;color:#555;">
+                                📌 @g.Key Toplam
+                            </td>
+                            @* Borç/Alacak kolonları geçici gizlendi — ileride tekrar açılabilir
+                            <td class="text-end fw-semibold text-success py-1" style="font-size:0.82rem;">@subBorc.ToString("N2")</td>
+                            <td class="text-end fw-semibold text-danger py-1" style="font-size:0.82rem;">@subAlacak.ToString("N2")</td>
+                            *@
+                            <td class="text-end fw-bold py-1 @subNetClass" style="font-size:0.85rem;">@subNet.ToString("N2")</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
                     }
                 }
             </tbody>

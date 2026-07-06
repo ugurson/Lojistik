@@ -91,6 +91,7 @@ namespace Lojistik.Pages.Seferler
             DateTime SiparisTarihi,
             string YukAciklamasi,
             string? Gonderen,
+            string? GonderenSehir,
             string? Alici,
             string? AliciUlke,
             string? AliciSehir,
@@ -144,6 +145,8 @@ Text = m.MusteriAdi
                     x.Sevkiyat.Siparis.SiparisTarihi,
                     x.Sevkiyat.Siparis.YukAciklamasi,
                     x.Sevkiyat.Siparis.GonderenMusteri != null ? x.Sevkiyat.Siparis.GonderenMusteri.MusteriAdi : null,
+                    x.Sevkiyat.Siparis.GonderenMusteri != null && x.Sevkiyat.Siparis.GonderenMusteri.Sehir != null
+                        ? x.Sevkiyat.Siparis.GonderenMusteri.Sehir.SehirAdi : null,
                     x.Sevkiyat.Siparis.AliciMusteri != null ? x.Sevkiyat.Siparis.AliciMusteri.MusteriAdi : null,
                     x.Sevkiyat.Siparis.AliciMusteri != null && x.Sevkiyat.Siparis.AliciMusteri.Ulke != null
                         ? x.Sevkiyat.Siparis.AliciMusteri.Ulke.UlkeAdi : null,

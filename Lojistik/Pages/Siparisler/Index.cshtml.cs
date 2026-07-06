@@ -19,6 +19,7 @@ namespace Lojistik.Pages.Siparisler
             int SiparisID,
             DateTime SiparisTarihi,
             string? Gonderen,
+            string? AraTedarikci,
             string? Alici,
             string? AliciUlke,
             string? AliciSehir,
@@ -28,7 +29,8 @@ namespace Lojistik.Pages.Siparisler
             byte Durum,
             string? SeferAracPlaka,
             string? SeferSurucuAdi,
-            string? SeferKodu // ← eklendi
+            string? SeferKodu, // ← eklendi
+            bool HasSevkiyat   // sipariş bir sevkiyata atanmış mı?
         );
 
         public IList<Row> Items { get; set; } = new List<Row>();
@@ -48,6 +50,9 @@ namespace Lojistik.Pages.Siparisler
         public async Task OnGetAsync()
         {
             var firmaId = User.GetFirmaId();
+
+            // Sayfa varsayılan olarak sefere göre gruplı açılır; "none" ile düz listeye geçilir.
+            if (groupBy == null) groupBy = "sefer";
 
             var query = _context.Siparisler
                 .AsNoTracking()
@@ -83,17 +88,30 @@ namespace Lojistik.Pages.Siparisler
 
             TotalCount = await query.CountAsync();
 
-            var durumGruplari = await query
-                .GroupBy(s => s.Durum)
-                .Select(g => new { Durum = g.Key, Sayi = g.Count() })
+            // Özet kartlar için durum, sevkiyat/sefer atamasına göre hesaplanır
+            // (görüntülenen Durum kolonuyla tutarlı olması için):
+            //   sevkiyata atanmamış → Taslak(0), sefere atanmamış → Yüklendi(1), aksi → mevcut durum.
+            var durumHesap = await query
+                .Select(s => new
+                {
+                    s.Durum,
+                    HasSevkiyat = _context.Sevkiyatlar
+                        .Any(x => x.FirmaID == firmaId && x.SiparisID == s.SiparisID),
+                    HasSefer = _context.SeferSevkiyatlar
+                        .Any(ss => ss.Sevkiyat.SiparisID == s.SiparisID && ss.Sevkiyat.FirmaID == firmaId)
+                })
                 .ToListAsync();
-            DurumSayilari = durumGruplari.ToDictionary(x => x.Durum, x => x.Sayi);
+
+            DurumSayilari = durumHesap
+                .GroupBy(x => !x.HasSevkiyat ? (byte)0 : (!x.HasSefer ? (byte)1 : x.Durum))
+                .ToDictionary(g => g.Key, g => g.Count());
 
             Items = await query
                 .Select(s => new Row(
                     s.SiparisID,
                     s.SiparisTarihi,
                     s.GonderenMusteri != null ? s.GonderenMusteri.MusteriAdi : null,
+                    s.AraTedarikciMusteri != null ? s.AraTedarikciMusteri.MusteriAdi : null,
                     s.AliciMusteri != null ? s.AliciMusteri.MusteriAdi : null,
                     s.AliciMusteri != null && s.AliciMusteri.Ulke != null ? s.AliciMusteri.Ulke.UlkeAdi : null,
                     s.AliciMusteri != null && s.AliciMusteri.Sehir != null ? s.AliciMusteri.Sehir.SehirAdi : null,
@@ -124,7 +142,10 @@ _context.SeferSevkiyatlar
     .OrderByDescending(ss => ss.SeferSevkiyatID)      // yoksa: OrderByDescending(ss => ss.SeferSevkiyatID)
     .ThenByDescending(ss => ss.SeferID)
     .Select(ss => ss.Sefer.SeferKodu)
-    .FirstOrDefault()
+    .FirstOrDefault(),
+
+_context.Sevkiyatlar
+    .Any(x => x.FirmaID == firmaId && x.SiparisID == s.SiparisID)
                 ))
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

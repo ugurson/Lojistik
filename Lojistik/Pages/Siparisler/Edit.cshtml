@@ -141,16 +141,51 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (function () {
+            // Tutar gibi sayısal alanlarda Türkçe biçimi (binlik nokta, ondalık virgül)
+            // sunucunun çözebileceği biçime ("2300,00") çevirir.
+            // En son ayıraç (nokta veya virgül) ondalık kabul edilir; diğerleri binlik sayılır.
+            function toServerDecimal(raw) {
+                var s = String(raw == null ? '' : raw).trim().replace(/[^\d.,-]/g, '');
+                if (s === '' || s === '-') return s;
+                var neg = s.charAt(0) === '-';
+                if (neg) s = s.slice(1);
+                var decPos = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','));
+                var intPart, frac;
+                if (decPos === -1) { intPart = s; frac = ''; }
+                else { intPart = s.slice(0, decPos); frac = s.slice(decPos + 1); }
+                intPart = intPart.replace(/[.,]/g, '');   // binlik ayıraçlarını at
+                frac = frac.replace(/[.,]/g, '');
+                var res = frac.length ? intPart + ',' + frac : intPart; // tr-TR ondalık virgül
+                return (neg ? '-' : '') + res;
+            }
+
+            function trToFloat(value) {
+                var s = toServerDecimal(value);
+                if (s === '' || s === '-') return NaN;
+                return parseFloat(s.replace(',', '.'));
+            }
+
             if (window.jQuery && $.validator && $.validator.methods) {
                 $.validator.methods.number = function (value, element) {
-                    return this.optional(element) || /^-?\d+(?:[.,]\d+)?$/.test(value);
+                    return this.optional(element) || !isNaN(trToFloat(value));
                 };
                 $.validator.methods.range = function (value, element, param) {
                     if (this.optional(element)) return true;
-                    const toNum = v => parseFloat(String(v).replace(',', '.'));
-                    const val = toNum(value), min = toNum(param[0]), max = toNum(param[1]);
+                    var val = trToFloat(value),
+                        min = trToFloat(param[0]),
+                        max = trToFloat(param[1]);
                     return !isNaN(val) && val >= min && val <= max;
                 };
+            }
+
+            // Form gönderilmeden ÖNCE (capture aşaması, jQuery doğrulamasından önce)
+            // Tutar alanını sunucunun çözebileceği biçime normalize et.
+            var form = document.getElementById('mainForm');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    var el = document.getElementById('Input_Tutar');
+                    if (el) el.value = toServerDecimal(el.value);
+                }, true);
             }
         })();
     </script>
