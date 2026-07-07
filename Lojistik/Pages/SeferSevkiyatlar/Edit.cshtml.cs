@@ -67,6 +67,14 @@ namespace Lojistik.Pages.SeferSevkiyatlar
 
             if (e == null) return RedirectToPage("/Seferler/Index");
 
+            var seferAit = await _context.Seferler
+                .AnyAsync(s => s.FirmaID == firmaId && s.SeferID == Input.SeferID);
+            if (!seferAit) return Forbid();
+
+            var sevkiyatAit = await _context.Sevkiyatlar
+                .AnyAsync(s => s.FirmaID == firmaId && s.SevkiyatID == Input.SevkiyatID);
+            if (!sevkiyatAit) return Forbid();
+
             e.SeferID = Input.SeferID;
             e.SevkiyatID = Input.SevkiyatID;
             e.Yon = Input.Yon;
