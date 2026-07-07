@@ -129,17 +129,17 @@ a.lj-ozet-link:hover .lj-ozet-kart-label { color: #1e293b; }
 .lj-ozet-kart.lj-ozet-warn .lj-ozet-kart-label { color: #92400e; }
 
 /* ── Cari — satır renkleri ────────────────────────────────────── */
-.tr-kapali   { background-color: rgba(25,135,84,0.10)  !important; }
-.tr-kapali:hover  { background-color: rgba(25,135,84,0.18)  !important; }
+.tr-kapali   { --bs-table-bg: rgba(25,135,84,0.10)  !important; }
+.tr-kapali:hover  { --bs-table-bg: rgba(25,135,84,0.18)  !important; }
 
-.tr-tahsilat { background-color: rgba(25,135,84,0.05)  !important; }
-.tr-tahsilat:hover { background-color: rgba(25,135,84,0.12) !important; }
+.tr-tahsilat { --bs-table-bg: rgba(25,135,84,0.05)  !important; }
+.tr-tahsilat:hover { --bs-table-bg: rgba(25,135,84,0.12) !important; }
 
-.tr-borc     { background-color: rgba(220,53,69,0.05)  !important; }
-.tr-borc:hover    { background-color: rgba(220,53,69,0.11)  !important; }
+.tr-borc     { --bs-table-bg: rgba(220,53,69,0.05)  !important; }
+.tr-borc:hover    { --bs-table-bg: rgba(220,53,69,0.11)  !important; }
 
-.tr-devir    { background-color: rgba(13,110,253,0.06) !important; }
-.tr-devir:hover   { background-color: rgba(13,110,253,0.13) !important; }
+.tr-devir    { --bs-table-bg: rgba(13,110,253,0.06) !important; }
+.tr-devir:hover   { --bs-table-bg: rgba(13,110,253,0.13) !important; }
 
 .tr-acilis   {
     background: linear-gradient(90deg,#f0f4ff,#f8f9fa) !important;
@@ -148,20 +148,20 @@ a.lj-ozet-link:hover .lj-ozet-kart-label { color: #1e293b; }
 
 /* ── Sipariş durum — satır renkleri ───────────────────────────── */
 /* 0 = Taslak */
-.tr-durum-0       { background-color: rgba(108,117,125,0.05) !important; }
-.tr-durum-0:hover { background-color: rgba(108,117,125,0.11) !important; }
+.tr-durum-0       { --bs-table-bg: rgba(108,117,125,0.05) !important; }
+.tr-durum-0:hover { --bs-table-bg: rgba(108,117,125,0.11) !important; }
 
 /* 1 = Yüklendi */
-.tr-durum-1       { background-color: rgba(13,202,240,0.06) !important; }
-.tr-durum-1:hover { background-color: rgba(13,202,240,0.13) !important; }
+.tr-durum-1       { --bs-table-bg: rgba(13,202,240,0.06) !important; }
+.tr-durum-1:hover { --bs-table-bg: rgba(13,202,240,0.13) !important; }
 
 /* 2 = Araçta */
-.tr-durum-2       { background-color: rgba(13,110,253,0.06) !important; }
-.tr-durum-2:hover { background-color: rgba(13,110,253,0.13) !important; }
+.tr-durum-2       { --bs-table-bg: rgba(13,110,253,0.06) !important; }
+.tr-durum-2:hover { --bs-table-bg: rgba(13,110,253,0.13) !important; }
 
 /* 3 = Tamamlandı */
-.tr-durum-3       { background-color: rgba(25,135,84,0.07)  !important; }
-.tr-durum-3:hover { background-color: rgba(25,135,84,0.14)  !important; }
+.tr-durum-3       { --bs-table-bg: rgba(25,135,84,0.07)  !important; }
+.tr-durum-3:hover { --bs-table-bg: rgba(25,135,84,0.14)  !important; }
 
 /* ── Bakiye / Net değer renkleri ──────────────────────────────── */
 .bky-pos, .net-pos { color: #198754; font-weight: 600; }
