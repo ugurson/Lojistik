@@ -2,6 +2,38 @@
    app.css  —  Lojistik uygulaması ortak UI bileşenleri
    ═══════════════════════════════════════════════════════════════ */
 
+:root {
+    /* Marka - lacivert (mevcut navbar rengiyle birebir aynı) */
+    --lj-navy-900: #1e293b;
+    --lj-navy-800: #253347;
+
+    /* Marka - amber aksan (yeni) */
+    --lj-amber-500: #F59E0B;
+    --lj-amber-600: #D97706;
+    --lj-amber-100: #FEF3C7;
+
+    /* Nötr skala */
+    --lj-slate-900: #1e293b;
+    --lj-slate-600: #64748b;
+    --lj-slate-300: #cbd5e1;
+    --lj-slate-100: #f1f5f9;
+
+    /* Durum renkleri - MEVCUT Bootstrap semantic renklerini
+       DEĞİŞTİRME, sadece referans olarak token'a bağla */
+    --lj-success: #198754;
+    --lj-danger:  #dc3545;
+    --lj-warning: #92400e;
+
+    /* Bootstrap değişken override - SADECE primary/link, başka
+       hiçbir --bs-* değişkenine dokunma */
+    --bs-primary: var(--lj-amber-500);
+    --bs-primary-rgb: 245, 158, 11;
+    --bs-link-color: var(--lj-amber-600);
+    --bs-link-color-rgb: 217, 119, 6;
+    --bs-link-hover-color: var(--lj-amber-500);
+    --bs-link-hover-color-rgb: 245, 158, 11;
+}
+
 /* ── Sayfa düzeyi kompakt sarmalayıcı ─────────────────────────── */
 .lj-page-compact              { font-size: 0.875rem; }
 .lj-page-compact h2           { font-size: 1.25rem; }
@@ -161,7 +193,7 @@ th.sortable.active .sort-icon { color: #0d6efd; }
 
 /* ── Navbar (lj-navbar) ───────────────────────────────────────── */
 .lj-navbar {
-    background-color: #1e293b !important;  /* koyu slate-navy */
+    background-color: var(--lj-navy-900) !important;  /* koyu slate-navy */
 }
 .lj-navbar .navbar-toggler-icon { filter: brightness(0) invert(1); }
 .lj-navbar .navbar-toggler { border-color: rgba(255,255,255,0.25); }
@@ -181,7 +213,7 @@ th.sortable.active .sort-icon { color: #0d6efd; }
 /* aktif sayfa — alt çizgi vurgusu */
 .lj-navbar .nav-link.active {
     color: #fff !important;
-    border-bottom: 2px solid #60a5fa;   /* açık mavi çizgi */
+    border-bottom: 2px solid var(--lj-amber-500);   /* amber çizgi */
 }
 
 /* dropdown menü */
@@ -194,17 +226,17 @@ th.sortable.active .sort-icon { color: #0d6efd; }
 .lj-navbar .dropdown-item {
     font-size: .875rem;
     padding: .4rem 1rem;
-    color: #1e293b;
+    color: var(--lj-navy-900);
 }
 .lj-navbar .dropdown-item:hover {
-    background-color: #eff6ff;
-    color: #1e40af;
+    background-color: var(--lj-amber-100);
+    color: var(--lj-navy-900);
 }
 
 /* dropdown içindeki aktif item */
 .lj-navbar .dropdown-item.lj-active {
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: var(--lj-amber-100);
+    color: var(--lj-navy-900);
     font-weight: 600;
 }
 
