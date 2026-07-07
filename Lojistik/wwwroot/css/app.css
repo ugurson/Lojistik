@@ -34,6 +34,22 @@
     --bs-link-hover-color-rgb: 245, 158, 11;
 }
 
+/* .btn-primary — marka paleti (amber arka plan, lacivert yazı)
+   Beyaz yazı amber-500 üzerinde ~2.15:1 kontrast veriyor (WCAG AA 3:1/4.5:1
+   eşiklerinin altında), bu yüzden yazı rengi de lacivert'e taşındı (~6.81:1). */
+.btn-primary {
+    --bs-btn-color: var(--lj-navy-900);
+    --bs-btn-bg: var(--lj-amber-500);
+    --bs-btn-border-color: var(--lj-amber-500);
+    --bs-btn-hover-color: var(--lj-navy-900);
+    --bs-btn-hover-bg: var(--lj-amber-600);
+    --bs-btn-hover-border-color: var(--lj-amber-600);
+    --bs-btn-active-color: var(--lj-navy-900);
+    --bs-btn-active-bg: var(--lj-amber-600);
+    --bs-btn-active-border-color: var(--lj-amber-600);
+    --bs-btn-disabled-color: var(--lj-navy-900);
+}
+
 /* ── Sayfa düzeyi kompakt sarmalayıcı ─────────────────────────── */
 .lj-page-compact              { font-size: 0.875rem; }
 .lj-page-compact h2           { font-size: 1.25rem; }
