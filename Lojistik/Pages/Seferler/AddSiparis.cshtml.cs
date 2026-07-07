@@ -97,7 +97,9 @@ namespace Lojistik.Pages.Seferler
                     {
                         FirmaID = firmaId,
                         SeferID = seferId,
-                        SevkiyatID = sevkiyatId
+                        SevkiyatID = sevkiyatId,
+                        KullaniciID = User.GetUserId(),
+                        CreatedAt = DateTime.Now
                     };
 
                     _context.SeferSevkiyatlar.Add(baglanti);
