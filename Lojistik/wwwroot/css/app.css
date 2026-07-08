@@ -2,34 +2,7 @@
    app.css  —  Lojistik uygulaması ortak UI bileşenleri
    ═══════════════════════════════════════════════════════════════ */
 
-@font-face {
-    font-family: "Inter";
-    src: url("/fonts/inter-var.ttf") format("truetype-variations");
-    font-weight: 100 900;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: "JetBrains Mono";
-    src: url("/fonts/jetbrains-mono-var.ttf") format("truetype-variations");
-    font-weight: 100 900;
-    font-style: normal;
-    font-display: swap;
-}
-
 :root {
-    /* Tipografi - self-hosted (Inter/JetBrains Mono).
-       Not: fallback zinciri Bootstrap'ın --bs-font-sans-serif/--bs-font-monospace
-       değerleriyle birebir aynı, literal olarak yazıldı - çünkü bu değişkenlerin
-       KENDİSİNİ hemen altta override ediyoruz; var(--bs-font-sans-serif) ile
-       referans vermek aynı :root içinde dairesel bağımlılığa (invalid değer)
-       yol açardı. */
-    --lj-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --lj-font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-
-    --bs-font-sans-serif: var(--lj-font-sans);
-    --bs-font-monospace: var(--lj-font-mono);
-
     /* Marka - lacivert (mevcut navbar rengiyle birebir aynı) */
     --lj-navy-900: #1e293b;
     --lj-navy-800: #253347;
