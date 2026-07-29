@@ -37,6 +37,8 @@ namespace Lojistik.Pages.Seferler
         public SeferItem? Data { get; set; }
         public List<SiparisRow> Siparisler { get; set; } = new();
         public List<SelectListItem> MusteriOptions { get; set; } = new();
+        public SelectList? MasrafTipleriSelect { get; set; }
+        public SelectList? ParaBirimleriSelect { get; set; }
 
         public record SeferItem(
             int SeferID,
@@ -48,7 +50,10 @@ namespace Lojistik.Pages.Seferler
             DateTime? DonusTarihi,
             byte Durum,
             string? Notlar,
-            DateTime CreatedAt
+            DateTime CreatedAt,
+            int? BaslangicKm,
+            int? BitisKm,
+            int? KmMesafe
         );
 
         public record MasrafRow(
@@ -120,7 +125,10 @@ namespace Lojistik.Pages.Seferler
                     s.DonusTarihi,
                     s.Durum,
                     s.Notlar,
-                    s.CreatedAt
+                    s.CreatedAt,
+                    s.BaslangicKm,
+                    s.BitisKm,
+                    s.KmMesafe
                 ))
                 .FirstOrDefaultAsync();
 
@@ -136,6 +144,15 @@ Value = m.MusteriID.ToString(),
 Text = m.MusteriAdi
 })
 .ToListAsync();
+
+            var masrafTipleri = await _context.MasrafTipleri
+                .AsNoTracking()
+                .Where(t => t.IsActive)
+                .OrderBy(t => t.SiraNo).ThenBy(t => t.Ad)
+                .Select(t => t.Ad)
+                .ToListAsync();
+            MasrafTipleriSelect = new SelectList(masrafTipleri, "Yakıt");
+            ParaBirimleriSelect = new SelectList(new[] { "TL", "EUR", "USD" });
 
             Siparisler = await _context.SeferSevkiyatlar
                 .AsNoTracking()
@@ -285,6 +302,78 @@ false,  // IsCarilestirildi
 
         // NOT: Razor Pages'ta method seviyesinde [ValidateAntiForgeryToken] gerekmez ve hata verir.
         // Formda @Html.AntiForgeryToken() zaten var.
+        public async Task<IActionResult> OnPostKmGuncelleAsync(int seferId, int? baslangicKm, int? bitisKm)
+        {
+            var firmaId = User.GetFirmaId();
+
+            var sefer = await _context.Seferler
+                .FirstOrDefaultAsync(s => s.FirmaID == firmaId && s.SeferID == seferId);
+
+            if (sefer == null)
+            {
+                TempData["StatusMessage"] = "Sefer bulunamadı.";
+                return RedirectToPage(new { id = seferId });
+            }
+
+            sefer.BaslangicKm = baslangicKm;
+            sefer.BitisKm = bitisKm;
+            // KmMesafe: BitisKm - BaslangicKm otomatik, aksi halde mevcut değer korunur (Edit.cshtml.cs ile aynı kural).
+            sefer.KmMesafe = (bitisKm.HasValue && baslangicKm.HasValue && bitisKm > baslangicKm)
+                ? bitisKm.Value - baslangicKm.Value
+                : sefer.KmMesafe;
+
+            await _context.SaveChangesAsync();
+            TempData["StatusMessage"] = "KM bilgileri güncellendi.";
+            return RedirectToPage(new { id = seferId });
+        }
+
+        public async Task<IActionResult> OnPostMasrafEkleAsync(
+            int seferId, DateTime tarih, string masrafTipi, decimal tutar, string paraBirimi,
+            string? faturaBelgeNo, string? ulke, string? yer, string? notlar, decimal? yakitLitre)
+        {
+            var firmaId = User.GetFirmaId();
+            var subeKodu = User.GetSubeKodu();
+            var userId = User.GetUserId();
+
+            var seferAit = await _context.Seferler.AnyAsync(s => s.FirmaID == firmaId && s.SeferID == seferId);
+            if (!seferAit) return Forbid();
+
+            var tip = (masrafTipi ?? "").Trim();
+
+            if (tip == "Yakıt" && (yakitLitre is null || yakitLitre <= 0))
+            {
+                TempData["StatusMessage"] = "Yakıt masrafında litre zorunludur.";
+                TempData["ReopenMasrafModal"] = true;
+                return RedirectToPage(new { id = seferId });
+            }
+
+            var entity = new SeferMasraf
+            {
+                FirmaID = firmaId,
+                SubeKodu = subeKodu,
+                KullaniciID = userId,
+                SeferID = seferId,
+                Tarih = tarih,
+                MasrafTipi = tip,
+                Tutar = tutar,
+                ParaBirimi = (paraBirimi ?? "TL").Trim(),
+                YakitLitre = (tip == "Yakıt") ? yakitLitre : null,
+                FaturaBelgeNo = string.IsNullOrWhiteSpace(faturaBelgeNo) ? null : faturaBelgeNo.Trim(),
+                Ulke = string.IsNullOrWhiteSpace(ulke) ? null : ulke.Trim(),
+                Yer = string.IsNullOrWhiteSpace(yer) ? null : yer.Trim(),
+                Notlar = string.IsNullOrWhiteSpace(notlar) ? null : notlar.Trim(),
+                CreatedByKullaniciID = userId,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.SeferMasraflari.Add(entity);
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Masraf eklendi.";
+            TempData["ReopenMasrafModal"] = true;
+            return RedirectToPage(new { id = seferId });
+        }
+
         public async Task<IActionResult> OnPostMasrafSilAsync(int seferId, int id)
         {
             var firmaId = User.GetFirmaId();

@@ -8,6 +8,7 @@
     var disClass   = isClosed ? " disabled" : "";
     var ariaDis    = isClosed ? "true"  : "false";
     var tabIndex   = isClosed ? "-1"    : "0";
+    bool reopenMasrafModal = TempData["ReopenMasrafModal"] is bool rmm && rmm;
 
     // ── Finansal toplamlar (header'da da lazım) ──────────────────────────
     decimal GTL  = Model.GelirToplamlari  != null && Model.GelirToplamlari.TryGetValue("TL",  out var _gtl)  ? _gtl  : 0;
@@ -175,6 +176,10 @@
                aria-disabled="@ariaDis" tabindex="@tabIndex">
                 + Sipariş Ekle
             </a>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    data-bs-toggle="modal" data-bs-target="#kmGuncelleModal">
+                🛣️ KM Güncelle
+            </button>
             @if (!isClosed)
             {
                 <button type="button" class="btn btn-sm btn-pastel-red"
@@ -221,6 +226,16 @@
                     <div class="sf-info-label">🏁 Dönüş Tarihi</div>
                     <div class="sf-info-value">
                         @(Model.Data.DonusTarihi?.ToString("dd.MM.yyyy HH:mm") ?? "—")
+                    </div>
+                </div>
+                <div class="sf-info-item">
+                    <div class="sf-info-label">🛣️ KM (Başlangıç → Bitiş)</div>
+                    <div class="sf-info-value">
+                        @(Model.Data.BaslangicKm?.ToString("N0") ?? "—") → @(Model.Data.BitisKm?.ToString("N0") ?? "—")
+                        @if (Model.Data.KmMesafe.HasValue)
+                        {
+                            <span class="text-muted" style="font-size:12px;">(@Model.Data.KmMesafe.Value.ToString("N0") km)</span>
+                        }
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Model.Data.Notlar))
@@ -464,9 +479,9 @@
                     <div class="ms-auto">
                         @if (!isReadOnly)
                         {
-                            <a asp-page="/SeferMasraflari/Create" asp-route-seferId="@Model.Data.SeferID"
-                               class="btn btn-sm btn-pastel-green@disClass"
-                               aria-disabled="@ariaDis" tabindex="@tabIndex">+ Masraf Ekle</a>
+                            <button type="button" class="btn btn-sm btn-pastel-green"
+                                    data-bs-toggle="modal" data-bs-target="#masrafEkleModal"
+                                    disabled="@(isClosed ? "disabled" : null)">+ Masraf Ekle</button>
                         }
                     </div>
                 </div>
@@ -915,6 +930,107 @@
             </div>
         </div>
     </div>
+
+    @* ══════════════════════════════════════════════════════
+       MASRAF EKLE MODAL
+    ══════════════════════════════════════════════════════ *@
+    <div class="modal fade" id="masrafEkleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="MasrafEkle">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">💸 Masraf Ekle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="seferId" value="@Model.Data.SeferID" />
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Tarih</label>
+                                <input type="date" name="tarih" id="mtTarih" class="form-control"
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Masraf Tipi</label>
+                                <select name="masrafTipi" id="mtMasrafTipi" class="form-select"
+                                        asp-items="Model.MasrafTipleriSelect"></select>
+                            </div>
+                            <div class="col-md-3" id="mtYakitLitreWrap" style="display:none;">
+                                <label class="form-label fw-semibold">Litre</label>
+                                <input type="number" step="0.01" name="yakitLitre" id="mtYakitLitre" class="form-control" inputmode="decimal" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Tutar</label>
+                                <input type="number" step="0.01" name="tutar" class="form-control" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Para Birimi</label>
+                                <select name="paraBirimi" class="form-select" asp-items="Model.ParaBirimleriSelect"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Fatura/Belge No</label>
+                                <input name="faturaBelgeNo" class="form-control" maxlength="50" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Ülke</label>
+                                <input name="ulke" class="form-control" maxlength="50" />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Yer</label>
+                                <input name="yer" class="form-control" maxlength="100" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Notlar</label>
+                                <textarea name="notlar" class="form-control" rows="2" maxlength="300"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-pastel-green">💾 Kaydet ve Devam Et</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ══════════════════════════════════════════════════════
+       KM GÜNCELLE MODAL
+    ══════════════════════════════════════════════════════ *@
+    <div class="modal fade" id="kmGuncelleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="KmGuncelle">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">🛣️ KM Güncelle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="seferId" value="@Model.Data.SeferID" />
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Başlangıç KM</label>
+                                <input type="number" min="0" name="baslangicKm" id="kmBaslangic" class="form-control"
+                                       value="@Model.Data.BaslangicKm" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Bitiş KM</label>
+                                <input type="number" min="0" name="bitisKm" id="kmBitis" class="form-control"
+                                       value="@Model.Data.BitisKm" oninput="lojistikHesaplaKmDetay()" />
+                            </div>
+                        </div>
+                        <div class="form-text mt-2" id="kmMesafeOnizleme"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-pastel-green">💾 Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 }
 
 @* ══════════════════════════════════════════════════════
@@ -940,6 +1056,38 @@ document.addEventListener("DOMContentLoaded", function () {
             if (target) target.classList.add('active');
         });
     });
+
+    // ── Masraf Ekle Modal ──────────────────────────────────
+    (function () {
+        var tipSel = document.getElementById('mtMasrafTipi');
+        var wrap = document.getElementById('mtYakitLitreWrap');
+        var litreInput = document.getElementById('mtYakitLitre');
+        if (!tipSel || !wrap) return;
+        function toggle() {
+            var isYakit = (tipSel.value || '').trim() === 'Yakıt';
+            wrap.style.display = isYakit ? '' : 'none';
+            if (!isYakit && litreInput) litreInput.value = '';
+        }
+        tipSel.addEventListener('change', toggle);
+        toggle();
+
+        var masrafModalEl = document.getElementById('masrafEkleModal');
+        if (masrafModalEl && @(reopenMasrafModal ? "true" : "false")) {
+            var masrafTabBtn = document.querySelector('#sfTabsBar [data-target="pane-masraflar"]');
+            if (masrafTabBtn) masrafTabBtn.click();
+            new bootstrap.Modal(masrafModalEl).show();
+        }
+    })();
+
+    // ── KM Güncelle Modal ──────────────────────────────────
+    window.lojistikHesaplaKmDetay = function () {
+        var b = parseInt(document.getElementById('kmBaslangic').value) || 0;
+        var e = parseInt(document.getElementById('kmBitis').value) || 0;
+        var onizleme = document.getElementById('kmMesafeOnizleme');
+        if (!onizleme) return;
+        onizleme.textContent = (b > 0 && e > b) ? ('Mesafe: ' + (e - b).toLocaleString('tr-TR') + ' km') : '';
+    };
+    lojistikHesaplaKmDetay();
 
     // ── Cariye İşle Modal ─────────────────────────────────
     var modalEl = document.getElementById('cariyeIsleModal');
