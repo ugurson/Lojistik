@@ -31,6 +31,7 @@ namespace Lojistik.Pages.Seferler
                     .Select(s => new
                     {
                         s.SiparisID,
+                        s.SiparisTur,
                         DorsePlaka = s.Sevkiyatlar
                             .OrderByDescending(v => v.SevkiyatID)
                             .Select(v => v.Dorse != null ? v.Dorse.Plaka : "(Dorse Yok)")
@@ -46,6 +47,12 @@ namespace Lojistik.Pages.Seferler
                             .Select(ss => string.IsNullOrEmpty(ss.Sefer.SeferKodu)
                                             ? $"SF-{ss.SeferID}"
                                             : ss.Sefer.SeferKodu)
+                            .FirstOrDefault(),
+                        // ⬇ Sipariş şu an bir seferde ise o seferin çektiği aracın plakası
+                        BagliPlaka = _context.SeferSevkiyatlar
+                            .Where(ss => ss.FirmaID == firmaId && ss.Sevkiyat.SiparisID == s.SiparisID)
+                            .OrderByDescending(ss => ss.SeferID)
+                            .Select(ss => ss.Sefer.Arac != null ? ss.Sefer.Arac.Plaka : null)
                             .FirstOrDefault()
                     })
                     .ToListAsync();
@@ -55,7 +62,7 @@ namespace Lojistik.Pages.Seferler
                 siparisler.Select(x => new
                 {
                     x.SiparisID,
-                    Text = $"{x.SiparisID} - {x.DorsePlaka} - {x.Alici} ({x.Ulke})"
+                    Text = $"{x.SiparisID} - {x.DorsePlaka} - {x.Alici} ({x.Ulke}) — {(x.SiparisTur == 2 ? "Yurtiçi" : "Yurtdışı")} — {(string.IsNullOrEmpty(x.BagliPlaka) ? "Boşta" : x.BagliPlaka)}"
                 }),
                 "SiparisID", "Text"
             );
