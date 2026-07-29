@@ -40,7 +40,7 @@ namespace Lojistik.Pages.Siparisler
             [Required, StringLength(200)] public string YukAciklamasi { get; set; } = null!;
             [Column(TypeName = "decimal(18,2)")]
             public decimal? Tutar { get; set; }
-            [StringLength(10)] public string? ParaBirimi { get; set; } = "TRY";
+            [StringLength(10)] public string? ParaBirimi { get; set; } = "TL";
 
             [StringLength(50)] public string? FaturaNo { get; set; }
             [StringLength(500)] public string? Notlar { get; set; }
@@ -199,7 +199,7 @@ namespace Lojistik.Pages.Siparisler
             MusterilerSelect = new SelectList(musteriList, "MusteriID", "MusteriAdi");
             AraTedarikciSelect = new SelectList(musteriList, "MusteriID", "MusteriAdi");
 
-            var pbs = new[] { "TRY", "USD", "EUR", "GBP", "CHF" };
+            var pbs = new[] { "TL", "USD", "EUR", "GBP", "CHF" };
             ParaBirimleriSelect = new SelectList(pbs.Select(x => new { Value = x, Text = x }), "Value", "Text", Input.ParaBirimi);
         }
     }
