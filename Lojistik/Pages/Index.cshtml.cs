@@ -64,7 +64,8 @@ namespace Lojistik.Pages
                 .AsNoTracking()
                 .CountAsync(b => b.Arac!.FirmaID == firmaId
                               && b.BitisTarihi.HasValue
-                              && b.BitisTarihi <= todayDO);
+                              && b.BitisTarihi <= todayDO
+                              && b.Takipte);
 
             // 4b. 30 gün içinde bitecek araç belgeleri (bugün < BitisTarihi <= +30 gün)
             YaklasanBelgeSayisi = await _context.AracBelgeleri
@@ -72,7 +73,8 @@ namespace Lojistik.Pages
                 .CountAsync(b => b.Arac!.FirmaID == firmaId
                               && b.BitisTarihi.HasValue
                               && b.BitisTarihi > todayDO
-                              && b.BitisTarihi <= limitDO);
+                              && b.BitisTarihi <= limitDO
+                              && b.Takipte);
 
             // 0. Güncelleme notları (aktif, en yeni 20)
             GuncellemeNotlari = await _context.GuncellemeNotlari

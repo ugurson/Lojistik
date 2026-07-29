@@ -86,6 +86,16 @@
                         <span asp-validation-for="AracBelgesi.Notlar" class="text-danger small"></span>
                     </div>
 
+                    @* Satır 4: Takipte *@
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="AracBelgesi.Takipte" id="takipte">
+                            <label class="form-check-label" for="takipte">
+                                Süre takibinde göster (işaretli değilse dashboard/uyarı listelerinde görünmez)
+                            </label>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

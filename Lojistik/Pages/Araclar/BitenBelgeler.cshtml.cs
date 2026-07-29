@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Lojistik.Data;
 using Lojistik.Models;
 using Lojistik.Extensions;                 // User.GetFirmaId()
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +29,7 @@ namespace Lojistik.Pages.Araclar
             var baseQuery = _context.AracBelgeleri
                                     .Include(b => b.Arac)
                                     .AsNoTracking()
-                                    .Where(b => b.Arac.FirmaID == firmaId && b.BitisTarihi != null);
+                                    .Where(b => b.Arac.FirmaID == firmaId && b.BitisTarihi != null && b.Takipte);
 
             // Süresi bitenler (Bitis <= bugün)
             Bitenler = await baseQuery
@@ -41,6 +42,19 @@ namespace Lojistik.Pages.Araclar
                 .Where(b => b.BitisTarihi! > today && b.BitisTarihi! <= limit)
                 .OrderBy(b => b.BitisTarihi)
                 .ToListAsync();
+        }
+
+        public async Task<IActionResult> OnPostTakiptenCikarAsync(int belgeId)
+        {
+            int firmaId = User.GetFirmaId();
+            var belge = await _context.AracBelgeleri
+                .Include(b => b.Arac)
+                .FirstOrDefaultAsync(b => b.BelgeID == belgeId && b.Arac!.FirmaID == firmaId);
+            if (belge == null) return Forbid();
+
+            belge.Takipte = false;
+            await _context.SaveChangesAsync();
+            return RedirectToPage();
         }
     }
 }

@@ -18,6 +18,7 @@ namespace Lojistik.Models
         public string? DosyaYolu { get; set; }
         public string? Notlar { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool Takipte { get; set; } = true;
 
         public Arac? Arac { get; set; }
     }

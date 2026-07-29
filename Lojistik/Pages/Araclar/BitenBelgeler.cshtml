@@ -58,6 +58,13 @@
                                 </span>
                             </td>
                             <td class="text-end">
+                                <form method="post" asp-page-handler="TakiptenCikar" asp-route-belgeId="@b.BelgeID" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm"
+                                            onclick="return confirm('Bu belge süresi takip listelerinden çıkarılacak. Kayıt silinmeyecek, istersen Düzenle sayfasından tekrar açabilirsin. Devam edilsin mi?');">
+                                        Takipten Çıkar
+                                    </button>
+                                </form>
                                 <div class="btn-group btn-group-sm">
                                     <a asp-page="/Belgeler/Details" asp-route-id="@b.BelgeID"
                                        asp-route-aracId="@b.AracID" asp-route-returnUrl="/Araclar/BitenBelgeler"
@@ -122,6 +129,13 @@
                                 <span class="@kalanBadge">@kalan gün</span>
                             </td>
                             <td class="text-end">
+                                <form method="post" asp-page-handler="TakiptenCikar" asp-route-belgeId="@b.BelgeID" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm"
+                                            onclick="return confirm('Bu belge süresi takip listelerinden çıkarılacak. Kayıt silinmeyecek, istersen Düzenle sayfasından tekrar açabilirsin. Devam edilsin mi?');">
+                                        Takipten Çıkar
+                                    </button>
+                                </form>
                                 <div class="btn-group btn-group-sm">
                                     <a asp-page="/Belgeler/Details" asp-route-id="@b.BelgeID"
                                        asp-route-aracId="@b.AracID" asp-route-returnUrl="/Araclar/BitenBelgeler"
