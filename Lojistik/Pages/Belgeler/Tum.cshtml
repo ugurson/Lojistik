@@ -21,8 +21,35 @@
         ["BaslangicMax"] = Model.BaslangicMax?.ToString("yyyy-MM-dd"),
         ["BitisMin"]     = Model.BitisMin?.ToString("yyyy-MM-dd"),
         ["BitisMax"]     = Model.BitisMax?.ToString("yyyy-MM-dd"),
+        ["SortBy"]       = Model.SortBy,
+        ["SortDir"]      = Model.SortDir,
     };
     Dictionary<string, string?> PD(int pg) { var d = BaseP(); d["PageIndex"] = pg.ToString(); return d; }
+
+    bool IsSortActive(string col) =>
+        string.Equals(Model.SortBy, col, StringComparison.OrdinalIgnoreCase)
+        || (string.IsNullOrEmpty(Model.SortBy) && col == "baslangic");
+
+    string SortIcon(string col)
+    {
+        if (!IsSortActive(col)) return "↕";
+        return string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? " ↑" : " ↓";
+    }
+
+    string NextDir(string col)
+    {
+        if (!IsSortActive(col)) return "desc"; // ilk tıklamada en yeni tarih üstte
+        return string.Equals(Model.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+    }
+
+    string SortUrl(string col)
+    {
+        var d = BaseP();
+        d["SortBy"] = col;
+        d["SortDir"] = NextDir(col);
+        d["PageIndex"] = "1";
+        return Url.Page("./Tum", d)!;
+    }
 }
 
 <div class="lj-page-compact">
@@ -111,8 +138,12 @@
                     <th>Belge Tipi</th>
                     <th>Belge No</th>
                     <th>Firma</th>
-                    <th>Başlangıç</th>
-                    <th>Bitiş</th>
+                    <th class="sortable @(IsSortActive("baslangic") ? "active" : "")">
+                        <a href="@SortUrl("baslangic")">Başlangıç <span class="sort-icon">@SortIcon("baslangic")</span></a>
+                    </th>
+                    <th class="sortable @(IsSortActive("bitis") ? "active" : "")">
+                        <a href="@SortUrl("bitis")">Bitiş <span class="sort-icon">@SortIcon("bitis")</span></a>
+                    </th>
                     <th class="text-end">Tutar</th>
                     <th>PB</th>
                     <th>Notlar</th>

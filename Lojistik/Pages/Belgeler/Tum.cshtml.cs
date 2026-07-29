@@ -26,6 +26,10 @@ namespace Lojistik.Pages.Belgeler
         [BindProperty(SupportsGet = true)] public int PageIndex { get; set; } = 1;
         [BindProperty(SupportsGet = true)] public int PageSize { get; set; } = 20;
 
+        // Sıralama
+        [BindProperty(SupportsGet = true)] public string? SortBy { get; set; }   // "baslangic" | "bitis"
+        [BindProperty(SupportsGet = true)] public string? SortDir { get; set; }  // "asc" | "desc"
+
         public int TotalCount { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / Math.Max(1, PageSize));
 
@@ -38,11 +42,14 @@ namespace Lojistik.Pages.Belgeler
                 .Include(b => b.Arac)
                 .Where(b => b.Arac!.FirmaID == firmaId);
 
+            // EF.Functions.Collate: DB/kolon collation'ı SQL_Latin1_General_CP1_CI_AS (Türkçe değil),
+            // bu yüzden ş/Ş, ı/İ, ğ/Ğ gibi harfler case-insensitive eşleşmiyor. Arama anında
+            // Turkish_CI_AS'a geçici olarak zorluyoruz (şema/kolon değişmiyor).
             if (!string.IsNullOrWhiteSpace(Plaka))
-                q = q.Where(b => b.Arac!.Plaka.Contains(Plaka));
+                q = q.Where(b => EF.Functions.Collate(b.Arac!.Plaka, "Turkish_CI_AS").Contains(Plaka));
 
             if (!string.IsNullOrWhiteSpace(BelgeTipi))
-                q = q.Where(b => b.BelgeTipi.Contains(BelgeTipi));
+                q = q.Where(b => EF.Functions.Collate(b.BelgeTipi, "Turkish_CI_AS").Contains(BelgeTipi));
 
             // >>>>> Tarih filtreleri: DateTime? -> DateOnly dönüşümü
             if (BaslangicMin.HasValue)
@@ -70,8 +77,17 @@ namespace Lojistik.Pages.Belgeler
             }
             // <<<<<
 
-            // Varsayılan sıralama
-            q = q.OrderByDescending(b => b.BaslangicTarihi).ThenByDescending(b => b.BelgeID);
+            // Sıralama (varsayılan: Başlangıç Tarihi, azalan)
+            bool asc = string.Equals(SortDir, "asc", StringComparison.OrdinalIgnoreCase);
+            q = SortBy?.ToLower() switch
+            {
+                "bitis" => asc
+                    ? q.OrderBy(b => b.BitisTarihi).ThenByDescending(b => b.BelgeID)
+                    : q.OrderByDescending(b => b.BitisTarihi).ThenByDescending(b => b.BelgeID),
+                "baslangic" when asc
+                    => q.OrderBy(b => b.BaslangicTarihi).ThenByDescending(b => b.BelgeID),
+                _ => q.OrderByDescending(b => b.BaslangicTarihi).ThenByDescending(b => b.BelgeID)
+            };
 
             TotalCount = await q.CountAsync();
 
