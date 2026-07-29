@@ -408,6 +408,27 @@ WHERE FirmaID = {0} AND SiparisID = {1};", firmaId, id);
         }
 
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostVarisGuncelleAsync(int sevkiyatId, int siparisId, DateTime? varisTarihi)
+        {
+            var firmaId = User.GetFirmaId();
+
+            var sevkiyat = await _context.Sevkiyatlar
+                .FirstOrDefaultAsync(x => x.FirmaID == firmaId && x.SevkiyatID == sevkiyatId && x.SiparisID == siparisId);
+
+            if (sevkiyat == null)
+            {
+                TempData["StatusMessage"] = "Sevkiyat bulunamadı.";
+                return RedirectToPage(new { id = siparisId });
+            }
+
+            sevkiyat.VarisTarihi = varisTarihi?.Date;
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Varış tarihi güncellendi.";
+            return RedirectToPage(new { id = siparisId });
+        }
+
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostGeriAktifEtAsync(int id)
         {
             var firmaId = User.GetFirmaId();

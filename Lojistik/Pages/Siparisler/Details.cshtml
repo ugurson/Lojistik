@@ -270,11 +270,14 @@
                                     <div class="d-inline-flex flex-wrap gap-1">
                                         @if (finalized)
                                         {
+                                            <button type="button" class="btn btn-pastel-blue btn-sm disabled" disabled>📅 Varış</button>
                                             <a class="btn btn-pastel-amber btn-sm disabled" aria-disabled="true">Düzenle</a>
                                             <button type="button" class="btn btn-pastel-red btn-sm disabled" disabled>Sil</button>
                                         }
                                         else
                                         {
+                                            <button type="button" class="btn btn-pastel-blue btn-sm"
+                                                    data-bs-toggle="modal" data-bs-target="#varisModal_@r.SevkiyatID">📅 Varış</button>
                                             <a asp-page="/Sevkiyatlar/Edit" asp-route-id="@r.SevkiyatID" class="btn btn-pastel-amber btn-sm">Düzenle</a>
                                             <form method="post"
                                                   asp-page="/Sevkiyatlar/Delete"
@@ -301,6 +304,36 @@
         </div>
     </div>
 </div>
+
+@* ─── Varış Tarihi Güncelle Modalları (her sevkiyat satırı için ayrı) ─── *@
+@if (Model.Sevkiyatlar?.Count > 0)
+{
+    foreach (var r in Model.Sevkiyatlar)
+    {
+        <div class="modal fade" id="varisModal_@r.SevkiyatID" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="post" asp-page-handler="VarisGuncelle" class="modal-content">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sevkiyatId" value="@r.SevkiyatID" />
+                    <input type="hidden" name="siparisId" value="@s.SiparisID" />
+                    <div class="modal-header">
+                        <h5 class="modal-title">📅 Varış Tarihi Güncelle @(string.IsNullOrWhiteSpace(r.DorsePlaka) ? "" : $"— {r.DorsePlaka}")</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Varış Tarihi</label>
+                        <input type="date" name="varisTarihi" class="form-control"
+                               value="@(r.VarisTarihi?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-pastel-blue" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-pastel-green">💾 Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
 
 <div class="card shadow-sm">
     <div class="card-header fw-semibold">İlişkili Seferler</div>
